@@ -21,7 +21,7 @@ const ProductCards: React.FC<ProductCardsProps> = ({ searchTerm, currentPage, se
       // Define the image endpoint
       const imgEndPoint = "http://127.0.0.1:8000";
     
-      const limit = 10; // Number of products per page
+      const limit = 8; // Number of products per page
     
       // Fetch products when page or search term changes
       useEffect(() => {
