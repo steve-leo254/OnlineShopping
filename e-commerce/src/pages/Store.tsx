@@ -14,42 +14,14 @@ type StoreItemProps = {
 };
 
 const Store: React.FC = () => {
-  // Use the custom hook to fetch products
-  const { isLoading, products, totalPages, error, fetchProducts } =
-    useFetchProducts();
-  // state for the cart
-  // const { addToCart } = useShoppingCart();
-  // Define the image endpoint
-  // const imgEndPoint = "http://127.0.0.1:8000";
-
-  // State for pagination and search
+  // State for pagination and search - managed here now
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const limit = 10; // Number of products per page
-
-  // Fetch products when page or search term changes
-  useEffect(() => {
-    fetchProducts(currentPage, limit, searchTerm);
-  }, [currentPage, searchTerm, fetchProducts]);
 
   // Reset to page 1 when search term changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
-
-  // Helper function for adding to cart with toast notification
-  // const addToCartWithToast = (product: Product) => {
-  //   // Add item to cart
-  //   addToCart({
-  //     id: product.id,
-  //     name: product.name,
-  //     price: product.price,
-  //     img_url: imgEndPoint + product.img_url,
-  //   });
-
-  //   // Show toast notification
-  //   toast.success(`${product.name} added to cart!`);
-  // };
 
   return (
     <>
@@ -282,36 +254,40 @@ const Store: React.FC = () => {
 
           {/* Search Input */}
           <div className="mb-4">
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 p-2 text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
-            />
-          </div>
-          <ProductCards />
-
-          {/* Pagination */}
-          {!isLoading && !error && totalPages > 1 && (
-            <div className="mt-4 flex justify-center">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`mx-1 rounded-lg px-3 py-1 ${
-                      currentPage === page
-                        ? "bg-primary-700 text-white"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                )
-              )}
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <svg
+                  className="w-4 h-4 text-gray-500 dark:text-gray-400"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
+                  />
+                </svg>
+              </div>
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+              />
             </div>
-          )}
+          </div>
+
+          {/* Pass search state and pagination to ProductCards */}
+          <ProductCards 
+            searchTerm={searchTerm}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+          />
 
           {/* Filter Modal */}
           <form
@@ -322,7 +298,6 @@ const Store: React.FC = () => {
             aria-hidden="true"
             className="fixed left-0 right-0 top-0 z-50 hidden h-modal w-full overflow-y-auto overflow-x-hidden p-4 md:inset-0 md:h-full"
           >
-            {/* Filter modal content remains unchanged */}
             <div className="relative h-full w-full max-w-xl md:h-auto">
               <div className="relative rounded-lg bg-white shadow dark:bg-gray-800">
                 <div className="flex items-start justify-between rounded-t p-4 md:p-5">
@@ -354,7 +329,6 @@ const Store: React.FC = () => {
                     <span className="sr-only">Close modal</span>
                   </button>
                 </div>
-                {/* Modal body and footer remain as in the original */}
                 <div className="px-4 md:px-5">
                   <div className="mb-4 border-b border-gray-200 dark:border-gray-700">
                     <ul
@@ -398,7 +372,6 @@ const Store: React.FC = () => {
                       role="tabpanel"
                       aria-labelledby="brand-tab"
                     >
-                      {/* Brand filter content remains unchanged */}
                       <div className="space-y-2">
                         <h5 className="text-lg font-medium uppercase text-black dark:text-white">
                           A
@@ -417,9 +390,7 @@ const Store: React.FC = () => {
                             Apple (56)
                           </label>
                         </div>
-                        {/* Additional brand checkboxes as in the original */}
                       </div>
-                      {/* Other brand sections (B, C, D, E, etc.) remain unchanged */}
                     </div>
                     <div
                       className="space-y-4"
@@ -427,7 +398,6 @@ const Store: React.FC = () => {
                       role="tabpanel"
                       aria-labelledby="advanced-filters-tab"
                     >
-                      {/* Advanced filters content remains unchanged */}
                       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                         <div className="grid grid-cols-2 gap-3">
                           <div>
@@ -442,7 +412,7 @@ const Store: React.FC = () => {
                               type="range"
                               min="0"
                               max="7000"
-                              value="300"
+                              defaultValue="300"
                               step="1"
                               className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 dark:bg-gray-700"
                             />
@@ -459,7 +429,7 @@ const Store: React.FC = () => {
                               type="range"
                               min="0"
                               max="7000"
-                              value="3500"
+                              defaultValue="3500"
                               step="1"
                               className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 dark:bg-gray-700"
                             />
@@ -468,7 +438,7 @@ const Store: React.FC = () => {
                             <input
                               type="number"
                               id="min-price-input"
-                              value="300"
+                              defaultValue="300"
                               min="0"
                               max="7000"
                               className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
@@ -481,7 +451,7 @@ const Store: React.FC = () => {
                             <input
                               type="number"
                               id="max-price-input"
-                              value="3500"
+                              defaultValue="3500"
                               min="0"
                               max="7000"
                               className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
@@ -490,7 +460,6 @@ const Store: React.FC = () => {
                             />
                           </div>
                         </div>
-                        {/* Additional advanced filters (delivery time, condition, etc.) remain unchanged */}
                       </div>
                     </div>
                   </div>
