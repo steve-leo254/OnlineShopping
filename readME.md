@@ -1,6 +1,6 @@
 # E-Commerce API
 
-A modern, secure, and scalable e-commerce backend built with FastAPI, providing product management, user authentication, order processing, and MPESA payment integration.
+A secure and scalable e-commerce application built with a FastAPI backend and React frontend, providing comprehensive features including product management, user authentication, order processing, and MPESA payment integration.
 
 ## Features
 
@@ -19,7 +19,7 @@ A modern, secure, and scalable e-commerce backend built with FastAPI, providing 
 - **JWT**: JSON Web Tokens for secure user authentication.
 - **Pydantic**: Data validation and settings management using Python type annotations.
 - **FastAPI Mail**: For sending emails (e.g., password reset).
-- **MPESA API**: For payment processing.
+- **DARAJA API**: For payment processing.
 
 ## Installation
 
