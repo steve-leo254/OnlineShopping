@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext"; // Import useAuth
 import CartDropdown from "./CartDropdown";
 import { useShoppingCart } from "../context/ShoppingCartContext"; // Import useShoppingCart
+
 const Bar: React.FC = () => {
   const { isAuthenticated, logout } = useAuth(); // Use AuthContext
   const { cartQuantity } = useShoppingCart();
