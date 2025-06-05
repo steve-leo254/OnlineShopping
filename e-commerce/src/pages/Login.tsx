@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useAuth } from "../context/AuthContext"; // Import useAuth
+import { useAuth } from "../context/AuthContext"; 
 import { Link } from "react-router-dom";
 
 interface LoginFormData {
@@ -16,7 +16,7 @@ interface ApiResponse {
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login } = useAuth(); // Get login function from context
+  const { login } = useAuth();
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: "",
@@ -43,9 +43,8 @@ const Login: React.FC = () => {
         },
       });
 
-      // Update auth state via context
       login(response.data.access_token);
-      navigate("/"); // No need for window.location.reload()
+      navigate("/");
     } catch (error) {
       console.error("Login error:", error);
       // toast.error("An error occurred. Please try again.");
@@ -56,8 +55,8 @@ const Login: React.FC = () => {
 
   return (
     <>
-      <section className="bg-gray-50 dark:bg-gray-900 ">
-        <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+      <section className="bg-gray-50 dark:bg-gray-900 min-h-screen">
+        <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto min-h-screen">
           <a
             href="#"
             className="flex items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white"
@@ -69,7 +68,7 @@ const Login: React.FC = () => {
             />
             Flowbite
           </a>
-          <div className="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+          <div className="w-full bg-white rounded-lg shadow dark:border sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
             <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
               <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
                 Sign in to your account
@@ -123,7 +122,6 @@ const Login: React.FC = () => {
                         aria-describedby="remember"
                         type="checkbox"
                         className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800"
-                        required
                       />
                     </div>
                     <div className="ml-3 text-sm">
@@ -153,7 +151,7 @@ const Login: React.FC = () => {
                 </button>
 
                 <p className="text-sm font-light text-gray-500 dark:text-gray-400">
-                  Don’t have an account yet?{" "}
+                  Don't have an account yet?{" "}
                   <Link
                     to="/register"
                     className="font-medium text-primary-600 hover:underline dark:text-primary-500"
