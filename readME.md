@@ -1,22 +1,4 @@
 
----
-
-# E-Commerce API
-
-A modern, secure, and scalable e-commerce backend built with FastAPI, providing product management, user authentication, order processing, and MPESA payment integration.
-
-## Features
-
-- User registration and authentication (customers and admins)
-- Product catalog with categories, filtering, and pagination
--
-### YOU
-provide a detailed reaDME  including HOW TO RUN THE APP AND STAFF
-### BLACKBOX.AI
-
-Here's a detailed README template for your e-commerce API project, including sections on features, installation, usage, and how to run the application. You can fill in specific details as needed.
-
----
 
 # E-Commerce API
 
