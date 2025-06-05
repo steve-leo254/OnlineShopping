@@ -27,7 +27,7 @@ A secure and scalable e-commerce application built with a FastAPI backend and Re
 
 - Python 3.6 or higher
 - MySQL Server
-- React (for any frontend or additional tooling)
+- Node.js (for any frontend or additional tooling)
 - pip (Python package installer)
 
 ### Clone the Repository
