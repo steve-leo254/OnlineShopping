@@ -1,4 +1,5 @@
 import React from "react";
+import ProductCards from "../components/ProductCards";
 
 const Home: React.FC = () => {
   return (
@@ -34,6 +35,12 @@ const Home: React.FC = () => {
             />
           </div>
         </div>
+        <section id="products" class="container mx-auto px-6 py-20">
+          <h2 className="text-4xl font-bold text-center text-white-900 mb-12">
+            Featured Products
+          </h2>
+          <ProductCards />
+        </section>
       </section>
     </>
   );
