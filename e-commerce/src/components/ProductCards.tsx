@@ -6,7 +6,13 @@ import { useFetchProducts } from "./UseFetchProducts";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
 
-const ProductCards: React.FC = () => {
+interface ProductCardsProps {
+  searchTerm: string;
+  currentPage: number;
+  setCurrentPage: (page: number) => void;
+}
+
+const ProductCards: React.FC<ProductCardsProps> = ({ searchTerm, currentPage, setCurrentPage }) => {
      // Use the custom hook to fetch products
       const { isLoading, products, totalPages, error, fetchProducts } =
         useFetchProducts();
@@ -15,20 +21,12 @@ const ProductCards: React.FC = () => {
       // Define the image endpoint
       const imgEndPoint = "http://127.0.0.1:8000";
     
-      // State for pagination and search
-      const [currentPage, setCurrentPage] = useState(1);
-      const [searchTerm, setSearchTerm] = useState("");
       const limit = 10; // Number of products per page
     
       // Fetch products when page or search term changes
       useEffect(() => {
         fetchProducts(currentPage, limit, searchTerm);
       }, [currentPage, searchTerm, fetchProducts]);
-    
-      // Reset to page 1 when search term changes
-      useEffect(() => {
-        setCurrentPage(1);
-      }, [searchTerm]);
     
       // Helper function for adding to cart with toast notification
       const addToCartWithToast = (product: Product) => {
@@ -57,35 +55,35 @@ const ProductCards: React.FC = () => {
               Error: {error}
             </div>
           ) : (
-            <div className="mb-2 grid gap-3 sm:grid-cols-2 md:mb-6 lg:grid-cols-3 xl:grid-cols-3">
+            <div className="mb-2 grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
               {products.map((product) => (
                 <div
                   key={product.id}
-                  className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+                  className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
                 >
-                  <div className="h-56 w-full">
+                  <div className="h-40 w-full">
                     <a href="#">
                       <img
-                        className="mx-auto h-full dark:block"
+                        className="mx-auto h-full w-full object-cover rounded dark:block"
                         src={imgEndPoint + product.img_url}
                         alt={product.name}
                       />
                     </a>
                   </div>
-                  <div className="pt-6">
-                    <div className="mb-4 flex items-center justify-between gap-4">
-                      <span className="bg-blue-300 me-2 rounded bg-primary-100 px-2.5 py-0.5 text-xs font-medium text-primary-800 dark:bg-primary-900 dark:text-primary-300">
+                  <div className="pt-3">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className="bg-blue-300 me-1 rounded bg-primary-100 px-1.5 py-0.5 text-xs font-medium text-primary-800 dark:bg-primary-900 dark:text-primary-300">
                         Up to 35% off
                       </span>
                       <div className="flex items-center justify-end gap-1">
                         <button
                           type="button"
                           data-tooltip-target={`tooltip-quick-look-${product.id}`}
-                          className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+                          className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
                         >
                           <span className="sr-only">Quick look</span>
                           <svg
-                            className="h-5 w-5"
+                            className="h-4 w-4"
                             aria-hidden="true"
                             xmlns="http://www.w3.org/2000/svg"
                             width="24"
@@ -105,26 +103,14 @@ const ProductCards: React.FC = () => {
                             />
                           </svg>
                         </button>
-                        <div
-                          id={`tooltip-quick-look-${product.id}`}
-                          role="tooltip"
-                          className="tooltip invisible absolute z-10 inline-block rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white opacity-0 shadow-sm transition-opacity duration-300 dark:bg-gray-700"
-                          data-popper-placement="top"
-                        >
-                          Quick look
-                          <div
-                            className="tooltip-arrow"
-                            data-popper-arrow=""
-                          ></div>
-                        </div>
                         <button
                           type="button"
                           data-tooltip-target={`tooltip-add-to-favorites-${product.id}`}
-                          className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+                          className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
                         >
                           <span className="sr-only">Add to Favorites</span>
                           <svg
-                            className="h-5 w-5"
+                            className="h-4 w-4"
                             aria-hidden="true"
                             xmlns="http://www.w3.org/2000/svg"
                             fill="none"
@@ -139,32 +125,20 @@ const ProductCards: React.FC = () => {
                             />
                           </svg>
                         </button>
-                        <div
-                          id={`tooltip-add-to-favorites-${product.id}`}
-                          role="tooltip"
-                          className="tooltip invisible absolute z-10 inline-block rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white opacity-0 shadow-sm transition-opacity duration-300 dark:bg-gray-700"
-                          data-popper-placement="top"
-                        >
-                          Add to favorites
-                          <div
-                            className="tooltip-arrow"
-                            data-popper-arrow=""
-                          ></div>
-                        </div>
                       </div>
                     </div>
                     <a
                       href="#"
-                      className="text-lg font-semibold leading-tight text-gray-900 hover:underline dark:text-white"
+                      className="text-sm font-semibold leading-tight text-gray-900 hover:underline dark:text-white line-clamp-2"
                     >
                       {product.name}
                     </a>
-                    <div className="mt-2 flex items-center gap-2">
+                    <div className="mt-1 flex items-center gap-1">
                       <div className="flex items-center">
                         {[...Array(5)].map((_, i) => (
                           <svg
                             key={i}
-                            className="h-4 w-4 text-yellow-400"
+                            className="h-3 w-3 text-yellow-400"
                             aria-hidden="true"
                             xmlns="http://www.w3.org/2000/svg"
                             fill="currentColor"
@@ -174,17 +148,17 @@ const ProductCards: React.FC = () => {
                           </svg>
                         ))}
                       </div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      <p className="text-xs font-medium text-gray-900 dark:text-white">
                         5.0
                       </p>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
                         (455)
                       </p>
                     </div>
-                    <ul className="mt-2 flex items-center gap-4">
-                      <li className="flex items-center gap-2">
+                    <ul className="mt-1 flex items-center gap-2 text-xs">
+                      <li className="flex items-center gap-1">
                         <svg
-                          className="h-4 w-4 text-gray-500 dark:text-gray-400"
+                          className="h-3 w-3 text-gray-500 dark:text-gray-400"
                           aria-hidden="true"
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
@@ -198,13 +172,13 @@ const ProductCards: React.FC = () => {
                             d="M13 7h6l2 4m-8-4v8m0-8V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v9h2m8 0H9m4 0h2m4 0h2v-4m0 0h-5m3.5 5.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm-10 0a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"
                           />
                         </svg>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                          Fast Delivery
+                        <p className="text-gray-500 dark:text-gray-400">
+                          Fast
                         </p>
                       </li>
-                      <li className="flex items-center gap-2">
+                      <li className="flex items-center gap-1">
                         <svg
-                          className="h-4 w-4 text-gray-500 dark:text-gray-400"
+                          className="h-3 w-3 text-gray-500 dark:text-gray-400"
                           aria-hidden="true"
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
@@ -217,22 +191,22 @@ const ProductCards: React.FC = () => {
                             d="M8 7V6c0-.6.4-1 1-1h11c.6 0 1 .4 1 1v7c0 .6-.4 1-1 1h-1M3 18v-7c0-.6.4-1 1-1h11c.6 0 1 .4 1 1v7c0 .6-.4 1-1 1H4a1 1 0 0 1-1-1Zm8-3.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"
                           />
                         </svg>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <p className="text-gray-500 dark:text-gray-400">
                           Best Price
                         </p>
                       </li>
                     </ul>
-                    <div className="mt-4 flex items-center justify-between gap-4">
-                      <p className="text-lg font-extrabold leading-tight text-gray-900 dark:text-white">
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <p className="text-base font-extrabold leading-tight text-gray-900 dark:text-white">
                         {formatCurrency(product.price)}
                       </p>
                       <button
                         type="button"
-                        className="bg-blue-600 inline-flex items-center rounded-lg bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
+                        className="bg-blue-600 inline-flex items-center rounded-lg bg-primary-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
                         onClick={() => addToCartWithToast(product)}
                       >
                         <svg
-                          className="-ms-2 me-2 h-5 w-5"
+                          className="-ms-1 me-1 h-4 w-4"
                           aria-hidden="true"
                           xmlns="http://www.w3.org/2000/svg"
                           width="24"
@@ -254,6 +228,27 @@ const ProductCards: React.FC = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {!isLoading && !error && totalPages > 1 && (
+            <div className="mt-4 flex justify-center">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`mx-1 rounded-lg px-3 py-1 ${
+                      currentPage === page
+                        ? "bg-primary-700 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
             </div>
           )}
     </>
