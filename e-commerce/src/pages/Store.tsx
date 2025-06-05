@@ -68,7 +68,23 @@ const Store: React.FC = () => {
                 currentPage === 1 ? "cursor-not-allowed opacity-50" : ""
               }`}
             >
-              Previous
+              <svg
+                className="w-6 h-6 text-gray-800 dark:text-white"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="m15 19-7-7 7-7"
+                />
+              </svg>
             </button>
             <span className="text-gray-900 dark:text-white font-semibold text-lg">
               {currentPage}
@@ -77,7 +93,23 @@ const Store: React.FC = () => {
               onClick={handleNext}
               className="flex items-center justify-center py-1.5 px-4 rounded-lg border border-gray-300 bg-white text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
             >
-              Next
+              <svg
+                className="w-6 h-6 text-gray-800 dark:text-white"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="m9 5 7 7-7 7"
+                />
+              </svg>
             </button>
           </nav>
         </div>

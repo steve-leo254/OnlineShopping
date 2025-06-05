@@ -1,7 +1,5 @@
-import React, { useState, useEffect} from "react";
-import axios from "axios";
+import React, { useEffect} from "react";
 import { toast } from "react-toastify";
-import { useAuth } from "../context/AuthContext";
 import { useFetchProducts } from "./UseFetchProducts";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
