@@ -1,12 +1,10 @@
-
-
 # E-Commerce API
 
 A modern, secure, and scalable e-commerce backend built with FastAPI, providing product management, user authentication, order processing, and MPESA payment integration.
 
 ## Features
 
-- **User  Management**: Register and authenticate users (customers and admins).
+- **User Management**: Register and authenticate users (customers and admins).
 - **Product Catalog**: Manage products with categories, filtering, and pagination.
 - **Order Processing**: Create, update, and manage orders.
 - **Payment Integration**: Seamless MPESA payment processing.
@@ -29,14 +27,19 @@ A modern, secure, and scalable e-commerce backend built with FastAPI, providing 
 
 - Python 3.6 or higher
 - MySQL Server
-- Node.js (for any frontend or additional tooling)
+- React (for any frontend or additional tooling)
 - pip (Python package installer)
 
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/e-commerce-api.git
-cd e-commerce-api
+git clone https://github.com/ericomondi/OnlineShopping.git
+```
+
+### set up the backend
+
+```bash
+cd e-api
 ```
 
 ### Create a Virtual Environment
@@ -73,6 +76,18 @@ MPESA_CALLBACK_URL=your_mpesa_callback_url
 1. Create a MySQL database for your application.
 2. Update the database connection URL in `database.py` if necessary.
 
+### Set up the Frontend
+
+```bash
+cd e-commerce
+```
+
+### Install packages
+
+```bash
+npm install
+```
+
 ## Running the Application
 
 ### Start the FastAPI Server
@@ -88,8 +103,8 @@ uvicorn main:app --reload
 
 ### API Endpoints
 
-- **User  Registration**: `POST /auth/register/customer` or `POST /auth/register/admin`
-- **User  Login**: `POST /auth/login`
+- **User Registration**: `POST /auth/register/customer` or `POST /auth/register/admin`
+- **User Login**: `POST /auth/login`
 - **Browse Products**: `GET /public/products`
 - **Create Order**: `POST /create_order`
 - **Payment Processing**: `POST /payments/lnmo/transact`
@@ -111,6 +126,14 @@ You can run tests using:
 ```bash
 pytest
 ```
+
+### Start the React Frontend
+
+```bash
+npm run dev
+```
+
+- The react app will be running at `http://127.0.0.1:5173`.
 
 ## Contributing
 
