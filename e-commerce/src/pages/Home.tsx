@@ -4,6 +4,7 @@ import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
 import { toast } from "react-toastify";
 
+
 const Home: React.FC = () => {
   // Use the custom hook to fetch products for carousel
   const { isLoading, products, error, fetchProducts } = useFetchProducts();
