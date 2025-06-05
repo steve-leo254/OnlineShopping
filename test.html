@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ShopEase - Tailwind E-commerce Landing</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+  <!-- Header -->
+  <header class="bg-white shadow">
+    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+      <a href="#" class="text-3xl font-bold text-blue-600">ShopEase</a>
+      <nav class="space-x-6 text-gray-700 font-medium hidden md:flex">
+        <a href="#" class="hover:text-blue-600 transition duration-300">Home</a>
+        <a href="#" class="hover:text-blue-600 transition duration-300">Shop</a>
+        <a href="#" class="hover:text-blue-600 transition duration-300">About</a>
+        <a href="#" class="hover:text-blue-600 transition duration-300">Contact</a>
+      </nav>
+      <div class="md:hidden">
+        <button id="menu-btn" class="focus:outline-none">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" 
+          stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <path d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Menu (hidden by default) -->
+  <nav id="mobile-menu" class="bg-white shadow-md hidden px-6 py-4 md:hidden">
+    <a href="#" class="block py-2 border-b border-gray-200 hover:text-blue-600 transition duration-300">Home</a>
+    <a href="#" class="block py-2 border-b border-gray-200 hover:text-blue-600 transition duration-300">Shop</a>
+    <a href="#" class="block py-2 border-b border-gray-200 hover:text-blue-600 transition duration-300">About</a>
+    <a href="#" class="block py-2 hover:text-blue-600 transition duration-300">Contact</a>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="bg-white">
+    <div class="container mx-auto px-6 py-20 flex flex-col md:flex-row items-center md:space-x-20">
+      <div class="md:w-1/2 text-center md:text-left">
+        <h1 class="text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
+          Discover Your Next Favorite Product
+        </h1>
+        <p class="text-lg text-gray-600 mb-8">
+          ShopEase offers the best deals on top quality products. Fast shipping, great prices, and excellent customer service.
+        </p>
+        <a href="#products" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-lg shadow-lg transition duration-300">
+          Shop Now
+        </a>
+      </div>
+      <div class="md:w-1/2 mt-10 md:mt-0">
+        <img src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80" alt="Shopping hero" class="rounded-lg shadow-lg mx-auto md:mx-0 max-w-full h-auto" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Products -->
+  <section id="products" class="container mx-auto px-6 py-20">
+    <h2 class="text-4xl font-bold text-center text-gray-900 mb-12">Featured Products</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10">
+      <!-- Product Card 1 -->
+      <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
+        <img src="https://images.unsplash.com/photo-1600185366312-c6f5cc26eac2?auto=format&fit=crop&w=600&q=70" alt="Wireless Headphones" class="w-full h-56 object-cover"/>
+        <div class="p-4">
+          <h3 class="font-semibold text-lg mb-2">Wireless Headphones</h3>
+          <p class="text-blue-600 font-bold text-xl mb-4">$99.99</p>
+          <button class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition duration-300">Buy Now</button>
+        </div>
+      </div>
+      <!-- Product Card 2 -->
+      <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
+        <img src="https://images.unsplash.com/photo-1510557880182-3eec5ebe8a6d?auto=format&fit=crop&w=600&q=70" alt="Smart Watch" class="w-full h-56 object-cover"/>
+        <div class="p-4">
+          <h3 class="font-semibold text-lg mb-2">Smart Watch</h3>
+          <p class="text-blue-600 font-bold text-xl mb-4">$149.99</p>
+          <button class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition duration-300">Buy Now</button>
+        </div>
+      </div>
+      <!-- Product Card 3 -->
+      <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
+        <img src="https://images.unsplash.com/photo-1513061785283-94d8f815b891?auto=format&fit=crop&w=600&q=70" alt="Camera" class="w-full h-56 object-cover"/>
+        <div class="p-4">
+          <h3 class="font-semibold text-lg mb-2">Digital Camera</h3>
+          <p class="text-blue-600 font-bold text-xl mb-4">$349.00</p>
+          <button class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition duration-300">Buy Now</button>
+        </div>
+      </div>
+      <!-- Product Card 4 -->
+      <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
+        <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=70" alt="Gaming Console" class="w-full h-56 object-cover"/>
+        <div class="p-4">
+          <h3 class="font-semibold text-lg mb-2">Gaming Console</h3>
+          <p class="text-blue-600 font-bold text-xl mb-4">$399.99</p>
+          <button class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition duration-300">Buy Now</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Benefits Section -->
+  <section class="bg-blue-600 text-white py-16">
+    <div class="container mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+      <div class="flex flex-col items-center space-y-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 6h18M3 14h18M3 18h18" />
+        </svg>
+        <h3 class="text-2xl font-bold">Wide Selection</h3>
+        <p class="max-w-xs">Thousands of products from top brands and newest arrivals, all in one place.</p>
+      </div>
+      <div class="flex flex-col items-center space-y-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3M8 21h8a2 2 0 002-2v-7H6v7a2 2 0 002 2z" />
+        </svg>
+        <h3 class="text-2xl font-bold">Fast Shipping</h3>
+        <p class="max-w-xs">Get your products delivered quickly with our reliable shipping partners.</p>
+      </div>
+      <div class="flex flex-col items-center space-y-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <circle cx="12" cy="12" r="10" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l4 2" />
+        </svg>
+        <h3 class="text-2xl font-bold">24/7 Support</h3>
+        <p class="max-w-xs">Our friendly support team is here to help you anytime.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-gray-200">
+    <div class="container mx-auto px-6 py-8 flex flex-col md:flex-row justify-between items-center text-gray-600 text-sm">
+      <p>© 2024 ShopEase. All rights reserved.</p>
+      <div class="space-x-4 mt-4 md:mt-0">
+        <a href="#" class="hover:text-blue-600 transition duration-300">Privacy Policy</a>
+        <a href="#" class="hover:text-blue-600 transition duration-300">Terms of Service</a>
+        <a href="#" class="hover:text-blue-600 transition duration-300">Help</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile menu toggle
+    const menuBtn = document.getElementById('menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    menuBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+  </script>
+</body>
+</html>
+
