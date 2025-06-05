@@ -12,7 +12,7 @@ const Home: React.FC = () => {
 
   // Fetch products when component mounts
   useEffect(() => {
-    fetchProducts(1, 20, ""); // Fetch more products for carousel
+    fetchProducts(1, 100, ""); // Fetch many more products for carousel
   }, [fetchProducts]);
 
   // Helper function for adding to cart with toast notification
@@ -85,7 +85,7 @@ const Home: React.FC = () => {
             <div className="relative overflow-hidden">
               {/* Carousel Container */}
               <div className="carousel-track flex animate-scroll">
-                {/* First set of products */}
+                {/* First complete set of all products */}
                 {products.map((product) => (
                   <div
                     key={`first-${product.id}`}
@@ -144,7 +144,7 @@ const Home: React.FC = () => {
                     </div>
                   </div>
                 ))}
-                {/* Duplicate set for seamless loop */}
+                {/* Second complete set for seamless infinite loop */}
                 {products.map((product) => (
                   <div
                     key={`second-${product.id}`}
@@ -220,7 +220,7 @@ const Home: React.FC = () => {
         }
 
         .animate-scroll {
-          animation: scroll 3s linear infinite;
+          animation: scroll 6s linear infinite;
         }
 
         .carousel-track:hover {
