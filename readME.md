@@ -36,7 +36,7 @@ A secure and scalable e-commerce application built with a FastAPI backend and Re
 git clone https://github.com/ericomondi/OnlineShopping.git
 ```
 
-### set up the backend
+### Set Up the Backend
 
 ```bash
 cd e-api
