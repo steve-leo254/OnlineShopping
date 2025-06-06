@@ -99,7 +99,7 @@ async def upload_image(user: user_dependency, file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail="Error uploading image")
 
 @app.get("/public/products", response_model=PaginatedProductResponse, status_code=status.HTTP_200_OK)
-async def browse_products(db: db_dependency, search: str = None, page: int = 1, limit: int = 10):
+async def browse_products(db: db_dependency, search: str = None, page: int = 1, limit: int = 8):
     try:
         skip = (page - 1) * limit
         query = db.query(models.Products)
@@ -172,28 +172,28 @@ async def add_product(user: user_dependency, db: db_dependency, create_product: 
         logger.error(f"Error adding product: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/products", response_model=PaginatedProductResponse, status_code=status.HTTP_200_OK)
-async def fetch_products(user: user_dependency, db: db_dependency, search: str = None, page: int = 1, limit: int = 10):
-    require_admin(user)
-    try:
-        skip = (page - 1) * limit
-        query = db.query(models.Products).filter(models.Products.user_id == user.get("id"))
-        if search:
-            query = query.filter(models.Products.name.ilike(f"%{search}%"))
-            logger.info(f"Admin product search query: {search}")
-        total = query.count()
-        products = query.offset(skip).limit(limit).all()
-        total_pages = ceil(total / limit)
-        return {
-            "items": products,
-            "total": total,
-            "page": page,
-            "limit": limit,
-            "pages": total_pages
-        }
-    except SQLAlchemyError as e:
-        logger.error(f"Error fetching products: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error fetching products")
+# @app.get("/products", response_model=PaginatedProductResponse, status_code=status.HTTP_200_OK)
+# async def fetch_products(user: user_dependency, db: db_dependency, search: str = None, page: int = 1, limit: int = 10):
+#     require_admin(user)
+#     try:
+#         skip = (page - 1) * limit
+#         query = db.query(models.Products).filter(models.Products.user_id == user.get("id"))
+#         if search:
+#             query = query.filter(models.Products.name.ilike(f"%{search}%"))
+#             logger.info(f"Admin product search query: {search}")
+#         total = query.count()
+#         products = query.offset(skip).limit(limit).all()
+#         total_pages = ceil(total / limit)
+#         return {
+#             "items": products,
+#             "total": total,
+#             "page": page,
+#             "limit": limit,
+#             "pages": total_pages
+#         }
+#     except SQLAlchemyError as e:
+#         logger.error(f"Error fetching products: {str(e)}")
+#         raise HTTPException(status_code=500, detail="Error fetching products")
 
 @app.put("/update-product/{product_id}", status_code=status.HTTP_200_OK)
 async def update_product(product_id: int, updated_data: UpdateProduct, user: user_dependency, db: db_dependency):

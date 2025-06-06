@@ -1,7 +1,5 @@
-import React, { useState, useEffect} from "react";
-import axios from "axios";
+import React, { useEffect} from "react";
 import { toast } from "react-toastify";
-import { useAuth } from "../context/AuthContext";
 import { useFetchProducts } from "./UseFetchProducts";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
@@ -21,7 +19,7 @@ const ProductCards: React.FC<ProductCardsProps> = ({ searchTerm, currentPage, se
       // Define the image endpoint
       const imgEndPoint = "http://127.0.0.1:8000";
     
-      const limit = 10; // Number of products per page
+      const limit = 8; // Number of products per page
     
       // Fetch products when page or search term changes
       useEffect(() => {
@@ -72,7 +70,7 @@ const ProductCards: React.FC<ProductCardsProps> = ({ searchTerm, currentPage, se
                   </div>
                   <div className="pt-3">
                     <div className="mb-2 flex items-center justify-between gap-2">
-                      <span className="bg-blue-300 me-1 rounded bg-primary-100 px-1.5 py-0.5 text-xs font-medium text-primary-800 dark:bg-primary-900 dark:text-primary-300">
+                      <span className="bg-blue-400 me-1 rounded bg-primary-100 px-1.5 py-0.5 text-xs font-medium text-primary-800 dark:bg-primary-900 dark:text-primary-300">
                         Up to 35% off
                       </span>
                       <div className="flex items-center justify-end gap-1">

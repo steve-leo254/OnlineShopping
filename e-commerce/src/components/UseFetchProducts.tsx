@@ -43,7 +43,7 @@ export const useFetchProducts = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchProducts = useCallback(
-    async (page: number = 1, limit: number = 10, search: string = '') => {
+    async (page: number = 1, limit: number = 8, search: string = '') => {
       setIsLoading(true);
       setError(null);
       try {

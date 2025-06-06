@@ -80,11 +80,13 @@ const Home: React.FC = () => {
               Discover Your Perfect Product
             </h2>
             <p className="mb-4">
-              Explore our extensive selection of high-quality products tailored to meet all your needs.
-              Enjoy seamless shopping, secure payment, and fast delivery right to your doorstep.
+              Explore our extensive selection of high-quality products tailored
+              to meet all your needs. Enjoy seamless shopping, secure payment,
+              and fast delivery right to your doorstep.
             </p>
             <p>
-              Our commitment is to provide you with exceptional customer service, great prices, and a shopping experience you can trust.
+              Our commitment is to provide you with exceptional customer
+              service, great prices, and a shopping experience you can trust.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-4 mt-8">
