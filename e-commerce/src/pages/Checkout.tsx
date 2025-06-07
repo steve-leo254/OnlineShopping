@@ -282,7 +282,7 @@ const Checkout: React.FC = () => {
 
   return (
     <>
-      <section className="bg-white py-8 antialiased dark:bg-gray-900 md:py-16">
+      <section className="bg-white py-8 antialiased md:py-16">
         <form
           action="#"
           className="mx-auto max-w-screen-xl px-4 2xl:px-0"
@@ -374,9 +374,7 @@ const Checkout: React.FC = () => {
           <div className="mt-6 sm:mt-8 lg:flex lg:items-start lg:gap-12 xl:gap-16">
             <div className="min-w-0 flex-1 space-y-8">
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Customer Address
-                </h2>
+               
                 <div className="grid grid-cols-1 gap-4 sm:col-span-2">
                   <DeliveryDetails />
                   <div className="sm:col-span-2">
@@ -416,26 +414,26 @@ const Checkout: React.FC = () => {
               <div className="flow-root">
                 <div className="-my-3 divide-y divide-gray-200 dark:divide-gray-800">
                   <dl className="flex items-center justify-between gap-4 py-3">
-                    <dt className="text-base font-normal text-gray-500 dark:text-gray-400">
+                    <dt className="text-base font-normal text-gray-600">
                       Subtotal
                     </dt>
-                    <dd className="text-base font-medium text-gray-900 dark:text-white">
+                    <dd className="text-base font-medium text-gray-800">
                       {formatCurrency(orderSubtotal)}
                     </dd>
                   </dl>
                   <dl className="flex items-center justify-between gap-4 py-3">
-                    <dt className="text-base font-normal text-gray-500 dark:text-gray-400">
+                    <dt className="text-base font-normal text-gray-600">
                       Delivery Fee
                     </dt>
-                    <dd className="text-base font-medium text-gray-900 dark:text-white">
+                    <dd className="text-base font-medium text-gray-800">
                       {formatCurrency(deliveryFee)}
                     </dd>
                   </dl>
                   <dl className="flex items-center justify-between gap-4 py-3">
-                    <dt className="text-base font-bold text-gray-900 dark:text-white">
+                    <dt className="text-base font-bold text-gray-900">
                       Total
                     </dt>
-                    <dd className="text-base font-bold text-gray-900 dark:text-white">
+                    <dd className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                       {formatCurrency(total)}
                     </dd>
                   </dl>
@@ -445,7 +443,7 @@ const Checkout: React.FC = () => {
                 <button
                   type="submit"
                   disabled={!isFormValid || isCreatingOrder}
-                  className={`bg-blue-600 flex w-full items-center justify-center rounded-lg px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 ${
+                  className={`group w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center justify-center space-x-2 ${
                     !isFormValid || isCreatingOrder
                       ? "opacity-50 cursor-not-allowed"
                       : ""

@@ -50,7 +50,7 @@ const CartDropdown: React.FC = () => {
   return (
     <div
       id="myCartDropdown1"
-      className="hidden z-10 mx-auto max-w-sm space-y-4 overflow-hidden rounded-lg bg-white p-4 antialiased shadow-lg dark:bg-gray-800"
+      className="hidden z-10 mx-auto max-w-sm space-y-4 overflow-hidden rounded-lg bg-white p-4 antialiased shadow-lg "
     >
       {cartProducts.length > 0 ? (
         cartProducts.map((cartProduct) => (
@@ -58,7 +58,7 @@ const CartDropdown: React.FC = () => {
             <div>
               <a
                 href="#"
-                className="truncate text-sm font-semibold leading-none text-gray-900 dark:text-white hover:underline"
+                className="truncate text-sm font-semibold leading-none hover:underline font-bold text-gray-900 transition-colors"
               >
                 {cartProduct.product.name}
               </a>
@@ -99,7 +99,7 @@ const CartDropdown: React.FC = () => {
       )}
       <a
         href="/shopping-cart"
-        className="mb-2 me-2 inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-blue-100 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-800"
+        className="mb-2 me-2 inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-blue-100  focus:outline-none focus:ring-4 focus:ring-blue-300 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
         role="button"
       >
         Open Cart

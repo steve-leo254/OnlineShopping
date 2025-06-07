@@ -57,7 +57,7 @@ const ProductCards: React.FC<ProductCardsProps> = ({ searchTerm, currentPage, se
               {products.map((product) => (
                 <div
                   key={product.id}
-                  className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+                  className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700"
                 >
                   <div className="h-40 w-full">
                     <a href="#">
@@ -127,7 +127,7 @@ const ProductCards: React.FC<ProductCardsProps> = ({ searchTerm, currentPage, se
                     </div>
                     <a
                       href="#"
-                      className="text-sm font-semibold leading-tight text-gray-900 hover:underline dark:text-white line-clamp-2"
+                      className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors"
                     >
                       {product.name}
                     </a>
@@ -146,7 +146,7 @@ const ProductCards: React.FC<ProductCardsProps> = ({ searchTerm, currentPage, se
                           </svg>
                         ))}
                       </div>
-                      <p className="text-xs font-medium text-gray-900 dark:text-white">
+                      <p className="text-xs font-bold text-gray-900  group-hover:text-blue-600 transition-colors">
                         5.0
                       </p>
                       <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
@@ -195,12 +195,12 @@ const ProductCards: React.FC<ProductCardsProps> = ({ searchTerm, currentPage, se
                       </li>
                     </ul>
                     <div className="mt-3 flex items-center justify-between gap-2">
-                      <p className="text-base font-extrabold leading-tight text-gray-900 dark:text-white">
+                      <p className="text-xl font-bold  bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                         {formatCurrency(product.price)}
                       </p>
                       <button
                         type="button"
-                        className="bg-blue-600 inline-flex items-center rounded-lg bg-primary-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center space-x-2"
                         onClick={() => addToCartWithToast(product)}
                       >
                         <svg
@@ -229,26 +229,7 @@ const ProductCards: React.FC<ProductCardsProps> = ({ searchTerm, currentPage, se
             </div>
           )}
 
-          {/* Pagination */}
-          {!isLoading && !error && totalPages > 1 && (
-            <div className="mt-4 flex justify-center">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`mx-1 rounded-lg px-3 py-1 ${
-                      currentPage === page
-                        ? "bg-primary-700 text-white"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                )
-              )}
-            </div>
-          )}
+
     </>
   );
 };

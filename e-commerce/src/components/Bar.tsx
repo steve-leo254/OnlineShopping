@@ -95,7 +95,7 @@ const Bar: React.FC = () => {
                 id="myCartDropdownButton1"
                 data-dropdown-toggle="myCartDropdown1"
                 type="button"
-                className="relative inline-flex items-center rounded-lg justify-center p-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium leading-none text-gray-900 dark:text-white"
+                className="relative inline-flex items-center rounded-lg justify-center p-2 hover:from-blue-700 hover:to-purple-700 text-sm font-medium leading-none text-gray-900 dark:text-white"
               >
                 <span className="sr-only">Cart</span>
                 <svg

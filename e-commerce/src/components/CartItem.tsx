@@ -42,7 +42,7 @@ const CartItem: React.FC<CartItemProps> = ({
   };
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 md:p-6">
+    <div className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1">
       <div className="space-y-4 md:flex md:items-center md:justify-between md:gap-6 md:space-y-0">
         {/* Product Image */}
         <a href="#" className="shrink-0 md:order-1">
@@ -60,29 +60,15 @@ const CartItem: React.FC<CartItemProps> = ({
               type="button"
               id={`decrement-button-${id}`}
               data-input-counter-decrement={`counter-input-${id}`}
-              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-gray-300 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-700"
+              className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
             >
-              <svg
-                className="h-2.5 w-2.5 text-gray-900 dark:text-white"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 18 2"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M1 1h16"
-                />
-              </svg>
+             <span className="text-gray-600 font-bold">−</span>
             </button>
             <input
               type="text"
               id={`counter-input-${id}`}
               data-input-counter
-              className="w-10 shrink-0 border-0 bg-transparent text-center text-sm font-medium text-gray-900 focus:outline-none focus:ring-0 dark:text-white"
+              className="w-10 shrink-0 border-0 bg-transparent text-center text-sm font-medium text-gray-900 focus:outline-none focus:ring-0"
               value={quantity}
               readOnly
             />
@@ -91,27 +77,13 @@ const CartItem: React.FC<CartItemProps> = ({
               type="button"
               id={`increment-button-${id}`}
               data-input-counter-increment={`counter-input-${id}`}
-              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-gray-300 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-700"
+              className="w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center transition-colors"
             >
-              <svg
-                className="h-2.5 w-2.5 text-gray-900 dark:text-white"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 18 18"
-              >
-                <path
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 1v16M1 9h16"
-                />
-              </svg>
+              <span className="font-bold">+</span>
             </button>
           </div>
           <div className="text-end md:order-4 md:w-32">
-            <p className="text-base font-bold text-gray-900 dark:text-white">
+            <p className="text-base font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               {formatCurrency(price * quantity)}{" "}
             </p>
           </div>
@@ -121,14 +93,14 @@ const CartItem: React.FC<CartItemProps> = ({
         <div className="w-full min-w-0 flex-1 space-y-4 md:order-2 md:max-w-md">
           <a
             href="#"
-            className="text-base font-medium text-gray-900 hover:underline dark:text-white"
+            className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors"
           >
             {name}
           </a>
           <div className="flex items-center gap-4">
             <button
               type="button"
-              className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 hover:underline dark:text-gray-400 dark:hover:text-white"
+              className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 hover:underline dark:text-gray-400"
             >
               <svg
                 className="me-1.5 h-5 w-5"

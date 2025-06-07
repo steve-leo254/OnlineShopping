@@ -135,7 +135,7 @@ const AddDeliveryDetails: React.FC = () => {
       // Close modal
       document.getElementById("close-modal-button")?.click();
     } catch (err) {
-      toast.error("Failed to add address", {
+      toast.error("Login required", {
         style: { border: "1px solid #ef4444", color: "#111827" },
         progressStyle: { background: "#ef4444" },
       });

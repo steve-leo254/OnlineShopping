@@ -25,12 +25,12 @@ const Store: React.FC = () => {
 
   return (
     <>
-      <section className="bg-gray-50 py-8 antialiased dark:bg-gray-900 md:py-12">
+      <section className="bg-gray-50 py-8 antialiased  md:py-12">
         <div className="mx-auto max-w-screen-xl px-4 2xl:px-0">
           {/* Heading & Filters */}
           <div className="mb-4 items-end justify-between space-y-4 sm:flex sm:space-y-0 md:mb-8">
             <div>
-              <h2 className="mt-3 text-xl font-semibold text-gray-900 dark:text-white sm:text-2xl">
+              <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
                 Electronics
               </h2>
             </div>
@@ -47,7 +47,7 @@ const Store: React.FC = () => {
                 placeholder="Search products..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600"
               />
             </div>
           </div>
@@ -89,7 +89,7 @@ const Store: React.FC = () => {
                 />
               </svg>
             </button>
-            <span className="text-gray-900 dark:text-white font-semibold text-lg">
+            <span className="text-gray-900 font-semibold text-lg">
               {currentPage}
             </span>
             <button

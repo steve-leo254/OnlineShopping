@@ -133,82 +133,110 @@ const DeliveryDetails: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
-        <p className="text-sm text-gray-500 dark:text-gray-400">Loading addresses...</p>
+      <div className="group bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="ml-3 text-lg font-medium bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Loading addresses...
+          </p>
+        </div>
       </div>
     );
   }
 
   if (addresses.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          No addresses found. Please add a delivery address.
-        </p>
+      <div className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1">
+        <div className="text-center">
+          <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <p className="text-xl font-bold text-gray-900 mb-2">No delivery addresses found</p>
+          <p className="text-gray-500">Please add a delivery address to continue with your order.</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
+      <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+        Delivery Addresses
+      </h3>
       {addresses.map((address) => (
         <div
           key={address.id}
-          className={`rounded-lg border p-4 ${
+          className={`group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border transform hover:-translate-y-1 ${
             selectedAddress?.id === address.id
-              ? 'border-primary-500 bg-primary-50 dark:border-primary-400 dark:bg-primary-900/20'
-              : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
+              ? 'border-blue-200 ring-2 ring-blue-100'
+              : 'border-gray-100 hover:border-blue-200'
           }`}
         >
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <input
-                  type="radio"
-                  id={`address-${address.id}`}
-                  name="selected-address"
-                  checked={selectedAddress?.id === address.id}
-                  onChange={() => handleSelectAddress(address)}
-                  className="h-4 w-4 border-gray-300 bg-white text-primary-600 focus:ring-2 focus:ring-primary-600 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-primary-600"
-                />
-                <label
-                  htmlFor={`address-${address.id}`}
-                  className="font-medium text-gray-900 dark:text-white cursor-pointer"
-                >
-                  {address.first_name} {address.last_name}
-                  {address.is_default && (
-                    <span className="ml-2 inline-flex items-center rounded-full bg-primary-100 px-2.5 py-0.5 text-xs font-medium text-primary-800 dark:bg-primary-900 dark:text-primary-300">
-                      Default
-                    </span>
-                  )}
-                </label>
+          <div className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start space-x-4 flex-1">
+                <div className="flex items-center mt-1">
+                  <input
+                    type="radio"
+                    id={`address-${address.id}`}
+                    name="selected-address"
+                    checked={selectedAddress?.id === address.id}
+                    onChange={() => handleSelectAddress(address)}
+                    className="h-5 w-5 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-2"
+                  />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <label
+                      htmlFor={`address-${address.id}`}
+                      className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors cursor-pointer"
+                    >
+                      {address.first_name} {address.last_name}
+                    </label>
+                    {address.is_default && (
+                      <span className="inline-flex items-center rounded-full bg-gradient-to-r from-blue-100 to-purple-100 px-3 py-1 text-xs font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent border border-blue-200">
+                        Default
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-gray-600 leading-relaxed">
+                    {formatAddress(address)}
+                  </p>
+                </div>
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {formatAddress(address)}
-              </p>
             </div>
+            
+            {selectedAddress?.id === address.id && (
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => handleEdit(address.id)}
+                    className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={loading}
+                  >
+                    <svg className="me-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit Address
+                  </button>
+                  <div className="h-4 w-px bg-gray-300"></div>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(address.id)}
+                    className="inline-flex items-center text-sm font-medium text-red-600 hover:text-red-800 hover:underline transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={loading}
+                  >
+                    <svg className="me-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-          {selectedAddress?.id === address.id && (
-            <div className="mt-4 flex items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-600">
-              <button
-                type="button"
-                onClick={() => handleDelete(address.id)}
-                className="text-sm font-medium text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={loading}
-              >
-                Delete
-              </button>
-              <div className="h-3 w-px shrink-0 bg-gray-200 dark:bg-gray-700"></div>
-              <button
-                type="button"
-                onClick={() => handleEdit(address.id)}
-                className="text-sm font-medium text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={loading}
-              >
-                Edit
-              </button>
-            </div>
-          )}
         </div>
       ))}
     </div>
