@@ -7,7 +7,7 @@ const Store: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
     // Use the custom hook to fetch products
-  const { isLoading, totalPages } = useFetchProducts();
+  const {  totalPages } = useFetchProducts();
 
   // Reset to page 1 when search term changes
   useEffect(() => {

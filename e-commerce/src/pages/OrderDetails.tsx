@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { formatCurrency } from "../cart/formatCurrency";
 import { useAuth } from "../context/AuthContext";
+import LoadingComponent from "../components/Loading";
 
 // Define interfaces based on your pydantic models
 interface Product {
@@ -43,7 +44,7 @@ interface Order {
 }
 
 const OrderDetails: React.FC = () => {
-  const {token} = useAuth()
+  const { token } = useAuth();
   const navigate = useNavigate();
   const params = useParams();
   // Try different possible parameter names
@@ -115,23 +116,14 @@ const OrderDetails: React.FC = () => {
   }, [orderId]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">
-            Loading order details...
-          </p>
-        </div>
-      </div>
-    );
+    return <LoadingComponent message="Loading order details, please wait..." />;
   }
 
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600 dark:text-red-400 text-lg">{error}</p>
+          <p className="text-red-600 text-lg">{error}</p>
           <button
             onClick={() => navigate(-1)}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -146,9 +138,7 @@ const OrderDetails: React.FC = () => {
   if (!order) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600 dark:text-gray-400">
-          No order data available
-        </p>
+        <p className="text-gray-600 ">No order data available</p>
       </div>
     );
   }
@@ -168,23 +158,17 @@ const OrderDetails: React.FC = () => {
   };
 
   return (
-    <section className="bg-white py-8 antialiased dark:bg-gray-900 md:py-16">
+    <section className="bg-white py-8 antialiased md:py-16">
       <div className="mx-auto max-w-screen-xl px-4 2xl:px-0">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white sm:text-2xl">
+          <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl">
             Order #{order.order_id} Details
           </h2>
-          <button
-            onClick={() => navigate(-1)}
-            className="bg-blue-600 px-4 py-2 text-sm text-gray-700 rounded hover:bg-gray-300 dark:bg-blue-700 dark:text-gray-300 dark:hover:bg-gray-600"
-          >
-            Back to Orders
-          </button>
         </div>
 
         {/* Order Status */}
         <div className="mb-6">
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          <p className="text-sm text-gray-500 mt-2">
             Ordered on{" "}
             {new Date(order.datetime).toLocaleDateString("en-US", {
               year: "numeric",
@@ -200,7 +184,10 @@ const OrderDetails: React.FC = () => {
           <div className="w-full divide-y divide-gray-200 overflow-hidden rounded-lg border border-gray-200 dark:divide-gray-700 dark:border-gray-700 lg:max-w-xl xl:max-w-2xl">
             {/* Order Items */}
             {order.order_details.map((item) => (
-              <div key={item.order_detail_id} className="space-y-4 p-6">
+              <div
+                key={item.order_detail_id}
+                className="space-y-4 p-6 "
+              >
                 <div className="flex items-center gap-6">
                   <div className="h-14 w-14 shrink-0">
                     <img
@@ -219,16 +206,16 @@ const OrderDetails: React.FC = () => {
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <h4 className="font-medium text-gray-900 dark:text-white">
+                    <h4 className="font-medium text-gray-900">
                       {item.product.name}
                     </h4>
                     {item.product.brand && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <p className="text-sm text-gray-500">
                         Brand: {item.product.brand}
                       </p>
                     )}
                     {item.product.description && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      <p className="text-sm text-gray-500 mt-1">
                         {item.product.description}
                       </p>
                     )}
@@ -236,18 +223,18 @@ const OrderDetails: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-between gap-4">
-                  <p className="text-sm font-normal text-gray-500 dark:text-gray-400">
-                    <span className="font-medium text-gray-900 dark:text-white">
+                  <p className="text-sm font-normal text-gray-500">
+                    <span className="font-medium text-gray-900 ">
                       Product ID:
                     </span>{" "}
                     {item.product_id}
                   </p>
 
                   <div className="flex items-center justify-end gap-4">
-                    <p className="text-base font-normal text-gray-900 dark:text-white">
+                    <p className="text-base font-normal text-gray-900">
                       x{item.quantity}
                     </p>
-                    <p className="text-xl font-bold leading-tight text-gray-900 dark:text-white">
+                    <p className="text-xl font-bold leading-tight text-gray-900">
                       {formatCurrency(item.total_price)}
                     </p>
                   </div>
@@ -256,49 +243,42 @@ const OrderDetails: React.FC = () => {
             ))}
 
             {/* Order Summary */}
-            <div className="space-y-4 bg-gray-50 p-6 dark:bg-gray-800">
+            <div className="space-y-4 bg-gray-50 p-6">
               <div className="space-y-2">
                 <dl className="flex items-center justify-between gap-4">
-                  <dt className="font-normal text-gray-500 dark:text-gray-400">
-                    Subtotal
-                  </dt>
-                  <dd className="font-medium text-gray-900 dark:text-white">
+                  <dt className="font-normal text-gray-500">Subtotal</dt>
+                  <dd className="font-medium text-gray-900">
                     {formatCurrency(subtotal)}
                   </dd>
                 </dl>
 
                 <dl className="flex items-center justify-between gap-4">
-                  <dt className="font-normal text-gray-500 dark:text-gray-400">
-                    Delivery Fee
-                  </dt>
-                  <dd className="font-medium text-gray-900 dark:text-white">
+                  <dt className="font-normal text-gray-500">Delivery Fee</dt>
+                  <dd className="font-medium text-gray-900">
                     {formatCurrency(DELIVERY_FEE)}
                   </dd>
                 </dl>
-
               </div>
 
               <dl className="flex items-center justify-between gap-4 border-t border-gray-200 pt-2 dark:border-gray-700">
-                <dt className="text-lg font-bold text-gray-900 dark:text-white">
-                  Total
-                </dt>
-                <dd className="text-lg font-bold text-gray-900 dark:text-white">
+                <dt className="text-lg font-bold text-gray-900 ">Total</dt>
+                <dd className="text-lg font-bold text-gray-900">
                   {formatCurrency(order.total)} or {formatCurrency(grandTotal)}
                 </dd>
               </dl>
             </div>
           </div>
           <div className="mt-6 grow sm:mt-8 lg:mt-0">
-            <div className="space-y-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <div className="space-y-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="text-xl font-semibold text-gray-900">
                 Order Tracking
               </h3>
 
-              <ol className="relative ms-3 border-s border-gray-200 dark:border-gray-700">
+              <ol className="relative ms-3 border-s border-gray-200">
                 <li className="mb-10 ms-6">
-                  <span className="absolute -start-3 flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 ring-8 ring-white dark:bg-gray-700 dark:ring-gray-800">
+                  <span className="absolute -start-3 flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 ring-8 ring-white">
                     <svg
-                      className="h-4 w-4 text-gray-500 dark:text-gray-400"
+                      className="h-4 w-4 text-gray-500"
                       aria-hidden="true"
                       xmlns="http://www.w3.org/2000/svg"
                       width="24"
@@ -315,16 +295,16 @@ const OrderDetails: React.FC = () => {
                       />
                     </svg>
                   </span>
-                  <h4 className="mb-0.5 text-base font-semibold text-gray-900 dark:text-white">
+                  <h4 className="mb-0.5 text-base font-semibold text-gray-900">
                     Estimated delivery
                   </h4>
-                  <p className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                  <p className="text-sm font-normal text-gray-500">
                     Within 48 hrs after order confirmation
                   </p>
                 </li>
 
                 <li className="mb-10 ms-6">
-                  <span className="absolute -start-3 flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 ring-8 ring-white dark:bg-gray-700 dark:ring-gray-800">
+                  <span className="absolute -start-3 flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 ring-8 ring-white">
                     <svg
                       className="h-4 w-4 text-gray-500 dark:text-gray-400"
                       aria-hidden="true"
@@ -343,20 +323,20 @@ const OrderDetails: React.FC = () => {
                       />
                     </svg>
                   </span>
-                  <h4 className="mb-0.5 text-base font-semibold text-gray-900 dark:text-white">
+                  <h4 className="mb-0.5 text-base font-semibold text-gray-900 ">
                     Order Status
                   </h4>
-                  <p className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                  <p className="text-sm font-normal text-gray-500">
                     <span
                       className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
             ${
               order.status === "delivered"
-                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                ? "bg-green-100 text-green-800"
                 : order.status === "pending"
-                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+                ? "bg-yellow-100 text-yellow-800 "
                 : order.status === "cancelled"
-                ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
-                : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+                ? "bg-red-100 text-red-800 "
+                : "bg-blue-100 text-blue-800 "
             }`}
                     >
                       {order.status.charAt(0).toUpperCase() +
@@ -366,9 +346,9 @@ const OrderDetails: React.FC = () => {
                 </li>
 
                 <li className="mb-10 ms-6">
-                  <span className="absolute -start-3 flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 ring-8 ring-white dark:bg-gray-700 dark:ring-gray-800">
+                  <span className="absolute -start-3 flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 ring-8 ring-white ">
                     <svg
-                      className="h-4 w-4 text-gray-500 dark:text-gray-400"
+                      className="h-4 w-4 text-gray-500"
                       aria-hidden="true"
                       xmlns="http://www.w3.org/2000/svg"
                       width="24"
@@ -385,16 +365,16 @@ const OrderDetails: React.FC = () => {
                       />
                     </svg>
                   </span>
-                  <h4 className="mb-0.5 text-base font-semibold text-gray-900 dark:text-white">
+                  <h4 className="mb-0.5 text-base font-semibold text-gray-900">
                     Delivery Address
                   </h4>
-                  <p className="text-sm font-normal text-gray-500 dark:text-gray-400">
+                  <p className="text-sm font-normal text-gray-500">
                     {formatAddress(order.address)}{" "}
                   </p>
                 </li>
 
-                <li className="ms-6 text-primary-700 dark:text-primary-500">
-                  <span className="absolute -start-3 flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 ring-8 ring-white dark:bg-primary-900 dark:ring-gray-800">
+                <li className="ms-6 text-primary-700">
+                  <span className="absolute -start-3 flex h-6 w-6 items-center justify-center rounded-full bg-primary-100 ring-8 ring-white ">
                     <svg
                       className="h-4 w-4"
                       aria-hidden="true"
@@ -414,8 +394,13 @@ const OrderDetails: React.FC = () => {
                     </svg>
                   </span>
                   <div>
-                    <h4 className="mb-0.5 font-semibold">19 Nov 2023, 10:45</h4>
-                    <a href="#" className="text-sm font-medium hover:underline">
+                    <h4 className="mb-0.5 font-semibold text-gray-500">
+                      19 Nov 2023, 10:45
+                    </h4>
+                    <a
+                      href="#"
+                      className="text-sm font-medium hover:underline text-gray-400"
+                    >
                       Order confirmed - Receipt #647563
                     </a>
                   </div>
@@ -426,14 +411,14 @@ const OrderDetails: React.FC = () => {
                 <button
                   onClick={() => navigate("/store")}
                   type="button"
-                  className="w-full rounded-lg  border border-gray-200 bg-white px-5  py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700"
+                  className="w-full rounded-lg  border border-gray-200 bg-white px-5  py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100"
                 >
                   Shop
                 </button>
 
                 <a
                   href="/orders-overview"
-                  className="bg-blue-600 mt-4 flex w-full items-center justify-center rounded-lg bg-primary-700  px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300  dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:mt-0"
+                  className="bg-blue-600 mt-4 flex w-full items-center justify-center rounded-lg bg-primary-700  px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300   sm:mt-0"
                 >
                   My Orders
                 </a>

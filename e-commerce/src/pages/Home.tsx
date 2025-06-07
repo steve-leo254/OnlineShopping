@@ -13,9 +13,10 @@ import {
   Zap,
   Shield,
 } from "lucide-react";
-import profesional from "../static/profesional.jpg"; // Assuming you have a profesional image
+import { useNavigate } from "react-router-dom";
 
 const Home: React.FC = () => {
+  const navigate = useNavigate();
   // Use the custom hook to fetch products for carousel
   const { isLoading, products, error, fetchProducts } = useFetchProducts();
   const { addToCart } = useShoppingCart();
@@ -280,11 +281,11 @@ const Home: React.FC = () => {
           </div>
 
           {isLoading ? (
-            <div className="text-center text-gray-900 dark:text-white">
+            <div className="text-center text-gray-900">
               Loading products...
             </div>
           ) : error ? (
-            <div className="text-center text-red-600 dark:text-red-400">
+            <div className="text-center text-red-600">
               Error loading products: {error}
             </div>
           ) : (
@@ -357,7 +358,8 @@ const Home: React.FC = () => {
             </div>
           )}
           <div className="text-center mt-12">
-            <button className="group bg-gradient-to-r from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 mx-auto shadow-lg hover:shadow-xl">
+            <button onClick={() => navigate("/store")}
+             className="group bg-gradient-to-r from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 mx-auto shadow-lg hover:shadow-xl">
               <span>View All Products</span>
               <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>

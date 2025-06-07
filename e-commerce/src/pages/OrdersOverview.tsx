@@ -134,7 +134,7 @@ const OrdersOverview: React.FC = () => {
       case "pending":
         return {
           label: "Pending",
-          className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+          className: "bg-gradient-to-r from-yellow-400 to-orange-500 p-4",
           icon: (
             <svg
               className="me-1 h-3 w-3"
@@ -158,7 +158,7 @@ const OrdersOverview: React.FC = () => {
       case "delivered":
         return {
           label: "Confirmed",
-          className: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+          className: "bg-green-100 text-green-800 ",
           icon: (
             <svg
               className="me-1 h-3 w-3"
@@ -216,10 +216,10 @@ const OrdersOverview: React.FC = () => {
 
   if (loading) {
     return (
-      <section className="bg-white py-8 antialiased dark:bg-gray-900 md:py-16">
+      <section className="bg-white py-8 antialiased md:py-16">
         <div className="mx-auto max-w-screen-xl px-4 2xl:px-0">
           <div className="flex justify-center items-center h-64">
-            <div className="text-lg text-gray-600 dark:text-gray-400">Loading orders...</div>
+            <div className="text-lg text-gray-600">Loading orders...</div>
           </div>
         </div>
       </section>
@@ -228,10 +228,10 @@ const OrdersOverview: React.FC = () => {
 
   if (error) {
     return (
-      <section className="bg-white py-8 antialiased dark:bg-gray-900 md:py-16">
+      <section className="bg-white py-8 antialiased md:py-16">
         <div className="mx-auto max-w-screen-xl px-4 2xl:px-0">
           <div className="flex justify-center items-center h-64">
-            <div className="text-lg text-red-600 dark:text-red-400">{error}</div>
+            <div className="text-lg text-red-600">{error}</div>
           </div>
         </div>
       </section>
@@ -239,11 +239,11 @@ const OrdersOverview: React.FC = () => {
   }
 
   return (
-    <section className="bg-white py-8 antialiased dark:bg-gray-900 md:py-16">
-      <div className="mx-auto max-w-screen-xl px-4 2xl:px-0">
+    <section className="bg-white py-8 antialiased md:py-16">
+      <div className="mx-auto max-w-screen-xl px-4 2xl:px-0 min-h-screen">
         <div className="mx-auto max-w-5xl">
           <div className="gap-4 sm:flex sm:items-center sm:justify-between">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white sm:text-2xl">
+            <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl">
               My orders
             </h2>
             <div className="mt-6 gap-4 space-y-4 sm:mt-0 sm:flex sm:items-center sm:justify-end sm:space-y-0">
@@ -256,7 +256,7 @@ const OrdersOverview: React.FC = () => {
                 </label>
                 <select
                   id="order-type"
-                  className="block w-full min-w-[8rem] rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+                  className="block w-full min-w-[8rem] rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500"
                   onChange={handleStatusChange}
                   disabled={loading}
                 >
@@ -284,10 +284,10 @@ const OrdersOverview: React.FC = () => {
                       className="flex flex-wrap items-center gap-y-4 py-6"
                     >
                       <dl className="w-1/2 sm:w-1/4 lg:w-auto lg:flex-1">
-                        <dt className="text-base font-medium text-gray-500 dark:text-gray-400">
+                        <dt className="text-base font-medium text-gray-500">
                           Order ID:
                         </dt>
-                        <dd className="mt-1.5 text-base font-semibold text-gray-900 dark:text-white">
+                        <dd className="mt-1.5 text-base font-semibold text-gray-900">
                           <Link 
                             to={`/order-details/${order.order_id}`}
                             className="hover:underline"
@@ -297,23 +297,23 @@ const OrdersOverview: React.FC = () => {
                         </dd>
                       </dl>
                       <dl className="w-1/2 sm:w-1/4 lg:w-auto lg:flex-1">
-                        <dt className="text-base font-medium text-gray-500 dark:text-gray-400">
+                        <dt className="text-base font-medium text-gray-500">
                           Date:
                         </dt>
-                        <dd className="mt-1.5 text-base font-semibold text-gray-900 dark:text-white">
+                        <dd className="mt-1.5 text-base font-semibold text-gray-900">
                           {new Date(order.datetime).toLocaleDateString()}
                         </dd>
                       </dl>
                       <dl className="w-1/2 sm:w-1/4 lg:w-auto lg:flex-1">
-                        <dt className="text-base font-medium text-gray-500 dark:text-gray-400">
+                        <dt className="text-base font-medium text-gray-500 ">
                           Price:
                         </dt>
-                        <dd className="mt-1.5 text-base font-semibold text-gray-900 dark:text-white">
+                        <dd className="mt-1.5 text-base font-semibold text-gray-900">
                           ${order.total?.toFixed(2) || '0.00'}
                         </dd>
                       </dl>
                       <dl className="w-1/2 sm:w-1/4 lg:w-auto lg:flex-1">
-                        <dt className="text-base font-medium text-gray-500 dark:text-gray-400">
+                        <dt className="text-base font-medium text-gray-500">
                           Status:
                         </dt>
                         <dd
@@ -328,7 +328,7 @@ const OrdersOverview: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => cancelOrder(order.order_id)}
-                            className="w-full rounded-lg border border-red-700 px-3 py-2 text-center text-sm font-medium text-red-700 hover:bg-red-700 hover:text-white focus:outline-none focus:ring-4 focus:ring-red-300 dark:border-red-500 dark:text-red-500 dark:hover:bg-red-600 dark:hover:text-white dark:focus:ring-red-900 lg:w-auto"
+                            className="w-full rounded-lg border border-red-700 px-3 py-2 text-center text-sm font-medium text-red-700 hover:bg-red-700 hover:text-white focus:outline-none focus:ring-4 focus:ring-red-300  lg:w-auto"
                           >
                             Cancel order
                           </button>
@@ -336,14 +336,14 @@ const OrdersOverview: React.FC = () => {
                         {order.status !== "pending" && (
                           <button
                             type="button"
-                            className="w-full rounded-lg bg-primary-700 px-3 py-2 text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 lg:w-auto"
+                            className="w-full inline-flex justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100  lg:w-auto"
                           >
                             Order again
                           </button>
                         )}
                         <Link
                           to={`/order-details/${order.order_id}`}
-                          className="w-full inline-flex justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 lg:w-auto"
+                          className="w-full inline-flex justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100  lg:w-auto"
                         >
                           View details
                         </Link>

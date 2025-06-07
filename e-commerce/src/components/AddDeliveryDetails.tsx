@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-import { useShoppingCart } from "../context/ShoppingCartContext"; 
+import { useShoppingCart } from "../context/ShoppingCartContext";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { MapPin } from "lucide-react";
 
 const AddDeliveryDetails: React.FC = () => {
   const { token } = useAuth();
@@ -90,12 +91,16 @@ const AddDeliveryDetails: React.FC = () => {
       });
       return;
     }
-    
+
     try {
       // Submit the address to the backend
-      const response = await axios.post("http://localhost:8000/addresses", formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.post(
+        "http://localhost:8000/addresses",
+        formData,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       // If the address was set as default, update the shopping cart context
       if (formData.is_default && response.data) {
@@ -109,7 +114,7 @@ const AddDeliveryDetails: React.FC = () => {
           region: formData.region,
           is_default: formData.is_default,
         };
-        
+
         // Update the shopping cart context with the new default address
         setSelectedAddress(newAddress);
       }
@@ -118,8 +123,8 @@ const AddDeliveryDetails: React.FC = () => {
         style: { border: "1px solid #10b981", color: "#111827" },
         progressStyle: { background: "#10b981" },
       });
-      window.location.reload(); 
-      
+      window.location.reload();
+
       // Reset form
       setFormData({
         first_name: "",
@@ -131,7 +136,7 @@ const AddDeliveryDetails: React.FC = () => {
         region: "",
         is_default: false,
       });
-      
+
       // Close modal
       document.getElementById("close-modal-button")?.click();
     } catch (err) {
@@ -153,12 +158,14 @@ const AddDeliveryDetails: React.FC = () => {
       >
         <div className="relative max-h-auto w-full max-h-full max-w-lg p-4">
           {/* <!-- Modal content --> */}
-          <div className="relative rounded-lg bg-white shadow dark:bg-gray-800">
+          <div className="relative rounded-lg bg-white shadow ">
             {/* <!-- Modal header --> */}
-            <div className="flex items-center justify-between rounded-t border-b border-gray-200 p-4 dark:border-gray-700 md:p-5">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Add Address
-              </h3>
+            <div className="flex items-center justify-between rounded-t border-b border-gray-200 p-4  md:p-5">
+              <MapPin className="text-blue-600 mr-3" size={24} />
+
+              <h2 className="text-2xl font-bold text-gray-900">
+                Delivery Information
+              </h2>
               <button
                 type="button"
                 className="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white"
@@ -188,7 +195,7 @@ const AddDeliveryDetails: React.FC = () => {
                 <div>
                   <label
                     htmlFor="first_name"
-                    className="mb-2 block text-sm font-medium text-gray-900 dark:text-white"
+                    className="mb-2 block text-sm font-medium text-gray-900"
                   >
                     First Name*
                   </label>
@@ -198,7 +205,7 @@ const AddDeliveryDetails: React.FC = () => {
                     name="first_name"
                     value={formData.first_name}
                     onChange={handleInputChange}
-                    className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+                    className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500"
                     placeholder="Enter your first name"
                     required
                   />
@@ -206,7 +213,7 @@ const AddDeliveryDetails: React.FC = () => {
                 <div>
                   <label
                     htmlFor="last_name"
-                    className="mb-2 block text-sm font-medium text-gray-900 dark:text-white"
+                    className="mb-2 block text-sm font-medium text-gray-900"
                   >
                     Last Name*
                   </label>
@@ -216,7 +223,7 @@ const AddDeliveryDetails: React.FC = () => {
                     name="last_name"
                     value={formData.last_name}
                     onChange={handleInputChange}
-                    className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+                    className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500"
                     placeholder="Enter your last name"
                     required
                   />
@@ -224,7 +231,7 @@ const AddDeliveryDetails: React.FC = () => {
                 <div className="sm:col-span-2">
                   <label
                     htmlFor="phone_number"
-                    className="mb-2 block text-sm font-medium text-gray-900 dark:text-white"
+                    className="mb-2 block text-sm font-medium text-gray-900"
                   >
                     Phone Number*
                   </label>
@@ -236,7 +243,7 @@ const AddDeliveryDetails: React.FC = () => {
                     onChange={handleInputChange}
                     pattern="^(?:\+254|0)[17]\d{8}$"
                     title="Expected format: +254712345678 or 0712345678"
-                    className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+                    className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500"
                     placeholder="e.g., +254712345678 or 0712345678"
                     required
                   />
@@ -244,7 +251,7 @@ const AddDeliveryDetails: React.FC = () => {
                 <div>
                   <label
                     htmlFor="address"
-                    className="mb-2 block text-sm font-medium text-gray-900 dark:text-white"
+                    className="mb-2 block text-sm font-medium text-gray-900"
                   >
                     Address*
                   </label>
@@ -254,7 +261,7 @@ const AddDeliveryDetails: React.FC = () => {
                     name="address"
                     value={formData.address}
                     onChange={handleInputChange}
-                    className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+                    className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500"
                     placeholder="Enter your address"
                     required
                   />
@@ -262,7 +269,7 @@ const AddDeliveryDetails: React.FC = () => {
                 <div>
                   <label
                     htmlFor="additional_info"
-                    className="mb-2 block text-sm font-medium text-gray-900 dark:text-white"
+                    className="mb-2 block text-sm font-medium text-gray-900"
                   >
                     Additional Info
                   </label>
@@ -272,14 +279,14 @@ const AddDeliveryDetails: React.FC = () => {
                     name="additional_info"
                     value={formData.additional_info}
                     onChange={handleInputChange}
-                    className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+                    className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500"
                     placeholder="e.g., Near a landmark"
                   />
                 </div>
                 <div>
                   <label
                     htmlFor="city"
-                    className="mb-2 block text-sm font-medium text-gray-900 dark:text-white"
+                    className="mb-2 block text-sm font-medium text-gray-900"
                   >
                     City/Locality*
                   </label>
@@ -289,7 +296,7 @@ const AddDeliveryDetails: React.FC = () => {
                     name="city"
                     value={formData.city}
                     onChange={handleInputChange}
-                    className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+                    className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500"
                     placeholder="Enter your city or locality"
                     required
                   />
@@ -297,7 +304,7 @@ const AddDeliveryDetails: React.FC = () => {
                 <div>
                   <label
                     htmlFor="region"
-                    className="mb-2 block text-sm font-medium text-gray-900 dark:text-white"
+                    className="mb-2 block text-sm font-medium text-gray-900 "
                   >
                     Region (County)*
                   </label>
@@ -306,7 +313,7 @@ const AddDeliveryDetails: React.FC = () => {
                     name="region"
                     value={formData.region}
                     onChange={handleInputChange}
-                    className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+                    className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500"
                     required
                   >
                     <option value="">Select County</option>
@@ -320,7 +327,7 @@ const AddDeliveryDetails: React.FC = () => {
                 <div className="sm:col-span-2">
                   <label
                     htmlFor="country"
-                    className="mb-2 block text-sm font-medium text-gray-900 dark:text-white"
+                    className="mb-2 block text-sm font-medium text-gray-900"
                   >
                     Country
                   </label>
@@ -329,7 +336,7 @@ const AddDeliveryDetails: React.FC = () => {
                     id="country"
                     value="Kenya"
                     disabled
-                    className="block w-full rounded-lg border border-gray-300 bg-gray-200 p-2.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    className="block w-full rounded-lg border border-gray-300 bg-gray-200 p-2.5 text-sm text-gray-900"
                     readOnly
                   />
                 </div>
@@ -341,21 +348,21 @@ const AddDeliveryDetails: React.FC = () => {
                       name="is_default"
                       checked={formData.is_default}
                       onChange={handleInputChange}
-                      className="h-4 w-4 rounded border-gray-300 bg-gray-100 text-primary-600 focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-primary-600"
+                      className="h-4 w-4 rounded border-gray-300 bg-gray-100 text-primary-600 focus:ring-2 focus:ring-primary-500"
                     />
                     <label
                       htmlFor="is_default"
-                      className="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                      className="ms-2 text-sm font-medium text-gray-900"
                     >
                       Set as default
                     </label>
                   </div>
                 </div>
               </div>
-              <div className="border-t border-gray-200 pt-4 dark:border-gray-700 md:pt-5">
+              <div className="border-t border-gray-200 pt-4  md:pt-5">
                 <button
                   type="submit"
-                  className="bg-blue-600 me-2 inline-flex items-center rounded-lg bg-primary-700 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
+                  className="bg-blue-600 me-2 inline-flex items-center rounded-lg bg-primary-700 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300"
                 >
                   Save information
                 </button>

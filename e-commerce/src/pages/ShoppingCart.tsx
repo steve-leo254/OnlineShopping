@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import CartItem from "../components/CartItem";
 import { formatCurrency } from "../cart/formatCurrency";
-import { ShoppingBag, CreditCard, Lock, ArrowRight } from "lucide-react";
+import { ShoppingBag, CreditCard, Lock, ArrowRight,Tag, Gift } from "lucide-react";
 
 const ShoppingCart: React.FC = () => {
   const navigate = useNavigate();
@@ -101,9 +101,61 @@ const ShoppingCart: React.FC = () => {
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </a>
               </div>
+              {/* ================ */}
+              <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center space-x-3 text-sm text-gray-600">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span>Secure SSL Encryption</span>
+                    </div>
+                    <div className="flex items-center space-x-3 text-sm text-gray-600">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span>30-Day Money Back Guarantee</span>
+                    </div>
+                    <div className="flex items-center space-x-3 text-sm text-gray-600">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span>Free Returns & Exchanges</span>
+                    </div>
+                  </div>
+              {/* ====================== */}
+               
+              {/* ============================= */}
             </div>
 
-            
+            {/* Promo Code */}
+              <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
+                <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-4">
+                  <h3 className="font-bold text-white flex items-center space-x-2">
+                    <Gift className="w-5 h-5" />
+                    <span>Promo Code</span>
+                  </h3>
+                </div>
+                
+                <div className="p-6">
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="voucher" className="block text-sm font-medium text-gray-700 mb-2">
+                        Have a voucher or gift card?
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          id="voucher"
+                          placeholder="Enter code here"
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 pr-12"
+                        />
+                        <Tag className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => console.log("Apply promo code")}
+                      className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+                    >
+                      Apply Code
+                    </button>
+                  </div>
+                </div>
+              </div>
           </div>
         </div>
       </div>
