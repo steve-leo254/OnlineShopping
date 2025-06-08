@@ -48,9 +48,15 @@ class Products(Base):
     name = Column(String(100), unique=True, nullable=False, index=True)
     cost = Column(Numeric(precision=14, scale=2), nullable=False)
     price = Column(Numeric(precision=14, scale=2), nullable=False)
+    original_price = Column(Numeric(precision=14, scale=2), nullable=True)  # New field
     img_url = Column(String(200), nullable=True)
     stock_quantity = Column(Numeric(precision=14, scale=2), nullable=False)
-    description = Column(String(200), nullable=True)  # New description field
+    description = Column(String(200), nullable=True)
+    rating = Column(Numeric(precision=3, scale=2), nullable=True, default=0.0)  # New field (0.00 to 5.00)
+    reviews = Column(Integer, nullable=False, default=0)  # New field - number of reviews
+    discount = Column(Numeric(precision=5, scale=2), nullable=True, default=0.0)  # New field - discount percentage
+    is_new = Column(Boolean, default=True, nullable=False)  # New field
+    is_favorite = Column(Boolean, default=True, nullable=False)  # New field
     created_at = Column(DateTime, default=func.now())
     barcode = Column(Numeric(precision=12), unique=True)
     brand = Column(String(100), nullable=True)
@@ -128,6 +134,3 @@ class Transaction(Base):
     
     user = relationship("Users", back_populates="transactions")
     order = relationship("Orders", back_populates="transactions")
-
-
-

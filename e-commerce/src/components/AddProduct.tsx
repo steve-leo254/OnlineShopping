@@ -14,12 +14,18 @@ type ProductForm = {
   name: string;
   cost: number;
   price: number;
+  original_price: number;
   img_url: string;
   stock_quantity: number;
   barcode: number;
   category_id: number | null;
   brand: string;
   description: string;
+  rating: number;
+  reviews: number;
+  discount: number;
+  is_new: boolean;
+  is_favorite: boolean;
 };
 
 const AddProduct: React.FC = () => {
@@ -28,12 +34,18 @@ const AddProduct: React.FC = () => {
     name: '',
     cost: 0,
     price: 0,
+    original_price: 0,
     img_url: '',
     stock_quantity: 0,
     barcode: 0,
     category_id: null,
     brand: '',
     description: '',
+    rating: 0,
+    reviews: 0,
+    discount: 0,
+    is_new: false,
+    is_favorite: false,
   });
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -63,11 +75,13 @@ const AddProduct: React.FC = () => {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === 'cost' || name === 'price' || name === 'stock_quantity' || name === 'barcode'
+        type === 'checkbox'
+          ? (e.target as HTMLInputElement).checked
+          : name === 'cost' || name === 'price' || name === 'original_price' || name === 'stock_quantity' || name === 'barcode' || name === 'rating' || name === 'reviews' || name === 'discount'
           ? Number(value) || 0
           : name === 'category_id'
           ? value ? Number(value) : null
@@ -122,12 +136,28 @@ const AddProduct: React.FC = () => {
       toast.error('Price must be greater than 0');
       return;
     }
+    if (formData.original_price <= 0) {
+      toast.error('Original price must be greater than 0');
+      return;
+    }
     if (formData.stock_quantity < 0) {
       toast.error('Stock quantity cannot be negative');
       return;
     }
     if (formData.barcode <= 0) {
       toast.error('Barcode must be a positive number');
+      return;
+    }
+    if (formData.rating < 0 || formData.rating > 5) {
+      toast.error('Rating must be between 0 and 5');
+      return;
+    }
+    if (formData.reviews < 0) {
+      toast.error('Reviews cannot be negative');
+      return;
+    }
+    if (formData.discount < 0 || formData.discount > 100) {
+      toast.error('Discount must be between 0 and 100');
       return;
     }
 
@@ -162,12 +192,18 @@ const AddProduct: React.FC = () => {
         name: '',
         cost: 0,
         price: 0,
+        original_price: 0,
         img_url: '',
         stock_quantity: 0,
         barcode: 0,
         category_id: null,
         brand: '',
         description: '',
+        rating: 0,
+        reviews: 0,
+        discount: 0,
+        is_new: false,
+        is_favorite: false,
       });
       setImageFile(null);
       setImagePreview(null);
@@ -188,7 +224,6 @@ const AddProduct: React.FC = () => {
 
   return (
     <>
-  
       {/* Create modal */}
       <div
         id="createProductModal"
@@ -196,7 +231,7 @@ const AddProduct: React.FC = () => {
         aria-hidden="true"
         className="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full"
       >
-        <div className="relative p-4 w-full max-w-2xl max-h-full">
+        <div className="relative p-4 w-full max-w-4xl max-h-full">
           {/* Modal content */}
           <div className="relative p-4 bg-white rounded-lg shadow dark:bg-gray-800 sm:p-5">
             {/* Modal header */}
@@ -228,7 +263,7 @@ const AddProduct: React.FC = () => {
             </div>
             {/* Modal body */}
             <form onSubmit={handleSubmit}>
-              <div className="grid gap-4 mb-4 sm:grid-cols-2">
+              <div className="grid gap-4 mb-4 sm:grid-cols-3">
                 <div>
                   <label
                     htmlFor="name"
@@ -266,23 +301,25 @@ const AddProduct: React.FC = () => {
                 </div>
                 <div>
                   <label
-                    htmlFor="price"
+                    htmlFor="category_id"
                     className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                   >
-                    Price
+                    Category
                   </label>
-                  <input
-                    type="number"
-                    name="price"
-                    id="price"
-                    value={formData.price}
+                  <select
+                    name="category_id"
+                    id="category_id"
+                    value={formData.category_id ?? ''}
                     onChange={handleChange}
-                    min="0"
-                    step="0.01"
-                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                    placeholder="$2999"
-                    required
-                  />
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  >
+                    <option value="">Select category</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label
@@ -302,6 +339,65 @@ const AddProduct: React.FC = () => {
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                     placeholder="$1999"
                     required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="original_price"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Original Price
+                  </label>
+                  <input
+                    type="number"
+                    name="original_price"
+                    id="original_price"
+                    value={formData.original_price}
+                    onChange={handleChange}
+                    min="0"
+                    step="0.01"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    placeholder="$2999"
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="price"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Current Price
+                  </label>
+                  <input
+                    type="number"
+                    name="price"
+                    id="price"
+                    value={formData.price}
+                    onChange={handleChange}
+                    min="0"
+                    step="0.01"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    placeholder="$2499"
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="discount"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Discount (%)
+                  </label>
+                  <input
+                    type="number"
+                    name="discount"
+                    id="discount"
+                    value={formData.discount}
+                    onChange={handleChange}
+                    min="0"
+                    max="100"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    placeholder="10"
                   />
                 </div>
                 <div>
@@ -344,27 +440,79 @@ const AddProduct: React.FC = () => {
                 </div>
                 <div>
                   <label
-                    htmlFor="category_id"
+                    htmlFor="rating"
                     className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                   >
-                    Category
+                    Rating (0-5)
                   </label>
-                  <select
-                    name="category_id"
-                    id="category_id"
-                    value={formData.category_id ?? ''}
+                  <input
+                    type="number"
+                    name="rating"
+                    id="rating"
+                    value={formData.rating}
                     onChange={handleChange}
-                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  >
-                    <option value="">Select category</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
+                    min="0"
+                    max="5"
+                    step="0.1"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    placeholder="4.5"
+                  />
                 </div>
-                <div className="sm:col-span-2">
+                <div>
+                  <label
+                    htmlFor="reviews"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Number of Reviews
+                  </label>
+                  <input
+                    type="number"
+                    name="reviews"
+                    id="reviews"
+                    value={formData.reviews}
+                    onChange={handleChange}
+                    min="0"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    placeholder="150"
+                  />
+                </div>
+                <div className="sm:col-span-3">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        name="is_new"
+                        id="is_new"
+                        checked={formData.is_new}
+                        onChange={handleChange}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      />
+                      <label
+                        htmlFor="is_new"
+                        className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                      >
+                        New Product
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        name="is_favorite"
+                        id="is_favorite"
+                        checked={formData.is_favorite}
+                        onChange={handleChange}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      />
+                      <label
+                        htmlFor="is_favorite"
+                        className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                      >
+                        Featured Product
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div className="sm:col-span-3">
                   <label
                     htmlFor="image"
                     className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
@@ -389,7 +537,7 @@ const AddProduct: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <div className="sm:col-span-2">
+                <div className="sm:col-span-3">
                   <label
                     htmlFor="description"
                     className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
