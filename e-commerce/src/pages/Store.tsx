@@ -1,22 +1,34 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Search, Filter, Grid, List, Star, Heart, Eye, ShoppingCart, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
+import axios from 'axios';
 import { useFetchProducts } from "../components/UseFetchProducts";
+
 // Transform API product to match component's expected format
-const transformProduct = (apiProduct: Product) => {
+const transformProduct = (apiProduct: any) => {
+  // Calculate discount percentage if original_price exists
+  const discount = apiProduct.original_price && apiProduct.original_price > apiProduct.price 
+    ? Math.round(((apiProduct.original_price - apiProduct.price) / apiProduct.original_price) * 100)
+    : (apiProduct.discount || 0);
+
+  // Check if product is new (created within last 30 days)
+  const isNew = apiProduct.is_new !== undefined 
+    ? apiProduct.is_new 
+    : (new Date() - new Date(apiProduct.created_at)) < (30 * 24 * 60 * 60 * 1000);
+
   return {
     id: apiProduct.id,
     name: apiProduct.name,
     price: apiProduct.price,
-    originalPrice: apiProduct.price > apiProduct.cost ? apiProduct.price : apiProduct.cost,
-    rating: 4.5, // Default rating since it's not in the API response
-    reviews: 100, // Default reviews since it's not in the API response  
+    originalPrice: apiProduct.original_price || (apiProduct.price > apiProduct.cost ? apiProduct.price : apiProduct.cost),
+    rating: apiProduct.rating || 4.5,
+    reviews: apiProduct.reviews || 100,
     img_url: apiProduct.img_url ? `http://localhost:8000${apiProduct.img_url}` : "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop",
     category: apiProduct.category?.name || "Uncategorized",
     brand: apiProduct.brand || "Unknown",
     inStock: apiProduct.stock_quantity > 0,
-    discount: 0, // Calculate discount if original_price exists in API
-    isNew: false, // Default to false since it's not in the API response
-    isFavorite: false,
+    discount: discount,
+    isNew: isNew,
+    isFavorite: apiProduct.is_favorite || false,
     stockQuantity: apiProduct.stock_quantity,
     description: apiProduct.description,
     barcode: apiProduct.barcode,
@@ -35,17 +47,19 @@ const Store = () => {
   const [priceRange, setPriceRange] = useState([0, 50000]); // Adjusted for the price range
   const [showFilters, setShowFilters] = useState(false);
   const [favorites, setFavorites] = useState(new Set());
+  const [allCategories, setAllCategories] = useState(["all"]);
+  const [allProducts, setAllProducts] = useState([]);
   
   const productsPerPage = 8;
   
   // Transform API products to component format
   const products = apiProducts.map(transformProduct);
   
-  // Get unique categories from API products
-  const categories = ["all", ...new Set(apiProducts.map(p => p.category?.name).filter(Boolean))];
-  const brands = ["All", ...new Set(apiProducts.map(p => p.brand).filter(Boolean))];
+  // Get unique categories and brands from all products
+  const categories = allCategories;
+  const brands = ["All", ...new Set(allProducts.map(p => p.brand).filter(Boolean))];
 
-  // Filter products (only client-side filtering for category and price since API handles search and pagination)
+  // Filter products (client-side filtering for category and price since API handles search and pagination)
   const filteredProducts = products.filter(product => {
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
@@ -69,6 +83,12 @@ const Store = () => {
 
   const displayedProducts = sortedProducts;
 
+  // Handle category change
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
+    setCurrentPage(1);
+  };
+
   const formatCurrency = (price) => {
     return new Intl.NumberFormat('en-KE', {
       style: 'currency',
@@ -90,10 +110,32 @@ const Store = () => {
     console.log("Added to cart:", product);
   };
 
+  // Fetch all products to get complete categories list
+  const fetchAllCategories = useCallback(async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/public/products', {
+        params: { page: 1, limit: 1000 } // Get a large number to capture all categories
+      });
+      
+      const allProductsData = response.data.items;
+      setAllProducts(allProductsData);
+      
+      const uniqueCategories = ["all", ...new Set(allProductsData.map(p => p.category?.name).filter(Boolean))];
+      setAllCategories(uniqueCategories);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  }, []);
+
   // Fetch products when component mounts or when search/page changes
   useEffect(() => {
     fetchProducts(currentPage, productsPerPage, searchTerm);
   }, [currentPage, searchTerm, fetchProducts]);
+
+  // Fetch all categories on component mount
+  useEffect(() => {
+    fetchAllCategories();
+  }, [fetchAllCategories]);
 
   // Reset to page 1 when search term changes
   useEffect(() => {
@@ -210,7 +252,7 @@ const Store = () => {
                 {categories.map(category => (
                   <button
                     key={category}
-                    onClick={() => setSelectedCategory(category)}
+                    onClick={() => handleCategoryChange(category)}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                       selectedCategory === category
                         ? "bg-blue-600 text-white shadow-lg transform scale-105"
