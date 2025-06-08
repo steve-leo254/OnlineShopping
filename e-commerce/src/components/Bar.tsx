@@ -51,24 +51,7 @@ const Bar: React.FC = () => {
                     Home
                   </a>
                 </li>
-                <li className="shrink-0">
-                  <a
-                    href="#"
-                    title=""
-                    className="flex text-sm font-medium text-gray-900 hover:text-primary-700 dark:text-white dark:hover:text-primary-500"
-                  >
-                    Best Sellers
-                  </a>
-                </li>
-                <li className="shrink-0">
-                  <a
-                    href="#"
-                    title=""
-                    className="flex text-sm font-medium text-gray-900 hover:text-primary-700 dark:text-white dark:hover:text-primary-500"
-                  >
-                    Gift Ideas
-                  </a>
-                </li>
+
                 <li className="shrink-0">
                   <a
                     href="/store"
@@ -95,7 +78,7 @@ const Bar: React.FC = () => {
                 id="myCartDropdownButton1"
                 data-dropdown-toggle="myCartDropdown1"
                 type="button"
-                className="relative inline-flex items-center rounded-lg justify-center p-2 hover:from-blue-700 hover:to-purple-700 text-sm font-medium leading-none text-gray-900 dark:text-white"
+                className="cursor-pointer relative inline-flex items-center rounded-lg justify-center p-2 hover:from-blue-700 hover:to-purple-700 text-sm font-medium leading-none text-gray-900 dark:text-white"
               >
                 <span className="sr-only">Cart</span>
                 <svg
@@ -146,7 +129,7 @@ const Bar: React.FC = () => {
                 id="userDropdownButton1"
                 data-dropdown-toggle="userDropdown1"
                 type="button"
-                className="inline-flex items-center rounded-lg justify-center p-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium leading-none text-gray-900 dark:text-white"
+                className="inline-flex items-center rounded-lg justify-center p-2 cursor-pointer text-sm font-medium leading-none text-gray-900 dark:text-white"
               >
                 <svg
                   className="w-5 h-5 me-1"
@@ -185,14 +168,14 @@ const Bar: React.FC = () => {
 
               <div
                 id="userDropdown1"
-                className="hidden z-10 w-56 divide-y divide-gray-100 overflow-hidden overflow-y-auto rounded-lg bg-white antialiased shadow dark:divide-gray-600 dark:bg-gray-700"
+                className="hidden z-10 w-56 divide-y divide-gray-100 overflow-hidden overflow-y-auto rounded-lg bg-white antialiased shadow"
               >
-                <ul className="p-2 text-start text-sm font-medium text-gray-900 dark:text-white">
+                <ul className="p-2 text-start text-sm font-medium text-gray-900">
                   <li>
                     <a
                       href="#"
                       title=""
-                      className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
+                      className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                     >
                       {" "}
                       My Account{" "}
@@ -202,7 +185,7 @@ const Bar: React.FC = () => {
                     <a
                       href="/orders-overview"
                       title=""
-                      className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
+                      className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                     >
                       {" "}
                       My Orders{" "}
@@ -213,7 +196,7 @@ const Bar: React.FC = () => {
                     <a
                       href="#"
                       title=""
-                      className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
+                      className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                     >
                       {" "}
                       Address-book{" "}
@@ -223,7 +206,7 @@ const Bar: React.FC = () => {
                     <a
                       href="/products"
                       title=""
-                      className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
+                      className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                     >
                       {" "}
                       Products{" "}
@@ -231,14 +214,14 @@ const Bar: React.FC = () => {
                   </li>
                 </ul>
 
-                <div className="p-2 text-sm font-medium text-gray-900 dark:text-white">
+                <div className="p-2 text-sm font-medium text-gray-900 ">
                   <a
                     id="logoutButton"
                     data-modal-target="logoutModal"
                     data-modal-toggle="logoutModal"
                     href="#"
                     title=""
-                    className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
+                    className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                   >
                     {" "}
                     Sign Out{" "}
@@ -276,55 +259,22 @@ const Bar: React.FC = () => {
 
           <div
             id="ecommerce-navbar-menu-1"
-            className="bg-gray-50 dark:bg-gray-700 dark:border-gray-600 border border-gray-200 rounded-lg py-3 hidden px-4 mt-4"
+            className="bg-gray-50  border border-gray-200 rounded-lg py-3 hidden px-4 mt-4"
           >
-            <ul className="text-gray-900 dark:text-white text-sm font-medium dark:text-white space-y-3">
+            <ul className="text-gray-900  text-sm font-medium space-y-3">
               <li>
-                <a
-                  href="/"
-                  className="hover:text-primary-700 dark:hover:text-primary-500"
-                >
+                <a href="/" className="hover:text-primary-700">
                   Home
                 </a>
               </li>
               <li>
-                <a
-                  href="/store"
-                  className="hover:text-primary-700 dark:hover:text-primary-500"
-                >
+                <a href="/store" className="hover:text-primary-700">
                   Todays Deals
                 </a>
               </li>
               <li>
-                <a
-                  href="/order-management"
-                  className="hover:text-primary-700 dark:hover:text-primary-500"
-                >
-                  Admin Orders
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="hover:text-primary-700 dark:hover:text-primary-500"
-                >
-                  Games
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="hover:text-primary-700 dark:hover:text-primary-500"
-                >
-                  Electronics
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="hover:text-primary-700 dark:hover:text-primary-500"
-                >
-                  Home & Garden
+                <a href="#" className="hover:text-primary-700">
+                  Sell
                 </a>
               </li>
             </ul>
