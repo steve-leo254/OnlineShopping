@@ -152,10 +152,7 @@ const ShoppingCart: React.FC = () => {
                       <span className="font-semibold text-gray-900">{formatCurrency(subtotal)}</span>
                     </div>
                     
-                    <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                      <span className="text-gray-600">Shipping</span>
-                      <span className="font-semibold text-green-600">Free</span>
-                    </div>
+                   
                 
                     
                     <div className="flex items-center justify-between py-4">
