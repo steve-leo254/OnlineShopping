@@ -20,8 +20,16 @@ import { formatCurrency } from "../cart/formatCurrency";
 const Checkout = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
-  const { cartItems, selectedAddress, deliveryFee, subtotal, total, clearCart } =
-    useShoppingCart();
+  const {
+    cartItems,
+    selectedAddress,
+    deliveryFee,
+    subtotal,
+    total,
+    clearCart,
+    deliveryMethod,
+    paymentMethod,
+  } = useShoppingCart();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -44,14 +52,14 @@ const Checkout = () => {
   const [orderId, setOrderId] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState("idle");
   const [errorMessage, setErrorMessage] = useState("");
-  
+
   // Add state to preserve order details after cart is cleared
   const [savedOrderDetails, setSavedOrderDetails] = useState({
     items: [],
     subtotal: 0,
     deliveryFee: 0,
     total: 0,
-    address: null
+    address: null,
   });
 
   const handleInputChange = (e) => {
@@ -73,7 +81,7 @@ const Checkout = () => {
       subtotal: subtotal,
       deliveryFee: deliveryFee,
       total: total,
-      address: selectedAddress
+      address: selectedAddress,
     });
 
     const cartPayload = {
@@ -92,7 +100,7 @@ const Checkout = () => {
     if (!response.ok) {
       throw new Error("Failed to create order");
     }
-    clearCart(); 
+    clearCart();
     const data = await response.json();
     return data.order_id;
   };
@@ -213,7 +221,27 @@ const Checkout = () => {
     } else if (formData.paymentMethod === "cod") {
       try {
         const orderId = await createOrder();
-        navigate("/order-confirmation", { state: { orderId } });
+        navigate("/order-confirmation", {
+          state: {
+            orderId,
+            orderDate: new Date().toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            }),
+            name: selectedAddress
+              ? `${selectedAddress.first_name} ${selectedAddress.last_name}`
+              : "Store Pickup",
+            address:
+              deliveryMethod === "delivery" && selectedAddress
+                ? `${selectedAddress.address}, ${selectedAddress.city}, ${selectedAddress.region}`
+                : "Store Pickup",
+            phoneNumber: selectedAddress?.phone_number || "N/A",
+            deliveryMethod,
+            paymentMethod,
+          },
+          replace: true,
+        });
       } catch (err) {
         setErrorMessage("Failed to place order");
       }
@@ -221,11 +249,15 @@ const Checkout = () => {
   };
 
   // Use current cart data or saved data depending on availability
-  const displayItems = cartItems.length > 0 ? cartItems : savedOrderDetails.items;
-  const displaySubtotal = cartItems.length > 0 ? subtotal : savedOrderDetails.subtotal;
-  const displayDeliveryFee = cartItems.length > 0 ? deliveryFee : savedOrderDetails.deliveryFee;
+  const displayItems =
+    cartItems.length > 0 ? cartItems : savedOrderDetails.items;
+  const displaySubtotal =
+    cartItems.length > 0 ? subtotal : savedOrderDetails.subtotal;
+  const displayDeliveryFee =
+    cartItems.length > 0 ? deliveryFee : savedOrderDetails.deliveryFee;
   const displayTotal = cartItems.length > 0 ? total : savedOrderDetails.total;
-  const displayAddress = cartItems.length > 0 ? selectedAddress : savedOrderDetails.address;
+  const displayAddress =
+    cartItems.length > 0 ? selectedAddress : savedOrderDetails.address;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-4 sm:py-8">

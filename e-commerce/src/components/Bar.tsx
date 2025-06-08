@@ -5,7 +5,7 @@ import CartDropdown from "./CartDropdown";
 import { useShoppingCart } from "../context/ShoppingCartContext"; // Import useShoppingCart
 
 const Bar: React.FC = () => {
-  const { isAuthenticated, logout } = useAuth(); // Use AuthContext
+  const { isAuthenticated, logout, role } = useAuth(); // Use AuthContext
   const { cartQuantity } = useShoppingCart();
 
   // Initialize Flowbite
@@ -27,7 +27,7 @@ const Bar: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-8">
               <div className="shrink-0">
-                <a href="#" title="" className="">
+                <Link to="#" title="" className="">
                   <img
                     className="block w-auto h-8 dark:hidden"
                     src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/logo-full.svg"
@@ -38,37 +38,37 @@ const Bar: React.FC = () => {
                     src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/logo-full-dark.svg"
                     alt=""
                   />
-                </a>
+                </Link>
               </div>
 
               <ul className="hidden lg:flex items-center justify-start gap-6 md:gap-8 py-3 sm:justify-center">
                 <li>
-                  <a
-                    href="/"
+                  <Link
+                    to="/"
                     title=""
                     className="flex text-sm font-medium text-gray-900 hover:text-primary-700 dark:text-white dark:hover:text-primary-500"
                   >
                     Home
-                  </a>
+                  </Link>
                 </li>
 
                 <li className="shrink-0">
-                  <a
-                    href="/store"
+                  <Link
+                    to="/store"
                     title=""
                     className="text-sm font-medium text-gray-900 hover:text-primary-700 dark:text-white dark:hover:text-primary-500"
                   >
                     Today's Deals
-                  </a>
+                  </Link>
                 </li>
                 <li className="shrink-0">
-                  <a
-                    href="#"
+                  <Link
+                    to="/about"
                     title=""
                     className="text-sm font-medium text-gray-900 hover:text-primary-700 dark:text-white dark:hover:text-primary-500"
                   >
-                    Sell
-                  </a>
+                    About us
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -172,60 +172,62 @@ const Bar: React.FC = () => {
               >
                 <ul className="p-2 text-start text-sm font-medium text-gray-900">
                   <li>
-                    <a
-                      href="#"
+                    <Link
+                      to="#"
                       title=""
                       className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                     >
                       {" "}
                       My Account{" "}
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a
-                      href="/orders-overview"
+                    <Link
+                      to="/orders-overview"
                       title=""
                       className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                     >
                       {" "}
                       My Orders{" "}
-                    </a>
+                    </Link>
                   </li>
 
                   <li>
-                    <a
-                      href="#"
+                    <Link
+                      to="#"
                       title=""
                       className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                     >
                       {" "}
                       Address-book{" "}
-                    </a>
+                    </Link>
                   </li>
-                  <li>
-                    <a
-                      href="/products"
-                      title=""
-                      className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
-                    >
-                      {" "}
-                      Products{" "}
-                    </a>
-                  </li>
+                  {role === "admin" && (
+                    <li>
+                      <Link
+                        to="/products"
+                        title=""
+                        className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
+                      >
+                        {" "}
+                        Products{" "}
+                      </Link>
+                    </li>
+                  )}
                 </ul>
 
                 <div className="p-2 text-sm font-medium text-gray-900 ">
-                  <a
+                  <Link
                     id="logoutButton"
                     data-modal-target="logoutModal"
                     data-modal-toggle="logoutModal"
-                    href="#"
+                    to="#"
                     title=""
                     className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                   >
                     {" "}
                     Sign Out{" "}
-                  </a>
+                  </Link>
                 </div>
               </div>
 
@@ -263,19 +265,19 @@ const Bar: React.FC = () => {
           >
             <ul className="text-gray-900  text-sm font-medium space-y-3">
               <li>
-                <a href="/" className="hover:text-primary-700">
+                <Link to="/" className="hover:text-primary-700">
                   Home
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/store" className="hover:text-primary-700">
+                <Link to="/store" className="hover:text-primary-700">
                   Todays Deals
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-primary-700">
-                  Sell
-                </a>
+                <Link to="/about" className="hover:text-primary-700">
+                  About us
+                </Link>
               </li>
             </ul>
           </div>

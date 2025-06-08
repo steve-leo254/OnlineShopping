@@ -53,9 +53,9 @@ class Products(Base):
     description = Column(String(200), nullable=True)  # New description field
     created_at = Column(DateTime, default=func.now())
     barcode = Column(Numeric(precision=12), unique=True)
+    brand = Column(String(100), nullable=True)
     user_id = Column(Integer, ForeignKey('users.id'))
     category_id = Column(Integer, ForeignKey('categories.id'))
-    brand = Column(String(100), nullable=True)
     user = relationship("Users", back_populates="products")
     category = relationship("Categories", back_populates="products")
     order_details = relationship("OrderDetails", back_populates="product")
