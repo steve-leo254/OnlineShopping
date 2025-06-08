@@ -5,7 +5,7 @@ import { formatCurrency } from "../cart/formatCurrency";
 import { useNavigate } from "react-router-dom";
 
 const CartItem = ({ id, name, price, img_url, quantity }) => {
-  const { subtotal, increaseCartQuantity, decreaseCartQuantity } = useShoppingCart();
+  const { increaseCartQuantity, decreaseCartQuantity } = useShoppingCart();
   
   return (
     <div className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1">
@@ -47,7 +47,7 @@ const CartItem = ({ id, name, price, img_url, quantity }) => {
                 className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
                   <span className="text-gray-600 font-bold">−</span>
                 </button>
-                <span className="w-8 text-center font-semibold">{quantity}</span>
+                <span className="w-8 text-center font-semibold text-gray-900">{quantity}</span>
                 <button
                 onClick={() => increaseCartQuantity(id)}
                  className="w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center transition-colors">
@@ -58,7 +58,7 @@ const CartItem = ({ id, name, price, img_url, quantity }) => {
               <div className="text-right space-y-1">
                 <p className="text-sm text-gray-500">Total</p>
                 <p className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  {formatCurrency(subtotal)}
+                  {formatCurrency(price * quantity)}
                 </p>
               </div>
             </div>
