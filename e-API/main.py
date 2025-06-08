@@ -98,17 +98,34 @@ async def upload_image(user: user_dependency, file: UploadFile = File(...)):
         logger.error(f"Error uploading image: {str(e)}")
         raise HTTPException(status_code=500, detail="Error uploading image")
 
+
+# Updated endpoint to support category filtering
 @app.get("/public/products", response_model=PaginatedProductResponse, status_code=status.HTTP_200_OK)
-async def browse_products(db: db_dependency, search: str = None, page: int = 1, limit: int = 8):
+async def browse_products(
+    db: db_dependency, 
+    search: str = None, 
+    page: int = 1, 
+    limit: int = 8,
+    category_id: int = None  # Add category_id parameter
+):
     try:
         skip = (page - 1) * limit
         query = db.query(models.Products)
+        
+        # Apply search filter
         if search:
             query = query.filter(models.Products.name.ilike(f"%{search}%"))
             logger.info(f"Product search query: {search}")
+        
+        # Apply category filter
+        if category_id:
+            query = query.filter(models.Products.category_id == category_id)
+            logger.info(f"Product category filter: {category_id}")
+        
         total = query.count()
         products = query.offset(skip).limit(limit).all()
         total_pages = ceil(total / limit)
+        
         return {
             "items": products,
             "total": total,
@@ -119,6 +136,9 @@ async def browse_products(db: db_dependency, search: str = None, page: int = 1, 
     except SQLAlchemyError as e:
         logger.error(f"Error fetching products: {str(e)}")
         raise HTTPException(status_code=500, detail="Error fetching products")
+    
+
+
 
 @app.get("/public/products/{product_id}", response_model=ProductResponse, status_code=status.HTTP_200_OK)
 async def get_product_by_id(product_id: int, db: db_dependency):
