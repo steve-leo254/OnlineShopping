@@ -20,7 +20,8 @@ import { formatCurrency } from "../cart/formatCurrency";
 const Checkout = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
-  const { cartItems, selectedAddress, deliveryFee, subtotal, total } = useShoppingCart();
+  const { cartItems, selectedAddress, deliveryFee, subtotal, total } =
+    useShoppingCart();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -41,7 +42,9 @@ const Checkout = () => {
     mpesaPhone: "",
   });
   const [orderId, setOrderId] = useState<number | null>(null);
-  const [paymentStatus, setPaymentStatus] = useState<"idle" | "processing" | "success" | "error">("idle");
+  const [paymentStatus, setPaymentStatus] = useState<
+    "idle" | "processing" | "success" | "error"
+  >("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleInputChange = (e) => {
@@ -58,7 +61,7 @@ const Checkout = () => {
 
   const createOrder = async () => {
     const cartPayload = {
-      cart: cartItems.map(item => ({ id: item.id, quantity: item.quantity })),
+      cart: cartItems.map((item) => ({ id: item.id, quantity: item.quantity })),
       address_id: selectedAddress?.id,
       delivery_fee: deliveryFee,
     };
@@ -77,20 +80,27 @@ const Checkout = () => {
     return data.order_id;
   };
 
-  const initiateTransaction = async (orderId: number, phoneNumber: string, amount: number) => {
+  const initiateTransaction = async (
+    orderId: number,
+    phoneNumber: string,
+    amount: number
+  ) => {
     const transactionData = {
       order_id: orderId,
       phone_number: phoneNumber,
       amount: amount,
     };
-    const response = await fetch("http://localhost:8000/payments/lnmo/transact", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(transactionData),
-    });
+    const response = await fetch(
+      "http://localhost:8000/payments/lnmo/transact",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(transactionData),
+      }
+    );
     if (!response.ok) {
       throw new Error("Failed to initiate transaction");
     }
@@ -99,14 +109,17 @@ const Checkout = () => {
   };
 
   const checkTransactionStatus = async (orderId: number) => {
-    const response = await fetch("http://localhost:8000/payments/transactions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ order_id: orderId.toString() }),
-    });
+    const response = await fetch(
+      "http://localhost:8000/payments/transactions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ order_id: orderId.toString() }),
+      }
+    );
     if (!response.ok) {
       throw new Error("Failed to check transaction status");
     }
@@ -132,29 +145,48 @@ const Checkout = () => {
       const orderId = await createOrder();
       setOrderId(orderId);
 
-      await initiateTransaction(orderId, formattedPhone, total);
+      const checkoutRequestID = await initiateTransaction(
+        orderId,
+        formattedPhone,
+        total
+      );
+      let attempts = 0;
+      const maxAttempts = 24; // 2 minutes with 5-second intervals
 
       const interval = setInterval(async () => {
+        attempts++;
         const status = await checkTransactionStatus(orderId);
-        if (status === 4) { // ACCEPTED
+        if (status === 4) {
+          // ACCEPTED
           clearInterval(interval);
+          // Update order status to "processing" after payment confirmation
+          const response = await fetch(
+            `http://localhost:8000/update-order-status/${orderId}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ status: "processing" }),
+            }
+          );
+          if (!response.ok) {
+            throw new Error("Failed to update order status");
+          }
           setPaymentStatus("success");
-          handleStepChange(3);
-        } else if (status === 3 || status === 2) { // REJECTED or CANCELLED
+          handleStepChange(3); // Move to Review step
+        } else if (status === 3 || status === 2) {
+          // REJECTED or CANCELLED
           clearInterval(interval);
           setPaymentStatus("error");
           setErrorMessage("Payment was rejected or cancelled");
-        }
-      }, 5000);
-
-      setTimeout(() => {
-        clearInterval(interval);
-        if (paymentStatus === "processing") {
+        } else if (attempts >= maxAttempts) {
+          clearInterval(interval);
           setPaymentStatus("error");
           setErrorMessage("Payment confirmation timed out");
         }
-      }, 120000);
-
+      }, 5000);
     } catch (err) {
       setPaymentStatus("error");
       setErrorMessage(err.message || "Failed to initiate payment");
@@ -345,7 +377,9 @@ const Checkout = () => {
                     </div>
                     {paymentStatus === "processing" ? (
                       <div className="space-y-2">
-                        <p className="text-green-700">Awaiting payment confirmation...</p>
+                        <p className="text-green-700">
+                          Awaiting payment confirmation...
+                        </p>
                         <div className="flex justify-center">
                           <svg
                             className="animate-spin h-5 w-5 text-green-600"
@@ -428,7 +462,10 @@ const Checkout = () => {
                   <button
                     type="button"
                     onClick={() => handleStepChange(3)}
-                    disabled={formData.paymentMethod === "mpesa" && paymentStatus !== "success"}
+                    disabled={
+                      formData.paymentMethod === "mpesa" &&
+                      paymentStatus !== "success"
+                    }
                     className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Review Order
@@ -452,12 +489,24 @@ const Checkout = () => {
                   </h3>
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <p className="font-medium">
-                      {selectedAddress ? `${selectedAddress.first_name} ${selectedAddress.last_name}` : `${formData.firstName} ${formData.lastName}`}
+                      {selectedAddress
+                        ? `${selectedAddress.first_name} ${selectedAddress.last_name}`
+                        : `${formData.firstName} ${formData.lastName}`}
                     </p>
-                    <p className="text-gray-600">{selectedAddress ? selectedAddress.phone_number : formData.phone}</p>
-                    <p className="text-gray-600">{selectedAddress ? selectedAddress.address : formData.address}</p>
                     <p className="text-gray-600">
-                      {selectedAddress ? `${selectedAddress.city}, ${selectedAddress.region}` : `${formData.city}, ${formData.county}`}
+                      {selectedAddress
+                        ? selectedAddress.phone_number
+                        : formData.phone}
+                    </p>
+                    <p className="text-gray-600">
+                      {selectedAddress
+                        ? selectedAddress.address
+                        : formData.address}
+                    </p>
+                    <p className="text-gray-600">
+                      {selectedAddress
+                        ? `${selectedAddress.city}, ${selectedAddress.region}`
+                        : `${formData.city}, ${formData.county}`}
                     </p>
                   </div>
                 </div>

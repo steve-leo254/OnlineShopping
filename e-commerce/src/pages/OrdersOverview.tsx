@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { formatCurrency } from "../cart/formatCurrency";
 
 const OrdersOverview: React.FC = () => {
   const { token } = useAuth();
@@ -14,17 +15,19 @@ const OrdersOverview: React.FC = () => {
   const [error, setError] = useState(null);
 
   // Mapping frontend dropdown values to API status values
-  const statusMapping = {
-    transit: "pending",
-    confirmed: "delivered",
-    cancelled: "cancelled",
-  };
+const statusMapping = {
+  transit: "pending",
+  confirmed: "delivered",
+  cancelled: "cancelled",
+  processing: "processing" 
+};
+
 
   // Fetch orders from the API
-  const fetchOrders = async () => {
+const fetchOrders = async () => {
     setLoading(true);
     setError(null);
-    
+
     if (!token) {
       setError("No authentication token found");
       setLoading(false);
@@ -35,7 +38,8 @@ const OrdersOverview: React.FC = () => {
       skip: ((page - 1) * limit).toString(),
       limit: limit.toString(),
     });
-    
+
+    // Only append status if selectedStatus is not null
     if (selectedStatus) {
       params.append("status", selectedStatus);
     }
@@ -44,19 +48,18 @@ const OrdersOverview: React.FC = () => {
       const response = await fetch(`http://127.0.0.1:8000/orders?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
-      
+
       if (!response.ok) {
         if (response.status === 401) {
-          // Token might be expired, redirect to login
-          navigate('/login');
+          navigate("/login");
           return;
         }
         throw new Error(`Failed to fetch orders: ${response.status}`);
       }
-      
+
       const data = await response.json();
       setOrders(data.items || []);
       setTotal(data.total || 0);
@@ -67,6 +70,8 @@ const OrdersOverview: React.FC = () => {
       setLoading(false);
     }
   };
+
+
 
   // Cancel order function
   const cancelOrder = async (orderId) => {
@@ -98,8 +103,9 @@ const OrdersOverview: React.FC = () => {
   }, [page, selectedStatus]);
 
   // Handle dropdown change
-  const handleStatusChange = (e) => {
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
+    // Reset to null for "all", otherwise map to API status
     setSelectedStatus(value === "all" ? null : statusMapping[value]);
     setPage(1); // Reset to first page on filter change
   };
@@ -258,12 +264,14 @@ const OrdersOverview: React.FC = () => {
                   id="order-type"
                   className="block w-full min-w-[8rem] rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500"
                   onChange={handleStatusChange}
+                  value={selectedStatus === null ? "all" : Object.keys(statusMapping).find(key => statusMapping[key] === selectedStatus) || "all"}
                   disabled={loading}
                 >
                   <option value="all">All orders</option>
                   <option value="transit">In transit</option>
                   <option value="confirmed">Confirmed</option>
                   <option value="cancelled">Cancelled</option>
+                  <option value="processing">Processing</option>
                 </select>
               </div>
             </div>
@@ -306,10 +314,10 @@ const OrdersOverview: React.FC = () => {
                       </dl>
                       <dl className="w-1/2 sm:w-1/4 lg:w-auto lg:flex-1">
                         <dt className="text-base font-medium text-gray-500 ">
-                          Price:
+                          Total:
                         </dt>
                         <dd className="mt-1.5 text-base font-semibold text-gray-900">
-                          ${order.total?.toFixed(2) || '0.00'}
+                          {formatCurrency(order.total)}
                         </dd>
                       </dl>
                       <dl className="w-1/2 sm:w-1/4 lg:w-auto lg:flex-1">
@@ -365,7 +373,7 @@ const OrdersOverview: React.FC = () => {
                   <button
                     onClick={() => page > 1 && setPage(page - 1)}
                     disabled={page <= 1}
-                    className="ms-0 flex h-8 items-center justify-center rounded-s-lg border border-e-0 border-gray-300 bg-white px-3 leading-tight text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="ms-0 flex h-8 items-center justify-center rounded-s-lg border border-e-0 border-gray-300 bg-white px-3 leading-tight text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span className="sr-only">Previous</span>
                     <svg
@@ -391,7 +399,7 @@ const OrdersOverview: React.FC = () => {
                   <li key={p}>
                     <button
                       onClick={() => setPage(p)}
-                      className={`flex h-8 items-center justify-center border border-gray-300 bg-white px-3 leading-tight text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white ${
+                      className={`flex h-8 items-center justify-center border border-gray-300 bg-white px-3 leading-tight text-gray-500 hover:bg-gray-100 hover:text-gray-700 ${
                         page === p
                           ? "z-10 bg-primary-50 text-primary-600 border-primary-300"
                           : ""
@@ -405,7 +413,7 @@ const OrdersOverview: React.FC = () => {
                   <button
                     onClick={() => page < totalPages && setPage(page + 1)}
                     disabled={page >= totalPages}
-                    className="flex h-8 items-center justify-center rounded-e-lg border border-gray-300 bg-white px-3 leading-tight text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex h-8 items-center justify-center rounded-e-lg border border-gray-300 bg-white px-3 leading-tight text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed"
                   >
                     <span className="sr-only">Next</span>
                     <svg
