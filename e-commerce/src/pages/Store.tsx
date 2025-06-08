@@ -159,8 +159,6 @@ const Store = () => {
     setFavorites(newFavorites);
   };
 
-
-
   // Fetch all categories
   const fetchAllCategories = useCallback(async () => {
     try {
@@ -433,174 +431,262 @@ const Store = () => {
               )}
             </div>
 
-            {/* Products Grid */}
-            <div
-              className={`mb-8 ${
-                viewMode === "grid"
-                  ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
-                  : "space-y-4"
-              }`}
-            >
-              {displayedProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className={`group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 ${
-                    viewMode === "list"
-                      ? "flex items-center p-4"
-                      : "flex flex-col"
-                  }`}
-                >
-                  {/* Product Image */}
-                  <div
-                    className={`relative overflow-hidden ${
-                      viewMode === "list"
-                        ? "w-32 h-32 flex-shrink-0 rounded-lg"
-                        : "aspect-square"
+
+{/* Products Grid */}
+<div
+  className={`mb-8 ${
+    viewMode === "grid"
+      ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+      : "space-y-4"
+  }`}
+>
+  {displayedProducts.map((product) => (
+    <div
+      key={product.id}
+      className={`group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 ${
+        viewMode === "list"
+          ? "flex items-center p-4"
+          : "flex flex-col h-full" // Added h-full for equal height cards
+      }`}
+    >
+      {/* Product Image */}
+      <div
+        className={`relative overflow-hidden ${
+          viewMode === "list"
+            ? "w-32 h-32 flex-shrink-0 rounded-lg"
+            : "aspect-square"
+        }`}
+      >
+        <img
+          src={product.img_url}
+          alt={product.name}
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          onError={(e) => {
+            e.target.src =
+              "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop";
+          }}
+        />
+
+        {/* Badges */}
+        <div className="absolute top-3 left-3 flex flex-col gap-1">
+          {product.isNew && (
+            <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+              New
+            </span>
+          )}
+          {product.discount > 0 && (
+            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+              -{product.discount}%
+            </span>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <button
+            onClick={() => toggleFavorite(product.id)}
+            className={`p-2 rounded-full shadow-lg transition-colors ${
+              favorites.has(product.id) || product.isFavorite
+                ? "bg-red-500 text-white"
+                : "bg-white text-gray-600 hover:text-red-500"
+            }`}
+          >
+            <Heart
+              className="w-4 h-4"
+              fill={
+                favorites.has(product.id) || product.isFavorite
+                  ? "currentColor"
+                  : "none"
+              }
+            />
+          </button>
+          <button className="p-2 bg-white text-gray-600 hover:text-blue-600 rounded-full shadow-lg transition-colors">
+            <Eye className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Stock Status */}
+        {!product.inStock && (
+          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <span className="text-white font-medium">
+              Out of Stock
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Product Info - Conditional Layout */}
+      <div
+        className={`${
+          viewMode === "list" ? "ml-4 flex-1" : "p-4 flex-1 flex flex-col"
+        } ${viewMode === "list" ? "" : "justify-between h-full"}`}
+      >
+        {viewMode === "list" ? (
+          // Original List View Layout
+          <>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-full">
+                {product.category}
+              </span>
+              <span className="text-xs text-gray-500">
+                {product.brand}
+              </span>
+            </div>
+
+            <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+              {product.name}
+            </h3>
+
+            {/* Rating */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`w-3 h-3 ${
+                      i < Math.floor(product.rating)
+                        ? "text-yellow-400 fill-current"
+                        : "text-gray-300"
                     }`}
-                  >
-                    <img
-                      src={product.img_url}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      onError={(e) => {
-                        e.target.src =
-                          "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop";
-                      }}
+                  />
+                ))}
+              </div>
+              <span className="text-sm font-medium text-gray-900">
+                {product.rating}
+              </span>
+              <span className="text-xs text-gray-500">
+                ({product.reviews})
+              </span>
+            </div>
+
+            {/* Stock Quantity */}
+            <div className="mb-2">
+              <span className="text-xs text-gray-500">
+                Stock: {product.stockQuantity} available
+              </span>
+            </div>
+
+            {/* Price and Actions - Original List Layout */}
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-bold text-gray-900">
+                    {formatCurrency(product.price)}
+                  </span>
+                  {product.originalPrice > product.price && (
+                    <span className="text-sm text-gray-500 line-through">
+                      {formatCurrency(product.originalPrice)}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 text-xs text-gray-500">
+                  <span>Free shipping</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => addToCart(product)}
+                disabled={!product.inStock}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  product.inStock
+                    ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
+              >
+                <ShoppingCart className="w-4 h-4" />
+                <span className="hidden sm:inline">Add to Cart</span>
+              </button>
+            </div>
+          </>
+        ) : (
+          // Improved Grid View Layout
+          <>
+            {/* Top Section - Category, Brand, Title, Rating, Stock */}
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-full">
+                  {product.category}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {product.brand}
+                </span>
+              </div>
+
+              <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2 text-sm sm:text-base">
+                {product.name}
+              </h3>
+
+              {/* Rating */}
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-3 h-3 ${
+                        i < Math.floor(product.rating)
+                          ? "text-yellow-400 fill-current"
+                          : "text-gray-300"
+                      }`}
                     />
+                  ))}
+                </div>
+                <span className="text-sm font-medium text-gray-900">
+                  {product.rating}
+                </span>
+                <span className="text-xs text-gray-500">
+                  ({product.reviews})
+                </span>
+              </div>
 
-                    {/* Badges */}
-                    <div className="absolute top-3 left-3 flex flex-col gap-1">
-                      {product.isNew && (
-                        <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                          New
-                        </span>
-                      )}
-                      {product.discount > 0 && (
-                        <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                          -{product.discount}%
-                        </span>
-                      )}
-                    </div>
+              {/* Stock Quantity */}
+              <div className="mb-3">
+                <span className="text-xs text-gray-500">
+                  Stock: {product.stockQuantity} available
+                </span>
+              </div>
+            </div>
 
-                    {/* Action Buttons */}
-                    <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <button
-                        onClick={() => toggleFavorite(product.id)}
-                        className={`p-2 rounded-full shadow-lg transition-colors ${
-                          favorites.has(product.id) || product.isFavorite
-                            ? "bg-red-500 text-white"
-                            : "bg-white text-gray-600 hover:text-red-500"
-                        }`}
-                      >
-                        <Heart
-                          className="w-4 h-4"
-                          fill={
-                            favorites.has(product.id) || product.isFavorite
-                              ? "currentColor"
-                              : "none"
-                          }
-                        />
-                      </button>
-                      <button className="p-2 bg-white text-gray-600 hover:text-blue-600 rounded-full shadow-lg transition-colors">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Stock Status */}
-                    {!product.inStock && (
-                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                        <span className="text-white font-medium">
-                          Out of Stock
-                        </span>
-                      </div>
+            {/* Bottom Section - Price and Actions (Fixed to bottom) */}
+            <div className="mt-auto">
+              <div className="flex flex-col gap-3">
+                {/* Price Section */}
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-lg sm:text-xl font-bold text-gray-900">
+                      {formatCurrency(product.price)}
+                    </span>
+                    {product.originalPrice > product.price && (
+                      <span className="text-sm text-gray-500 line-through">
+                        {formatCurrency(product.originalPrice)}
+                      </span>
                     )}
                   </div>
-
-                  {/* Product Info */}
-                  <div
-                    className={`${
-                      viewMode === "list" ? "ml-4 flex-1" : "p-4"
-                    } flex flex-col justify-between h-full`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-full">
-                          {product.category}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {product.brand}
-                        </span>
-                      </div>
-
-                      <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
-                        {product.name}
-                      </h3>
-
-                      {/* Rating */}
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`w-3 h-3 ${
-                                i < Math.floor(product.rating)
-                                  ? "text-yellow-400 fill-current"
-                                  : "text-gray-300"
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-sm font-medium text-gray-900">
-                          {product.rating}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          ({product.reviews})
-                        </span>
-                      </div>
-
-                      {/* Stock Quantity */}
-                      <div className="mb-2">
-                        <span className="text-xs text-gray-500">
-                          Stock: {product.stockQuantity} available
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Price and Actions */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl font-bold text-gray-900">
-                            {formatCurrency(product.price)}
-                          </span>
-                          {product.originalPrice > product.price && (
-                            <span className="text-sm text-gray-500 line-through">
-                              {formatCurrency(product.originalPrice)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                          <span>Free shipping</span>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => addToCart(product)}
-                        disabled={!product.inStock}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                          product.inStock
-                            ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
-                            : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        }`}
-                      >
-                        <ShoppingCart className="w-4 h-4" />
-                        <span className="hidden sm:inline">Add to Cart</span>
-                      </button>
-                    </div>
+                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                    <span>Free shipping</span>
                   </div>
                 </div>
-              ))}
+
+                {/* Add to Cart Button */}
+                <button
+                  onClick={() => addToCart(product)}
+                  disabled={!product.inStock}
+                  className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
+                    product.inStock
+                      ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
+                >
+                  <ShoppingCart className="w-4 h-4 flex-shrink-0" />
+                  <span>Add to Cart</span>
+                </button>
+              </div>
             </div>
+          </>
+        )}
+      </div>
+    </div>
+  ))}
+</div>
 
             {/* Pagination */}
             {apiTotalPages > 1 && (
