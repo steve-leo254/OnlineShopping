@@ -1,12 +1,20 @@
 import React from "react";
-import { ShoppingBag, ArrowRight, Tag, Gift, Lock, CreditCard } from "lucide-react";
+import {
+  ShoppingBag,
+  ArrowRight,
+  Tag,
+  Gift,
+  Lock,
+  CreditCard,
+} from "lucide-react";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const CartItem = ({ id, name, price, img_url, quantity }) => {
   const { increaseCartQuantity, decreaseCartQuantity } = useShoppingCart();
-  
+
   return (
     <div className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1">
       <div className="p-6">
@@ -37,20 +45,26 @@ const CartItem = ({ id, name, price, img_url, quantity }) => {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-sm text-gray-500">Unit Price</p>
-                <p className="text-lg font-semibold text-gray-900">{formatCurrency(price)}</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {formatCurrency(price)}
+                </p>
               </div>
-              
+
               {/* Quantity Controls */}
               <div className="flex items-center space-x-3">
-                <button 
-                onClick={() => decreaseCartQuantity(id)}
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+                <button
+                  onClick={() => decreaseCartQuantity(id)}
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                >
                   <span className="text-gray-600 font-bold">−</span>
                 </button>
-                <span className="w-8 text-center font-semibold text-gray-900">{quantity}</span>
+                <span className="w-8 text-center font-semibold text-gray-900">
+                  {quantity}
+                </span>
                 <button
-                onClick={() => increaseCartQuantity(id)}
-                 className="w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center transition-colors">
+                  onClick={() => increaseCartQuantity(id)}
+                  className="w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center transition-colors"
+                >
                   <span className="font-bold">+</span>
                 </button>
               </div>
@@ -72,6 +86,7 @@ const CartItem = ({ id, name, price, img_url, quantity }) => {
 const ShoppingCart: React.FC = () => {
   const { cartItems, cartQuantity, subtotal } = useShoppingCart();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   // Handle empty cart
   if (cartItems.length === 0) {
@@ -81,11 +96,16 @@ const ShoppingCart: React.FC = () => {
           <div className="w-24 h-24 mx-auto bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
             <ShoppingBag className="w-12 h-12 text-gray-400" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Your cart is empty</h2>
-          <p className="text-gray-600">Looks like you haven't added any items to your cart yet.</p>
-          <button 
-          onClick={() => navigate("/store")}
-          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105">
+          <h2 className="text-2xl font-bold text-gray-900">
+            Your cart is empty
+          </h2>
+          <p className="text-gray-600">
+            Looks like you haven't added any items to your cart yet.
+          </p>
+          <button
+            onClick={() => navigate("/store")}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105"
+          >
             Start Shopping
           </button>
         </div>
@@ -95,8 +115,23 @@ const ShoppingCart: React.FC = () => {
 
   // Navigate to checkout page
   const handleCheckout = () => {
-    console.log("Navigating to checkout with subtotal:", subtotal);
-    navigate("/checkout", { state: { subtotal: subtotal } });
+    if (!isAuthenticated) {
+      sessionStorage.setItem("redirectAfterLogin", "/checkout");
+      sessionStorage.setItem("checkoutData", JSON.stringify({ subtotal }));
+      navigate("/login", {
+        state: {
+          from: "/cart",
+          message: "Please log in to continue with checkout",
+        },
+      });
+      return;
+    }
+
+    navigate("/checkout", {
+      state: {
+        subtotal: subtotal,
+      },
+    });
   };
 
   return (
@@ -111,7 +146,10 @@ const ShoppingCart: React.FC = () => {
             </div>
             <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
               Your Selected
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Items</span>
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                {" "}
+                Items
+              </span>
             </h1>
             <p className="text-xl text-gray-600">
               Review your items and proceed to secure checkout
@@ -143,20 +181,23 @@ const ShoppingCart: React.FC = () => {
                     <span>Order Summary</span>
                   </h2>
                 </div>
-                
+
                 <div className="p-6 space-y-6">
                   {/* Items Summary */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                      <span className="text-gray-600">Items ({cartQuantity})</span>
-                      <span className="font-semibold text-gray-900">{formatCurrency(subtotal)}</span>
+                      <span className="text-gray-600">
+                        Items ({cartQuantity})
+                      </span>
+                      <span className="font-semibold text-gray-900">
+                        {formatCurrency(subtotal)}
+                      </span>
                     </div>
-                    
-                   
-                
-                    
+
                     <div className="flex items-center justify-between py-4">
-                      <span className="text-xl font-bold text-gray-900">Total</span>
+                      <span className="text-xl font-bold text-gray-900">
+                        Total
+                      </span>
                       <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                         {formatCurrency(subtotal)}
                       </span>
@@ -169,7 +210,11 @@ const ShoppingCart: React.FC = () => {
                     className="group w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center justify-center space-x-2"
                   >
                     <Lock className="w-5 h-5" />
-                    <span>Secure Checkout</span>
+                    <span>
+                      {isAuthenticated
+                        ? "Secure Checkout"
+                        : "Login to Checkout"}
+                    </span>
                     <span className="bg-white/20 px-2 py-1 rounded-lg text-sm">
                       {formatCurrency(subtotal)}
                     </span>
@@ -213,11 +258,14 @@ const ShoppingCart: React.FC = () => {
                     <span>Promo Code</span>
                   </h3>
                 </div>
-                
+
                 <div className="p-6">
                   <div className="space-y-4">
                     <div>
-                      <label htmlFor="voucher" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label
+                        htmlFor="voucher"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
                         Have a voucher or gift card?
                       </label>
                       <div className="relative">
