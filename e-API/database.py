@@ -10,13 +10,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 password = os.getenv("DB_PASSWORD")
-<<<<<<< HEAD
-db_name = os.getenv("DB_name")
-URL_DATABASE = f"mysql+pymysql://root:{password}@localhost:3306/('db_name')"
-=======
-db_name = os.getenv("DB_NAME", "react-pos")
+
+
+
+db_name = os.getenv("DB_NAME", "ecommerce")
 URL_DATABASE = f"mysql+pymysql://root:{password}@localhost:3306/{db_name}"
->>>>>>> 0eab2e53f617b0d5de3fc81dcf1f749860d3cc55
+
 engine = create_engine(URL_DATABASE)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

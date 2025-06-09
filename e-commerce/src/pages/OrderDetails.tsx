@@ -62,6 +62,9 @@ const OrderDetails: React.FC = () => {
   // Configuration variables for delivery
   const DELIVERY_FEE = 150; // Fixed delivery fee
 
+
+
+  
   // image endpoint
   const imgEndPoint = "http://localhost:8000";
 
