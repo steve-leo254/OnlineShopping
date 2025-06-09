@@ -62,6 +62,15 @@ const Checkout = () => {
     address: null,
   });
 
+  // Function to open the modal
+  const openAddressModal = () => {
+    const modal = document.getElementById("addBillingInformationModal");
+    if (modal) {
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -328,6 +337,7 @@ const Checkout = () => {
                   <div className="w-full">
                     <button
                       type="button"
+                      onClick={openAddressModal}
                       className="group w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center justify-center space-x-2 text-sm sm:text-base"
                     >
                       <svg
@@ -482,6 +492,16 @@ const Checkout = () => {
                             onChange={handleInputChange}
                             className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-green-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-sm sm:text-base"
                             placeholder="e.g., 0712345678 or 254712345678"
+                            style={{
+                              color: "#000000",
+                              backgroundColor: "#ffffff",
+                              border: "1px solid #ccc",
+                              padding: "12px",
+                              fontSize: "16px",
+                              borderRadius: "4px",
+                              width: "100%",
+                              boxSizing: "border-box",
+                            }}
                           />
                         </div>
                         <button

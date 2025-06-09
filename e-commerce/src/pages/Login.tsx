@@ -14,6 +14,11 @@ interface ApiResponse {
   access_token: string;
 }
 
+interface Alert {
+  type: 'success' | 'error' | 'warning' | 'info';
+  message: string;
+}
+
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -22,6 +27,7 @@ const Login: React.FC = () => {
     password: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [alert, setAlert] = useState<Alert | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -29,11 +35,27 @@ const Login: React.FC = () => {
       ...prev,
       [name]: value,
     }));
+    // Clear alert when user starts typing
+    if (alert) setAlert(null);
+  };
+
+  const showAlert = (type: Alert['type'], message: string) => {
+    setAlert({ type, message });
+    // Auto-hide alert after 5 seconds
+    setTimeout(() => setAlert(null), 5000);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setAlert(null);
+
+    // Basic validation
+    if (!formData.email || !formData.password) {
+      showAlert('error', 'Please fill in all fields.');
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const apiUrl = "http://localhost:8000/auth/login";
@@ -43,14 +65,60 @@ const Login: React.FC = () => {
         },
       });
 
+      showAlert('success', 'Login successful! Redirecting...');
       login(response.data.access_token);
-      navigate("/");
-    } catch (error) {
+      
+      // Delay navigation to show success message
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
+    } catch (error: any) {
       console.error("Login error:", error);
-      // toast.error("An error occurred. Please try again.");
+      
+      // Handle different types of errors
+      if (error.response?.status === 401) {
+        showAlert('error', 'Invalid email or password. Please try again.');
+      } else if (error.response?.status === 422) {
+        showAlert('error', 'Please check your email format and try again.');
+      } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+        showAlert('error', 'Network error. Please check your connection and try again.');
+      } else {
+        showAlert('error', 'An unexpected error occurred. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const AlertComponent = ({ alert }: { alert: Alert }) => {
+    const alertStyles = {
+      success: 'bg-green-50 border-green-200 text-green-800',
+      error: 'bg-red-50 border-red-200 text-red-800',
+      warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+      info: 'bg-blue-50 border-blue-200 text-blue-800'
+    };
+
+    const iconStyles = {
+      success: '✓',
+      error: '✕',
+      warning: '⚠',
+      info: 'ℹ'
+    };
+
+    return (
+      <div className={`p-4 mb-4 border rounded-lg ${alertStyles[alert.type]}`}>
+        <div className="flex items-center">
+          <span className="mr-2 font-bold">{iconStyles[alert.type]}</span>
+          <span className="text-sm font-medium">{alert.message}</span>
+          <button
+            onClick={() => setAlert(null)}
+            className="ml-auto text-lg font-bold hover:opacity-70"
+          >
+            ×
+          </button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -73,6 +141,10 @@ const Login: React.FC = () => {
               <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl">
                 Sign in to your account
               </h1>
+              
+              {/* Alert Component */}
+              {alert && <AlertComponent alert={alert} />}
+              
               <form
                 onSubmit={handleSubmit}
                 className="space-y-4 md:space-y-6"
@@ -140,7 +212,7 @@ const Login: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`w-full py-2 px-4 bg-gradient-to-r from-green-600 to-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  className={`w-full py-2 px-4 bg-gradient-to-r from-green-600 to-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 ${
                     isSubmitting ? "opacity-70 cursor-not-allowed" : ""
                   }`}
                 >
