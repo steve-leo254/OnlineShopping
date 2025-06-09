@@ -5,6 +5,60 @@ import { formatCurrency } from "../cart/formatCurrency";
 import { toast } from "react-toastify";
 import axios from "axios";
 
+// Confirmation Modal Component
+const ConfirmationModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  isLoading: boolean;
+  orderNumber: string;
+}> = ({ isOpen, onClose, onConfirm, isLoading, orderNumber }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
+        <div className="p-6">
+          <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+            Cancel Order
+          </h3>
+          <p className="text-gray-600 text-center mb-6">
+            Are you sure you want to cancel order <span className="font-semibold">#{orderNumber}</span>? This action cannot be undone.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              disabled={isLoading}
+              className="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-colors disabled:opacity-50"
+            >
+              Keep Order
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={isLoading}
+              className="flex-1 px-4 py-2.5 text-white bg-red-600 hover:bg-red-700 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Cancelling...
+                </>
+              ) : (
+                "Cancel Order"
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const OrdersOverview: React.FC = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
@@ -16,6 +70,8 @@ const OrdersOverview: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [cancellingOrderId, setCancellingOrderId] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState(null);
 
   // Mapping frontend dropdown values to API status values
   const statusMapping = {
@@ -41,7 +97,6 @@ const OrdersOverview: React.FC = () => {
       limit: limit.toString(),
     });
 
-    // Only append status if selectedStatus is not null
     if (selectedStatus) {
       params.append("status", selectedStatus);
     }
@@ -73,19 +128,25 @@ const OrdersOverview: React.FC = () => {
     }
   };
 
-  // Cancel order function - fixed version
-  const cancelOrder = async (orderId: number) => {
-    if (!token) {
+  // Handle cancel order confirmation
+  const handleCancelOrder = (orderId: number) => {
+    setOrderToCancel(orderId);
+    setShowConfirmModal(true);
+  };
+
+  // Cancel order function
+  const cancelOrder = async () => {
+    if (!token || !orderToCancel) {
       setError("No authentication token found. Please log in.");
       return;
     }
 
-    setCancellingOrderId(orderId);
+    setCancellingOrderId(orderToCancel);
 
     try {
       const response = await axios.put(
-        `http://127.0.0.1:8000/update-order-status/${orderId}`,
-        { status: "cancelled" }, // Fixed: use "cancelled" instead of undefined newStatus
+        `http://127.0.0.1:8000/update-order-status/${orderToCancel}`,
+        { status: "cancelled" },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -94,13 +155,13 @@ const OrdersOverview: React.FC = () => {
         }
       );
 
-      // Fixed: axios response doesn't have .ok property, check response.status instead
       if (response.status < 200 || response.status >= 300) {
         throw new Error(response.data?.detail || `Failed to cancel order: ${response.status}`);
       }
 
       toast.success("Order cancelled successfully!");
-      // Refresh orders after cancellation
+      setShowConfirmModal(false);
+      setOrderToCancel(null);
       await fetchOrders();
     } catch (error) {
       console.error("Error cancelling order:", error);
@@ -123,9 +184,8 @@ const OrdersOverview: React.FC = () => {
   // Handle dropdown change
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    // Reset to null for "all", otherwise map to API status
     setSelectedStatus(value === "all" ? null : statusMapping[value]);
-    setPage(1); // Reset to first page on filter change
+    setPage(1);
   };
 
   // Map API status to frontend display
@@ -133,104 +193,49 @@ const OrdersOverview: React.FC = () => {
     switch (status) {
       case "processing":
         return {
-          label: "Processed",
-          className: "bg-blue-200 text-white dark:bg-blue-900 dark:text-white",
+          label: "Processing",
+          className: "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg",
           icon: (
-            <svg
-              className="me-1 h-3 w-3"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M13 7h6l2 4m-8-4v8m0-8V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v9h2m8 0H9m4 0h2m4 0h2v-4m0 0h-5m3.5 5.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm-10 0a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"
-              />
+            <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
             </svg>
           ),
         };
       case "pending":
         return {
-          label: "Pending",
-          className: "bg-gradient-to-r from-yellow-400 to-orange-500 p-4",
+          label: "In Transit",
+          className: "bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg",
           icon: (
-            <svg
-              className="me-1 h-3 w-3"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M13 7h6l2 4m-8-4v8m0-8V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v9h2m8 0H9m4 0h2m4 0h2v-4m0 0h-5m3.5 5.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm-10 0a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"
-              />
+            <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+              <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707L15 6.586A1 1 0 0014.414 6H14v1z" />
             </svg>
           ),
         };
       case "delivered":
         return {
-          label: "Confirmed",
-          className: "bg-green-100 text-green-800 ",
+          label: "Delivered",
+          className: "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg",
           icon: (
-            <svg
-              className="me-1 h-3 w-3"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M5 11.917 9.724 16.5 19 7.5"
-              />
+            <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
           ),
         };
       case "cancelled":
         return {
           label: "Cancelled",
-          className: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
+          className: "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg",
           icon: (
-            <svg
-              className="me-1 h-3 w-3"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M6 18 17.94 6M18 18 6.06 6"
-              />
+            <svg className="w-3 h-3 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
           ),
         };
       default:
         return {
           label: status,
-          className: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
+          className: "bg-gradient-to-r from-gray-400 to-gray-500 text-white shadow-lg",
           icon: null,
         };
     }
@@ -240,228 +245,224 @@ const OrdersOverview: React.FC = () => {
 
   if (loading) {
     return (
-      <section className="bg-white py-8 antialiased md:py-16">
-        <div className="mx-auto max-w-screen-xl px-4 2xl:px-0">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-center items-center h-64">
-            <div className="text-lg text-gray-600">Loading orders...</div>
+            <div className="flex flex-col items-center space-y-4">
+              <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-lg text-gray-600 font-medium">Loading your orders...</p>
+            </div>
           </div>
         </div>
-      </section>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <section className="bg-white py-8 antialiased md:py-16">
-        <div className="mx-auto max-w-screen-xl px-4 2xl:px-0">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-center items-center h-64">
-            <div className="text-lg text-red-600">{error}</div>
+            <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="text-lg text-red-600 font-medium">{error}</p>
+            </div>
           </div>
         </div>
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className="bg-white py-8 antialiased md:py-16">
-      <div className="mx-auto max-w-screen-xl px-4 2xl:px-0 min-h-screen">
-        <div className="mx-auto max-w-5xl">
-          <div className="gap-4 sm:flex sm:items-center sm:justify-between">
-            <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl">
-              My orders
-            </h2>
-            <div className="mt-6 gap-4 space-y-4 sm:mt-0 sm:flex sm:items-center sm:justify-end sm:space-y-0">
-              <div>
-                <label
-                  htmlFor="order-type"
-                  className="sr-only mb-2 block text-sm font-medium text-gray-900 dark:text-white"
-                >
-                  Select order type
-                </label>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">My Orders</h1>
+              <p className="text-gray-600">Track and manage your orders</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="relative">
                 <select
                   id="order-type"
-                  className="block w-full min-w-[8rem] rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500"
+                  className="appearance-none bg-white border-2 border-gray-200 rounded-xl px-4 py-3 pr-10 text-gray-700 focus:border-blue-500 focus:ring-0 transition-colors min-w-[160px]"
                   onChange={handleStatusChange}
                   value={selectedStatus === null ? "all" : Object.keys(statusMapping).find(key => statusMapping[key] === selectedStatus) || "all"}
                   disabled={loading}
                 >
-                  <option value="all">All orders</option>
-                  <option value="transit">In transit</option>
-                  <option value="confirmed">Confirmed</option>
+                  <option value="all">All Orders</option>
+                  <option value="transit">In Transit</option>
+                  <option value="confirmed">Delivered</option>
                   <option value="cancelled">Cancelled</option>
                   <option value="processing">Processing</option>
                 </select>
+                <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="mt-6 flow-root sm:mt-8">
-            {orders.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500 dark:text-gray-400">No orders found.</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {orders.map((order) => {
-                  const statusBadge = getStatusBadge(order.status);
-                  const isCancelling = cancellingOrderId === order.order_id;
-                  
-                  return (
-                    <div
-                      key={order.order_id}
-                      className="flex flex-wrap items-center gap-y-4 py-6"
-                    >
-                      <dl className="w-1/2 sm:w-1/4 lg:w-auto lg:flex-1">
-                        <dt className="text-base font-medium text-gray-500">
-                          Order ID:
-                        </dt>
-                        <dd className="mt-1.5 text-base font-semibold text-gray-900">
+        {/* Orders List */}
+        {orders.length === 0 ? (
+          <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+            <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No orders found</h3>
+            <p className="text-gray-600">You haven't placed any orders yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {orders.map((order) => {
+              const statusBadge = getStatusBadge(order.status);
+              const isCancelling = cancellingOrderId === order.order_id;
+              
+              return (
+                <div
+                  key={order.order_id}
+                  className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
+                >
+                  <div className="p-6 sm:p-8">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                      {/* Order Details */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 flex-1">
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 mb-1">Order ID</p>
                           <Link 
                             to={`/order-details/${order.order_id}`}
-                            className="hover:underline"
+                            className="text-lg font-bold text-blue-600 hover:text-blue-800 transition-colors"
                           >
                             #{order.order_id}
                           </Link>
-                        </dd>
-                      </dl>
-                      <dl className="w-1/2 sm:w-1/4 lg:w-auto lg:flex-1">
-                        <dt className="text-base font-medium text-gray-500">
-                          Date:
-                        </dt>
-                        <dd className="mt-1.5 text-base font-semibold text-gray-900">
-                          {new Date(order.datetime).toLocaleDateString()}
-                        </dd>
-                      </dl>
-                      <dl className="w-1/2 sm:w-1/4 lg:w-auto lg:flex-1">
-                        <dt className="text-base font-medium text-gray-500 ">
-                          Total:
-                        </dt>
-                        <dd className="mt-1.5 text-base font-semibold text-gray-900">
-                          {formatCurrency(order.total)}
-                        </dd>
-                      </dl>
-                      <dl className="w-1/2 sm:w-1/4 lg:w-auto lg:flex-1">
-                        <dt className="text-base font-medium text-gray-500">
-                          Status:
-                        </dt>
-                        <dd
-                          className={`me-2 mt-1.5 inline-flex items-center rounded px-2.5 py-0.5 text-xs font-medium ${statusBadge.className}`}
-                        >
-                          {statusBadge.icon}
-                          {statusBadge.label}
-                        </dd>
-                      </dl>
-                      <div className="w-full grid sm:grid-cols-2 lg:flex lg:w-64 lg:items-center lg:justify-end gap-4">
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 mb-1">Date</p>
+                          <p className="text-lg font-semibold text-gray-900">
+                            {new Date(order.datetime).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 mb-1">Total</p>
+                          <p className="text-lg font-bold text-gray-900">
+                            {formatCurrency(order.total)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 mb-1">Status</p>
+                          <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${statusBadge.className}`}>
+                            {statusBadge.icon}
+                            {statusBadge.label}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Action Buttons */}
+                      <div className="flex flex-col sm:flex-row gap-3 lg:w-auto">
                         {order.status === "pending" && (
                           <button
                             type="button"
-                            onClick={() => cancelOrder(order.order_id)}
+                            onClick={() => handleCancelOrder(order.order_id)}
                             disabled={isCancelling}
-                            className="w-full rounded-lg border border-red-700 px-3 py-2 text-center text-sm font-medium text-red-700 hover:bg-red-700 hover:text-white focus:outline-none focus:ring-4 focus:ring-red-300 disabled:opacity-50 disabled:cursor-not-allowed lg:w-auto"
+                            className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-medium rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                           >
-                            {isCancelling ? "Cancelling..." : "Cancel order"}
+                            {isCancelling ? "Cancelling..." : "Cancel Order"}
                           </button>
                         )}
                         {order.status !== "pending" && (
                           <button
                             type="button"
-                            className="w-full inline-flex justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100  lg:w-auto"
+                            className="px-6 py-3 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 font-medium rounded-xl hover:from-gray-200 hover:to-gray-300 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                           >
-                            Order again
+                            Order Again
                           </button>
                         )}
                         <Link
                           to={`/order-details/${order.order_id}`}
-                          className="w-full inline-flex justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100  lg:w-auto"
+                          className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-center"
                         >
-                          View details
+                          View Details
                         </Link>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
+        )}
 
-          {totalPages > 1 && (
-            <nav
-              className="mt-6 flex items-center justify-center sm:mt-8"
-              aria-label="Page navigation"
-            >
-              <ul className="flex h-8 items-center -space-x-px text-sm">
-                <li>
-                  <button
-                    onClick={() => page > 1 && setPage(page - 1)}
-                    disabled={page <= 1}
-                    className="ms-0 flex h-8 items-center justify-center rounded-s-lg border border-e-0 border-gray-300 bg-white px-3 leading-tight text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="sr-only">Previous</span>
-                    <svg
-                      className="h-4 w-4 rtl:rotate-180"
-                      aria-hidden="true"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="m15 19-7-7 7-7"
-                      />
-                    </svg>
-                  </button>
-                </li>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="bg-white rounded-2xl shadow-lg p-6 mt-8">
+            <nav className="flex items-center justify-center">
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => page > 1 && setPage(page - 1)}
+                  disabled={page <= 1}
+                  className="px-4 py-2 text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                  <li key={p}>
-                    <button
-                      onClick={() => setPage(p)}
-                      className={`flex h-8 items-center justify-center border border-gray-300 bg-white px-3 leading-tight text-gray-500 hover:bg-gray-100 hover:text-gray-700 ${
-                        page === p
-                          ? "z-10 bg-primary-50 text-primary-600 border-primary-300"
-                          : ""
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  </li>
-                ))}
-                <li>
                   <button
-                    onClick={() => page < totalPages && setPage(page + 1)}
-                    disabled={page >= totalPages}
-                    className="flex h-8 items-center justify-center rounded-e-lg border border-gray-300 bg-white px-3 leading-tight text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed"
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={`px-4 py-2 font-medium rounded-xl transition-colors ${
+                      page === p
+                        ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg"
+                        : "text-gray-600 bg-gray-100 hover:bg-gray-200"
+                    }`}
                   >
-                    <span className="sr-only">Next</span>
-                    <svg
-                      className="h-4 w-4 rtl:rotate-180"
-                      aria-hidden="true"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-              fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="m9 5 7 7-7 7"
-                      />
-                    </svg>
+                    {p}
                   </button>
-                </li>
-              </ul>
+                ))}
+                
+                <button
+                  onClick={() => page < totalPages && setPage(page + 1)}
+                  disabled={page >= totalPages}
+                  className="px-4 py-2 text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
             </nav>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-    </section>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        onClose={() => {
+          setShowConfirmModal(false);
+          setOrderToCancel(null);
+        }}
+        onConfirm={cancelOrder}
+        isLoading={cancellingOrderId !== null}
+        orderNumber={orderToCancel?.toString() || ""}
+      />
+    </div>
   );
 };
 
