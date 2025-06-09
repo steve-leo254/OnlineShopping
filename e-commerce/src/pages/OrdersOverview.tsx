@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrency } from "../cart/formatCurrency";
+import { toast } from "react-toastify";
+import axios from "axios";
 
 const OrdersOverview: React.FC = () => {
   const { token } = useAuth();
@@ -13,18 +15,18 @@ const OrdersOverview: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [cancellingOrderId, setCancellingOrderId] = useState(null);
 
   // Mapping frontend dropdown values to API status values
-const statusMapping = {
-  transit: "pending",
-  confirmed: "delivered",
-  cancelled: "cancelled",
-  processing: "processing" 
-};
-
+  const statusMapping = {
+    transit: "pending",
+    confirmed: "delivered",
+    cancelled: "cancelled",
+    processing: "processing" 
+  };
 
   // Fetch orders from the API
-const fetchOrders = async () => {
+  const fetchOrders = async () => {
     setLoading(true);
     setError(null);
 
@@ -71,29 +73,45 @@ const fetchOrders = async () => {
     }
   };
 
+  // Cancel order function - fixed version
+  const cancelOrder = async (orderId: number) => {
+    if (!token) {
+      setError("No authentication token found. Please log in.");
+      return;
+    }
 
-
-  // Cancel order function
-  const cancelOrder = async (orderId) => {
-    if (!token) return;
+    setCancellingOrderId(orderId);
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/orders/${orderId}/cancel`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axios.put(
+        `http://127.0.0.1:8000/update-order-status/${orderId}`,
+        { status: "cancelled" }, // Fixed: use "cancelled" instead of undefined newStatus
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      if (response.ok) {
-        // Refresh orders after cancellation
-        fetchOrders();
-      } else {
-        console.error("Failed to cancel order");
+      // Fixed: axios response doesn't have .ok property, check response.status instead
+      if (response.status < 200 || response.status >= 300) {
+        throw new Error(response.data?.detail || `Failed to cancel order: ${response.status}`);
       }
+
+      toast.success("Order cancelled successfully!");
+      // Refresh orders after cancellation
+      await fetchOrders();
     } catch (error) {
       console.error("Error cancelling order:", error);
+      const errorMessage = axios.isAxiosError(error) 
+        ? error.response?.data?.detail || error.message
+        : error.message || "Failed to cancel order. Please try again.";
+      
+      setError(errorMessage);
+      toast.error("Failed to cancel order. Please try again.");
+    } finally {
+      setCancellingOrderId(null);
     }
   };
 
@@ -286,6 +304,8 @@ const fetchOrders = async () => {
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {orders.map((order) => {
                   const statusBadge = getStatusBadge(order.status);
+                  const isCancelling = cancellingOrderId === order.order_id;
+                  
                   return (
                     <div
                       key={order.order_id}
@@ -336,9 +356,10 @@ const fetchOrders = async () => {
                           <button
                             type="button"
                             onClick={() => cancelOrder(order.order_id)}
-                            className="w-full rounded-lg border border-red-700 px-3 py-2 text-center text-sm font-medium text-red-700 hover:bg-red-700 hover:text-white focus:outline-none focus:ring-4 focus:ring-red-300  lg:w-auto"
+                            disabled={isCancelling}
+                            className="w-full rounded-lg border border-red-700 px-3 py-2 text-center text-sm font-medium text-red-700 hover:bg-red-700 hover:text-white focus:outline-none focus:ring-4 focus:ring-red-300 disabled:opacity-50 disabled:cursor-not-allowed lg:w-auto"
                           >
-                            Cancel order
+                            {isCancelling ? "Cancelling..." : "Cancel order"}
                           </button>
                         )}
                         {order.status !== "pending" && (
@@ -422,7 +443,7 @@ const fetchOrders = async () => {
                       xmlns="http://www.w3.org/2000/svg"
                       width="24"
                       height="24"
-                      fill="none"
+              fill="none"
                       viewBox="0 0 24 24"
                     >
                       <path
