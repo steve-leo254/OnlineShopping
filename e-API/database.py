@@ -10,7 +10,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 password = os.getenv("DB_PASSWORD")
-URL_DATABASE = f"mysql+pymysql://root:{password}@localhost:3306/ecommerce"
+db_name = os.getenv("DB_name")
+URL_DATABASE = f"mysql+pymysql://root:{password}@localhost:3306/('db_name')"
 engine = create_engine(URL_DATABASE)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
