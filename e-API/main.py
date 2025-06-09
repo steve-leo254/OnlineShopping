@@ -424,7 +424,6 @@ async def get_order_by_id(
             db.query(models.Orders)
             .filter(
                 models.Orders.order_id == order_id,
-                models.Orders.user_id == user.get("id")
             )
             .options(
                 joinedload(models.Orders.order_details).joinedload(models.OrderDetails.product),
