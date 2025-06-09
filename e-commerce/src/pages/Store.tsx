@@ -15,6 +15,7 @@ import {
 import axios from "axios";
 import { useFetchProducts } from "../components/UseFetchProducts";
 import { useShoppingCart } from "../context/ShoppingCartContext";
+import { formatCurrency } from "../cart/formatCurrency";
 
 // Transform API product to match component's expected format
 const transformProduct = (apiProduct) => {
@@ -174,20 +175,13 @@ const Store = () => {
     setCurrentPage(1);
     setIsFiltering(true);
     try {
-      // Only pass category filter to API, not search term for better product visibility
-      await fetchProducts(1, productsPerPage, "", categoryId);
+      await fetchProducts(1, productsPerPage, searchTerm, categoryId);
     } catch (error) {
       console.error("Error filtering by category:", error);
     } finally {
       setIsFiltering(false);
     }
   };
-
-  const formatCurrency = (price) =>
-    new Intl.NumberFormat("en-KE", {
-      style: "currency",
-      currency: "KES",
-    }).format(price);
 
   const toggleFavorite = (productId) => {
     const newFavorites = new Set(favorites);
@@ -245,10 +239,14 @@ const Store = () => {
     setTimeout(() => setNotification({ show: false, message: "" }), 3000);
   };
 
-  // Initial load and category changes
   useEffect(() => {
-    fetchProducts(currentPage, productsPerPage, "", selectedCategoryId);
-  }, [currentPage, selectedCategoryId, fetchProducts]);
+    fetchProducts(
+      currentPage,
+      productsPerPage,
+      debouncedSearchTerm,
+      selectedCategoryId
+    );
+  }, [currentPage, debouncedSearchTerm, selectedCategoryId, fetchProducts]);
 
   // Handle debounced search - only refetch if we have a search term
   useEffect(() => {
@@ -268,12 +266,6 @@ const Store = () => {
     return category ? category.name : "all";
   };
 
-  // Pagination for filtered results
-  const paginatedProducts = useMemo(() => {
-    const startIndex = (currentPage - 1) * productsPerPage;
-    const endIndex = startIndex + productsPerPage;
-    return displayedProducts.slice(startIndex, endIndex);
-  }, [displayedProducts, currentPage, productsPerPage]);
 
   const totalPagesForFiltered = Math.ceil(
     displayedProducts.length / productsPerPage
@@ -474,7 +466,7 @@ const Store = () => {
 
             <div className="mb-6 flex items-center justify-between">
               <p className="text-gray-600">
-                Showing {paginatedProducts.length} of {displayedProducts.length}{" "}
+                Showing {displayedProducts.length} of {displayedProducts.length}{" "}
                 products
                 {selectedCategoryId && (
                   <span className="text-blue-600 ml-1">
@@ -496,7 +488,7 @@ const Store = () => {
                   : "space-y-4"
               }`}
             >
-              {paginatedProducts.map((product) => (
+              {displayedProducts.map((product) => (
                 <div
                   key={product.id}
                   className={`group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 ${
@@ -517,8 +509,8 @@ const Store = () => {
                       alt={product.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       onError={(e) => {
-                        e.target
-                          "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop";
+                        e.target;
+                        ("https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop");
                       }}
                     />
                     <div className="absolute top-3 left-3 flex flex-col gap-1">
