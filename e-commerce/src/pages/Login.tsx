@@ -15,7 +15,7 @@ interface ApiResponse {
 }
 
 interface Alert {
-  type: 'success' | 'error' | 'warning' | 'info';
+  type: "success" | "error" | "warning" | "info";
   message: string;
 }
 
@@ -39,7 +39,7 @@ const Login: React.FC = () => {
     if (alert) setAlert(null);
   };
 
-  const showAlert = (type: Alert['type'], message: string) => {
+  const showAlert = (type: Alert["type"], message: string) => {
     setAlert({ type, message });
     // Auto-hide alert after 5 seconds
     setTimeout(() => setAlert(null), 5000);
@@ -52,7 +52,7 @@ const Login: React.FC = () => {
 
     // Basic validation
     if (!formData.email || !formData.password) {
-      showAlert('error', 'Please fill in all fields.');
+      showAlert("error", "Please fill in all fields.");
       setIsSubmitting(false);
       return;
     }
@@ -65,25 +65,31 @@ const Login: React.FC = () => {
         },
       });
 
-      showAlert('success', 'Login successful! Redirecting...');
+      showAlert("success", "Login successful! Redirecting...");
       login(response.data.access_token);
-      
+
       // Delay navigation to show success message
       setTimeout(() => {
         navigate("/");
       }, 1000);
     } catch (error: any) {
       console.error("Login error:", error);
-      
+
       // Handle different types of errors
       if (error.response?.status === 401) {
-        showAlert('error', 'Invalid email or password. Please try again.');
+        showAlert("error", "Invalid email or password. Please try again.");
       } else if (error.response?.status === 422) {
-        showAlert('error', 'Please check your email format and try again.');
-      } else if (error.code === 'NETWORK_ERROR' || !error.response) {
-        showAlert('error', 'Network error. Please check your connection and try again.');
+        showAlert("error", "Please check your email format and try again.");
+      } else if (error.code === "NETWORK_ERROR" || !error.response) {
+        showAlert(
+          "error",
+          "Network error. Please check your connection and try again."
+        );
       } else {
-        showAlert('error', 'An unexpected error occurred. Please try again.');
+        showAlert(
+          "error",
+          "Incorrect email or password. Please verify your credentials or register for an account."
+        );
       }
     } finally {
       setIsSubmitting(false);
@@ -92,17 +98,17 @@ const Login: React.FC = () => {
 
   const AlertComponent = ({ alert }: { alert: Alert }) => {
     const alertStyles = {
-      success: 'bg-green-50 border-green-200 text-green-800',
-      error: 'bg-red-50 border-red-200 text-red-800',
-      warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
-      info: 'bg-blue-50 border-blue-200 text-blue-800'
+      success: "bg-green-50 border-green-200 text-green-800",
+      error: "bg-red-50 border-red-200 text-red-800",
+      warning: "bg-yellow-50 border-yellow-200 text-yellow-800",
+      info: "bg-blue-50 border-blue-200 text-blue-800",
     };
 
     const iconStyles = {
-      success: '✓',
-      error: '✕',
-      warning: '⚠',
-      info: 'ℹ'
+      success: "✓",
+      error: "✕",
+      warning: "⚠",
+      info: "ℹ",
     };
 
     return (
@@ -141,10 +147,10 @@ const Login: React.FC = () => {
               <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl">
                 Sign in to your account
               </h1>
-              
+
               {/* Alert Component */}
               {alert && <AlertComponent alert={alert} />}
-              
+
               <form
                 onSubmit={handleSubmit}
                 className="space-y-4 md:space-y-6"
