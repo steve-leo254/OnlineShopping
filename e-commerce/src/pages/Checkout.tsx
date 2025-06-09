@@ -18,6 +18,7 @@ import { useAuth } from "../context/AuthContext";
 import { formatCurrency } from "../cart/formatCurrency";
 
 const Checkout = () => {
+  const [showTooltip, setShowTooltip] = useState(false);
   const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
   const [orderConfirmationData, setOrderConfirmationData] = useState<any>(null);
   const { token } = useAuth();
@@ -326,27 +327,27 @@ const Checkout = () => {
       >
         <div className="bg-white  rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh]  border border-gray-100">
           <div className="p-6 sm:p-8 relative">
-              <button
-                onClick={() => {
-                  setShowOrderConfirmation(false);
-                  navigate(`/order-details/${orderConfirmationData.orderId}`);
-                }}
-                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-all"
+            <button
+              onClick={() => {
+                setShowOrderConfirmation(false);
+                navigate(`/order-details/${orderConfirmationData.orderId}`);
+              }}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-all"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
             {/* Header with Thank You Message */}
             <div className="text-center mb-6">
               {" "}
@@ -371,7 +372,6 @@ const Checkout = () => {
               <p className="text-gray-600 text-base">
                 Your order has been successfully placed
               </p>
-            
             </div>
 
             {/* Order Details Card */}
@@ -532,13 +532,25 @@ const Checkout = () => {
                 </div>
 
                 <div className="flex justify-end mt-6 sm:mt-8">
-                  <button
-                    type="button"
-                    onClick={() => handleStepChange(2)}
-                    className="px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 text-sm sm:text-base"
-                  >
-                    Continue to Payment
-                  </button>
+                  <div className="relative inline-block">
+                    <button
+                      type="button"
+                      disabled={!selectedAddress}
+                      onClick={() => handleStepChange(2)}
+                      onMouseEnter={() => setShowTooltip(true)}
+                      onMouseLeave={() => setShowTooltip(false)}
+                      className="disabled:opacity-50 disabled:cursor-not-allowed px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 text-sm sm:text-base"
+                    >
+                      Continue to Payment
+                    </button>
+
+                    {!selectedAddress && showTooltip && (
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-red-600 text-white text-xs rounded-lg whitespace-nowrap z-50 shadow-lg">
+                        Please select an address to continue
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-red-600"></div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
