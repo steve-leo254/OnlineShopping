@@ -15,6 +15,7 @@ import {
 import axios from "axios";
 import { useFetchProducts } from "../components/UseFetchProducts";
 import { useShoppingCart } from "../context/ShoppingCartContext";
+import { formatCurrency } from "../cart/formatCurrency";
 
 // Transform API product to match component's expected format
 const transformProduct = (apiProduct) => {
@@ -83,7 +84,7 @@ const Store = () => {
   ]);
   const [isFiltering, setIsFiltering] = useState(false);
 
-  const productsPerPage = 8;
+  const productsPerPage = 9;
 
   // Transform API products to component format
   const products = apiProducts.map(transformProduct);
@@ -142,12 +143,12 @@ const Store = () => {
     }
   };
 
-  const formatCurrency = (price) => {
-    return new Intl.NumberFormat("en-KE", {
-      style: "currency",
-      currency: "KES",
-    }).format(price);
-  };
+  // const formatCurrency = (price) => {
+  //   return new Intl.NumberFormat("en-KE", {
+  //     style: "currency",
+  //     currency: "KES",
+  //   }).format(price);
+  // };
 
   const toggleFavorite = (productId) => {
     const newFavorites = new Set(favorites);
