@@ -356,8 +356,6 @@ const OrdersManagement: React.FC = () => {
     fetchOrders();
   }, [page, selectedStatus, navigate, token]);
 
-  
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
       <div className="max-w-7xl mx-auto">
@@ -762,41 +760,44 @@ const OrdersManagement: React.FC = () => {
 
         {/* Delete Order Modal */}
         {showDeleteModal && selectedOrderId && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200">
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
               <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-slate-900">
-                    Cancel Order
-                  </h3>
-                  <button
-                    onClick={() => setShowDeleteModal(false)}
-                    className="p-1 hover:bg-slate-100 rounded-lg transition-colors duration-200"
+                <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                  <svg
+                    className="w-6 h-6 text-red-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <X className="w-5 h-5 text-slate-600" />
-                  </button>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                    />
+                  </svg>
                 </div>
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100">
-                  <Trash2 className="h-6 w-6 text-gray-500" />
-                </div>
-                <p className="mb-4 text-lg font-semibold text-slate-900">
-                  Are you sure you want to cancel order #{selectedOrderId}?
-                </p>
-                <p className="mb-4 text-sm text-slate-600">
+                <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+                  Cancel Order
+                </h3>
+                <p className="text-gray-600 text-center mb-6">
+                  Are you sure you want to cancel order{" "}
+                  <span className="font-semibold">#{selectedOrderId}</span>?
                   This action cannot be undone.
                 </p>
-                <div className="flex justify-center items-center space-x-4">
+                <div className="flex gap-3">
                   <button
                     onClick={() => setShowDeleteModal(false)}
-                    className="py-2 px-3 text-sm font-medium text-slate-700 bg-white rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors duration-200"
+                    className="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-colors disabled:opacity-50"
                   >
-                    No, cancel
+                    Keep Order
                   </button>
                   <button
                     onClick={() => cancelOrder(selectedOrderId)}
-                    className="py-2 px-3 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-200"
+                    className="flex-1 px-4 py-2.5 text-white bg-red-600 hover:bg-red-700 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    Yes, I'm sure
+                    Cancel Order
                   </button>
                 </div>
               </div>
