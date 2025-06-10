@@ -402,7 +402,7 @@ const OrdersManagement: React.FC = () => {
               <div className="relative">
                 <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
                 <select
-                  className="appearance-none pl-10 pr-8 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-slate-50 focus:bg-white min-w-48"
+                  className="text-gray-500 appearance-none pl-10 pr-8 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-slate-50 focus:bg-white min-w-48"
                   onChange={handleStatusChange}
                   value={selectedStatus || ""}
                 >
@@ -559,13 +559,17 @@ const OrdersManagement: React.FC = () => {
                             >
                               <MoreVertical className="w-5 h-5 text-slate-600" />
                             </button>
-
                             {openDropdown === order.order_id && (
                               <div
                                 ref={(el) =>
                                   (dropdownRefs.current[order.order_id] = el)
                                 }
-                                className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-50 animate-in slide-in-from-top-2 duration-200"
+                                className={`absolute right-0 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-50 animate-in slide-in-from-top-2 duration-200 ${
+                                  // Check if this is one of the last few rows to show dropdown above
+                                  orders.indexOf(order) >= orders.length - 2
+                                    ? "bottom-full mb-2"
+                                    : "top-full mt-2"
+                                }`}
                               >
                                 <div className="p-1">
                                   <button
