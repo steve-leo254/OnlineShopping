@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { jwtDecode } from 'jwt-decode';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { jwtDecode } from "jwt-decode";
 
 interface JwtPayload {
   sub: string;
@@ -18,9 +18,15 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
-  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [token, setToken] = useState<string | null>(
+    localStorage.getItem("token")
+  );
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    !!localStorage.getItem("token")
+  );
   const [role, setRole] = useState<string | null>(null);
 
   // Decode token and check expiration
@@ -33,19 +39,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setToken(null);
           setRole(null);
           setIsAuthenticated(false);
-          localStorage.removeItem('token');
-          localStorage.removeItem('isLoggedIn');
+          localStorage.removeItem("token");
+          localStorage.removeItem("isLoggedIn");
         } else {
           setRole(decoded.role);
           setIsAuthenticated(true);
         }
       } catch (err) {
-        console.error('Invalid token:', err);
+        console.error("Invalid token:", err);
         setToken(null);
         setRole(null);
         setIsAuthenticated(false);
-        localStorage.removeItem('token');
-        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem("token");
+        localStorage.removeItem("isLoggedIn");
       }
     } else {
       setRole(null);
@@ -56,30 +62,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sync with localStorage changes
   useEffect(() => {
     const handleStorageChange = () => {
-      const newToken = localStorage.getItem('token');
+      const newToken = localStorage.getItem("token");
       setToken(newToken);
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   const login = (newToken: string) => {
-    localStorage.setItem('token', newToken);
-    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem("token", newToken);
+    localStorage.setItem("isLoggedIn", "true");
     setToken(newToken);
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('isLoggedIn');
+    localStorage.clear();
     setToken(null);
     setRole(null);
     setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, token, role, login, logout }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, token, role, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -88,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

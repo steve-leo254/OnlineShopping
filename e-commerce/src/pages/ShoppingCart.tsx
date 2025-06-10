@@ -207,7 +207,7 @@ const ShoppingCart: React.FC = () => {
                   {/* Checkout Button */}
                   <button
                     onClick={handleCheckout}
-                    className="group w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center justify-center space-x-2"
+                    className="cursor-pointer group w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center justify-center space-x-2"
                   >
                     <Lock className="w-5 h-5" />
                     <span>

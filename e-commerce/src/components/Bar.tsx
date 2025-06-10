@@ -18,6 +18,7 @@ const Bar: React.FC = () => {
 
   const handleLogout = () => {
     logout(); // Use context logout
+    localStorage.clear(); // Clear local storage
     window.location.href = "/login";
   };
   return (
