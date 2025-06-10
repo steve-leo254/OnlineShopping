@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   ShoppingBag,
   ArrowRight,
@@ -14,9 +14,65 @@ import { useAuth } from "../context/AuthContext";
 
 const CartItem = ({ id, name, price, img_url, quantity }) => {
   const { increaseCartQuantity, decreaseCartQuantity } = useShoppingCart();
+  const [notification, setNotification] = useState({
+    show: false,
+    message: "",
+    type: "success", // success, warning, info
+  });
+
+  // Function to show notification
+  const showNotification = (message, type = "success") => {
+    setNotification({
+      show: true,
+      message,
+      type,
+    });
+
+    // Auto-hide notification after 3 seconds
+    setTimeout(() => {
+      setNotification({ show: false, message: "", type: "success" });
+    }, 3000);
+  };
+
+  // Function to handle quantity increase with alert
+  const handleIncreaseQuantity = () => {
+    increaseCartQuantity(id);
+    showNotification(`${name} quantity increased to ${quantity + 1}!`, "success");
+  };
+
+  // Function to handle quantity decrease with alert
+  const handleDecreaseQuantity = () => {
+    if (quantity > 1) {
+      decreaseCartQuantity(id);
+      showNotification(`${name} quantity decreased to ${quantity - 1}!`, "warning");
+    } else {
+      decreaseCartQuantity(id);
+      showNotification(`${name} removed from cart!`, "info");
+    }
+  };
 
   return (
-    <div className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1">
+    <div className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1 relative">
+      {/* Notification Alert - Top Left */}
+      {notification.show && (
+        <div className="fixed top-4 left-4 z-50 max-w-xs">
+          <div className={`${
+            notification.type === 'success' ? 'bg-green-500' :
+            notification.type === 'warning' ? 'bg-yellow-500' :
+            'bg-blue-500'
+          } text-white px-4 py-3 rounded-lg shadow-xl flex items-center justify-between animate-slide-in-left`}>
+            <span className="text-sm font-medium">{notification.message}</span>
+            <button
+              onClick={() => setNotification({ show: false, message: "", type: "success" })}
+              className="ml-3 text-white hover:text-gray-200 font-bold text-lg leading-none"
+              aria-label="Close notification"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="p-6">
         <div className="flex flex-col sm:flex-row gap-6">
           {/* Product Image */}
@@ -53,17 +109,17 @@ const CartItem = ({ id, name, price, img_url, quantity }) => {
               {/* Quantity Controls */}
               <div className="flex items-center space-x-3">
                 <button
-                  onClick={() => decreaseCartQuantity(id)}
-                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                  onClick={handleDecreaseQuantity}
+                  className="w-8 h-8 rounded-full bg-red-100 hover:bg-red-200 text-red-600 flex items-center justify-center transition-colors hover:scale-110 transform"
                 >
-                  <span className="text-gray-600 font-bold">−</span>
+                  <span className="font-bold">−</span>
                 </button>
                 <span className="w-8 text-center font-semibold text-gray-900">
                   {quantity}
                 </span>
                 <button
-                  onClick={() => increaseCartQuantity(id)}
-                  className="w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center transition-colors"
+                  onClick={handleIncreaseQuantity}
+                  className="w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center transition-colors hover:scale-110 transform"
                 >
                   <span className="font-bold">+</span>
                 </button>
@@ -87,6 +143,13 @@ const ShoppingCart: React.FC = () => {
   const { cartItems, cartQuantity, subtotal } = useShoppingCart();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  
+  // Global notification state for cart-level alerts
+  const [globalNotification, setGlobalNotification] = useState({
+    show: false,
+    message: "",
+    type: "success", // success, warning, info
+  });
 
   // Handle empty cart
   if (cartItems.length === 0) {
@@ -134,8 +197,41 @@ const ShoppingCart: React.FC = () => {
     });
   };
 
+  // Function to show global notification
+  const showGlobalNotification = (message, type = "success") => {
+    setGlobalNotification({
+      show: true,
+      message,
+      type,
+    });
+
+    setTimeout(() => {
+      setGlobalNotification({ show: false, message: "", type: "success" });
+    }, 4000);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+      {/* Global Notification - Top Left */}
+      {globalNotification.show && (
+        <div className="fixed top-4 left-4 z-50 max-w-sm">
+          <div className={`${
+            globalNotification.type === 'success' ? 'bg-green-500' :
+            globalNotification.type === 'warning' ? 'bg-yellow-500' :
+            'bg-blue-500'
+          } text-white px-6 py-4 rounded-lg shadow-xl flex items-center justify-between animate-slide-in-left`}>
+            <span className="font-medium">{globalNotification.message}</span>
+            <button
+              onClick={() => setGlobalNotification({ show: false, message: "", type: "success" })}
+              className="ml-4 text-white hover:text-gray-200 font-bold"
+              aria-label="Close notification"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       <section className="py-12 lg:py-16">
         <div className="mx-auto max-w-7xl px-4">
           {/* Header */}
@@ -280,7 +376,10 @@ const ShoppingCart: React.FC = () => {
                     </div>
                     <button
                       type="button"
-                      onClick={() => console.log("Apply promo code")}
+                      onClick={() => {
+                        console.log("Apply promo code");
+                        showGlobalNotification("Promo code functionality coming soon!", "info");
+                      }}
                       className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
                     >
                       Apply Code
@@ -292,6 +391,22 @@ const ShoppingCart: React.FC = () => {
           </div>
         </div>
       </section>
+
+      <style jsx>{`
+        @keyframes slide-in-left {
+          from {
+            transform: translateX(-100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        .animate-slide-in-left {
+          animation: slide-in-left 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 };

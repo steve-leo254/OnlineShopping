@@ -24,6 +24,9 @@ import Payment from "./pages/Payment";
 import CategoryForm from "./components/AddCategory";
 import AboutPage from "./pages/AboutUs";
 import AccountProfile from "./pages/MyProfile";
+
+
+
 function App() {
   return (
     <AuthProvider>
@@ -31,7 +34,7 @@ function App() {
         <Router>
           <ToastContainer
             position="top-left"
-            autoClose={3000}
+            autoClose={1000}
             hideProgressBar={true}
             newestOnTop={true}
             closeOnClick

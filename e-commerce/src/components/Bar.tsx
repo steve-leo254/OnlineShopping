@@ -27,16 +27,16 @@ const Bar: React.FC = () => {
         <div className="max-w-screen-xl px-4 mx-auto 2xl:px-0 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-8">
-              <div className="shrink-0">
+              <div className="shrink-5">
                 <Link to="#" title="" className="">
-                  <img
+                  {/* <img
                     className="block w-auto h-8 dark:hidden"
                     src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/logo-full.svg"
                     alt=""
-                  />
+                  /> */}
                   <img
-                    className="hidden w-auto h-8 dark:block"
-                    src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/logo-full-dark.svg"
+                    className="hidden w-auto h-20 dark:block"
+                    src="/flowtechlogo.png"
                     alt=""
                   />
                 </Link>
