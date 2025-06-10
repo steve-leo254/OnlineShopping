@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 interface Order {
   order_id: number;
@@ -36,12 +37,12 @@ const AccountProfile: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
       if (!token) {
-        setError("No authentication token found. Please log in.");
-        setLoading(false);
+        navigate("/login");
         return;
       }
 
@@ -72,18 +73,23 @@ const AccountProfile: React.FC = () => {
 
         setLoading(false);
       } catch (err) {
-        setError("Failed to load data. Please try again.");
-        setLoading(false);
-        console.error(err);
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+          setError("Session expired. Please log in again.");
+          setTimeout(() => navigate("/login"), 2000);
+        } else {
+          setError("Failed to load data. Please try again.");
+          setLoading(false);
+          console.error(err);
+        }
       }
     };
 
     fetchData();
-  }, [token]);
+  }, [token, navigate]);
 
   const handleCancelOrderClick = async (orderId: number) => {
     if (!token) {
-      setError("No authentication token found.");
+      navigate("/login");
       return;
     }
 
@@ -101,8 +107,13 @@ const AccountProfile: React.FC = () => {
       setShowCancelModal(false);
       setSelectedOrderId(null);
     } catch (err) {
-      setError("Failed to cancel order.");
-      console.error(err);
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        setError("Session expired. Please log in again.");
+        setTimeout(() => navigate("/login"), 2000);
+      } else {
+        setError("Failed to cancel order.");
+        console.error(err);
+      }
     }
   };
 
@@ -139,11 +150,13 @@ const AccountProfile: React.FC = () => {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                d="M12 _generate8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
           </div>
-          <p className="text-red-600 text-base sm:text-lg font-semibold">{error}</p>
+          <p className="text-red-600 text-base sm:text-lg font-semibold">
+            {error}
+          </p>
         </div>
       </div>
     );
@@ -324,11 +337,12 @@ const AccountProfile: React.FC = () => {
                     Premium Customer
                   </span>
                 </div>
-                
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-3">
                   {user?.username}
                 </h2>
-                <p className="text-slate-600 text-sm sm:text-base break-all sm:break-normal">{user?.email}</p>
+                <p className="text-slate-600 text-sm sm:text-base break-all sm:break-normal">
+                  {user?.email}
+                </p>
               </div>
             </div>
 
@@ -461,7 +475,9 @@ const AccountProfile: React.FC = () => {
                     <div
                       className={`w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r ${action.color} rounded-lg flex items-center justify-center text-white shadow-sm group-hover:shadow-md transition-shadow duration-200`}
                     >
-                      <span className="text-sm sm:text-base">{action.icon}</span>
+                      <span className="text-sm sm:text-base">
+                        {action.icon}
+                      </span>
                     </div>
                     <span className="font-medium text-slate-700 group-hover:text-slate-900 transition-colors duration-200 text-xs sm:text-sm">
                       {action.label}
@@ -526,19 +542,25 @@ const AccountProfile: React.FC = () => {
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:flex lg:items-center lg:space-x-6">
                       <div className="text-center sm:text-left">
-                        <p className="text-xs sm:text-sm text-slate-500 mb-1">Order ID</p>
+                        <p className="text-xs sm:text-sm text-slate-500 mb-1">
+                          Order ID
+                        </p>
                         <p className="font-bold text-slate-900 text-sm sm:text-lg">
                           #{order.order_id}
                         </p>
                       </div>
                       <div className="text-center sm:text-left">
-                        <p className="text-xs sm:text-sm text-slate-500 mb-1">Date</p>
+                        <p className="text-xs sm:text-sm text-slate-500 mb-1">
+                          Date
+                        </p>
                         <p className="font-semibold text-slate-700 text-sm sm:text-base">
                           {new Date(order.datetime).toLocaleDateString()}
                         </p>
                       </div>
                       <div className="text-center sm:text-left">
-                        <p className="text-xs sm:text-sm text-slate-500 mb-1">Total</p>
+                        <p className="text-xs sm:text-sm text-slate-500 mb-1">
+                          Total
+                        </p>
                         <p className="font-bold text-slate-900 text-sm sm:text-lg">
                           KSh {order.total.toLocaleString()}
                         </p>

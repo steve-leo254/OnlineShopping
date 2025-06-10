@@ -36,7 +36,7 @@ const Bar: React.FC = () => {
                   /> */}
                   <img
                     className="hidden w-auto h-20 dark:block"
-                    src="/flowtechlogo.png"
+                    src="/flowtecho.png"
                     alt=""
                   />
                 </Link>
