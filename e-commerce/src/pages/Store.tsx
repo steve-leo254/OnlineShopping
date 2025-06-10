@@ -17,6 +17,7 @@ import { useFetchProducts } from "../components/UseFetchProducts";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
 
+
 // Transform API product to match component's expected format
 const transformProduct = (apiProduct) => {
   const discount =
