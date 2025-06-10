@@ -1,182 +1,591 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Users, Search, Eye, EyeOff, Trash2, Edit, Shield, UserCheck, AlertCircle, CheckCircle, X } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import {
+  Plus,
+  Users,
+  Search,
+  Eye,
+  EyeOff,
+  Trash2,
+  Shield,
+  UserCheck,
+  AlertCircle,
+  CheckCircle,
+  X,
+  RefreshCw,
+  LogOut,
+} from "lucide-react";
 
-const SuperAdminDashboard = () => {
-  const [admins, setAdmins] = useState([]);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [notification, setNotification] = useState({ type: '', message: '', show: false });
-  const [showPassword, setShowPassword] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
+// Type definitions
+interface Admin {
+  id: string;
+  username: string;
+  email: string;
+  created_at: string;
+  last_login?: string;
+  status: "active" | "inactive";
+}
+
+interface Stats {
+  total_admins: number;
+  active_admins: number;
+  admins_this_month: number;
+  total_customers: number;
+}
+
+interface Notification {
+  type: "success" | "error" | "";
+  message: string;
+  show: boolean;
+}
+
+interface FormData {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+interface LoginData {
+  email: string;
+  password: string;
+}
+
+interface FormErrors {
+  username?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+}
+
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+}
+
+interface ApiResponse<T> {
+  items?: T[];
+  total?: number;
+  pages?: number;
+  detail?: string;
+}
+
+const SuperAdminDashboard: React.FC = () => {
+  const [admins, setAdmins] = useState<Admin[]>([]);
+  const [stats, setStats] = useState<Stats>({
+    total_admins: 0,
+    active_admins: 0,
+    admins_this_month: 0,
+    total_customers: 0,
   });
-  
-  const [formErrors, setFormErrors] = useState({});
+  const [showAddForm, setShowAddForm] = useState<boolean>(false);
+  const [showLoginForm, setShowLoginForm] = useState<boolean>(true);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [notification, setNotification] = useState<Notification>({
+    type: "",
+    message: "",
+    show: false,
+  });
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    pages: 0,
+  });
 
-  // Mock admin data - replace with actual API call
-  const mockAdmins = [
-    {
-      id: 1,
-      username: 'admin_john',
-      email: 'john@company.com',
-      created_at: '2024-01-15T10:30:00Z',
-      last_login: '2024-06-08T14:22:00Z',
-      status: 'active'
-    },
-    {
-      id: 2,
-      username: 'admin_sarah',
-      email: 'sarah@company.com',
-      created_at: '2024-02-20T09:15:00Z',
-      last_login: '2024-06-07T11:45:00Z',
-      status: 'active'
-    }
-  ];
+  // Authentication state
+  const [authToken, setAuthToken] = useState<string>("");
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
+  const [formData, setFormData] = useState<FormData>({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const [loginData, setLoginData] = useState<LoginData>({
+    email: "",
+    password: "",
+  });
+
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+
+  // Check for existing token on component mount
   useEffect(() => {
-    fetchAdmins();
+    const token = getStoredToken();
+    if (token) {
+      setAuthToken(token);
+      verifyToken(token);
+    }
   }, []);
 
-  const fetchAdmins = async () => {
-    setLoading(true);
-    try {
-      // In a real app, this would be an API call to fetch admin users
-      // const response = await fetch('/api/admin/users?role=admin', {
-      //   headers: { 'Authorization': `Bearer ${token}` }
-      // });
-      // const data = await response.json();
-      // setAdmins(data);
-      
-      // For now, using mock data
-      setTimeout(() => {
-        setAdmins(mockAdmins);
-        setLoading(false);
-      }, 1000);
-    } catch (error) {
-      showNotification('error', 'Failed to fetch admins');
-      setLoading(false);
+  useEffect(() => {
+    if (authToken && currentUser) {
+      fetchAdmins();
+      fetchStats();
     }
+  }, [pagination.page, searchTerm, authToken, currentUser]);
+
+  // Token management functions (using component state instead of localStorage)
+  const [storedToken, setStoredToken] = useState<string>("");
+
+  const getStoredToken = (): string => {
+    return storedToken;
   };
 
-  const validateForm = () => {
-    const errors = {};
-    
-    if (!formData.username.trim()) {
-      errors.username = 'Username is required';
-    } else if (formData.username.length < 3) {
-      errors.username = 'Username must be at least 3 characters';
-    }
-    
-    if (!formData.email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Please enter a valid email';
-    }
-    
-    if (!formData.password) {
-      errors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
-    }
-    
-    if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
-    }
-    
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+  const storeToken = (token: string): void => {
+    setStoredToken(token);
+    setAuthToken(token);
   };
 
-  const handleAddAdmin = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-    
-    setLoading(true);
+  const removeToken = (): void => {
+    setStoredToken("");
+    setAuthToken("");
+    setCurrentUser(null);
+    setShowLoginForm(true);
+  };
+
+  const verifyToken = async (token: string): Promise<void> => {
     try {
-      // API call to register admin
-      const response = await fetch('/auth/register/admin', {
-        method: 'POST',
+      const response = await fetch("http://localhost:8000/auth/verify-token", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          // 'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
-          password: formData.password
-        })
+        body: JSON.stringify({ token }),
       });
-      
+
       if (response.ok) {
-        const newAdmin = {
-          id: Date.now(),
-          username: formData.username,
-          email: formData.email,
-          created_at: new Date().toISOString(),
-          last_login: null,
-          status: 'active'
-        };
-        
-        setAdmins([...admins, newAdmin]);
-        setFormData({ username: '', email: '', password: '', confirmPassword: '' });
-        setShowAddForm(false);
-        showNotification('success', 'Admin added successfully!');
+        const data = await response.json();
+        setCurrentUser(data);
+        setShowLoginForm(false);
       } else {
-        const errorData = await response.json();
-        showNotification('error', errorData.detail || 'Failed to add admin');
+        removeToken();
+        showNotification("error", "Session expired. Please login again.");
       }
     } catch (error) {
-      showNotification('error', 'Network error. Please try again.');
+      console.error("Token verification failed:", error);
+      removeToken();
+      showNotification("error", "Authentication failed. Please login again.");
+    }
+  };
+
+  const handleLogin = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:8000/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: loginData.email,
+          password: loginData.password,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        storeToken(data.access_token);
+
+        // Get user info
+        const userResponse = await fetch("http://localhost:8000/auth/me", {
+          headers: {
+            Authorization: `Bearer ${data.access_token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          if (userData.role !== "admin") {
+            removeToken();
+            showNotification(
+              "error",
+              "Access denied. Admin privileges required."
+            );
+            return;
+          }
+          setCurrentUser(userData);
+          setShowLoginForm(false);
+          setLoginData({ email: "", password: "" });
+          showNotification("success", "Login successful!");
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        showNotification("error", errorData.detail || "Login failed");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      showNotification("error", "Network error. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteAdmin = async (adminId) => {
-    if (!window.confirm('Are you sure you want to delete this admin?')) return;
-    
+  const handleLogout = (): void => {
+    removeToken();
+    setAdmins([]);
+    setStats({
+      total_admins: 0,
+      active_admins: 0,
+      admins_this_month: 0,
+      total_customers: 0,
+    });
+    showNotification("success", "Logged out successfully");
+  };
+
+  const fetchAdmins = async (): Promise<void> => {
+    if (!authToken) return;
+
+    setLoading(true);
     try {
-      // API call to delete admin
-      // await fetch(`/api/admin/users/${adminId}`, {
-      //   method: 'DELETE',
-      //   headers: { 'Authorization': `Bearer ${token}` }
-      // });
-      
-      setAdmins(admins.filter(admin => admin.id !== adminId));
-      showNotification('success', 'Admin deleted successfully');
+      const searchParam = searchTerm
+        ? `&search=${encodeURIComponent(searchTerm)}`
+        : "";
+      const response = await fetch(
+        `http://localhost:8000/auth/users?page=${pagination.page}&limit=${pagination.limit}${searchParam}`,
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data: ApiResponse<Admin> = await response.json();
+        setAdmins(data.items || []);
+        setPagination((prev) => ({
+          ...prev,
+          total: data.total || 0,
+          pages: data.pages || 0,
+        }));
+      } else if (response.status === 401) {
+        removeToken();
+        showNotification("error", "Session expired. Please login again.");
+      } else {
+        const errorData: ApiResponse<never> = await response
+          .json()
+          .catch(() => ({}));
+        showNotification("error", errorData.detail || "Failed to fetch admins");
+      }
     } catch (error) {
-      showNotification('error', 'Failed to delete admin');
+      console.error("Error fetching admins:", error);
+      showNotification("error", "Network error. Please check your connection.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const showNotification = (type, message) => {
+  const fetchStats = async (): Promise<void> => {
+    if (!authToken) return;
+
+    try {
+      const response = await fetch("http://localhost:8000/auth/stats", {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data: Stats = await response.json();
+        setStats(data);
+      } else if (response.status === 401) {
+        removeToken();
+        showNotification("error", "Session expired. Please login again.");
+      }
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  };
+
+  const handleRefresh = async (): Promise<void> => {
+    setRefreshing(true);
+    await Promise.all([fetchAdmins(), fetchStats()]);
+    setRefreshing(false);
+    showNotification("success", "Data refreshed successfully");
+  };
+
+  const validateForm = (): boolean => {
+    const errors: FormErrors = {};
+
+    if (!formData.username.trim()) {
+      errors.username = "Username is required";
+    } else if (formData.username.length < 3) {
+      errors.username = "Username must be at least 3 characters";
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = "Please enter a valid email";
+    }
+
+    if (!formData.password) {
+      errors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      errors.password = "Password must be at least 6 characters";
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = "Passwords do not match";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleAddAdmin = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(
+        "http://localhost:8000/auth/register/admin",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            username: formData.username,
+            email: formData.email,
+            password: formData.password,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        setFormData({
+          username: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+        });
+        setFormErrors({});
+        setShowAddForm(false);
+        showNotification("success", "Admin added successfully!");
+        await fetchAdmins();
+        await fetchStats();
+      } else if (response.status === 401) {
+        removeToken();
+        showNotification("error", "Session expired. Please login again.");
+      } else {
+        const errorData: ApiResponse<never> = await response
+          .json()
+          .catch(() => ({}));
+        showNotification("error", errorData.detail || "Failed to add admin");
+      }
+    } catch (error) {
+      console.error("Error adding admin:", error);
+      showNotification("error", "Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAdmin = async (adminId: string): Promise<void> => {
+    if (!window.confirm("Are you sure you want to delete this admin?")) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:8000/auth/users/${adminId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        showNotification("success", "Admin deleted successfully");
+        await fetchAdmins();
+        await fetchStats();
+      } else if (response.status === 401) {
+        removeToken();
+        showNotification("error", "Session expired. Please login again.");
+      } else if (response.status === 400) {
+        const errorData: ApiResponse<never> = await response
+          .json()
+          .catch(() => ({}));
+        showNotification(
+          "error",
+          errorData.detail || "Cannot delete this admin"
+        );
+      } else {
+        const errorData: ApiResponse<never> = await response
+          .json()
+          .catch(() => ({}));
+        showNotification("error", errorData.detail || "Failed to delete admin");
+      }
+    } catch (error) {
+      console.error("Error deleting admin:", error);
+      showNotification("error", "Network error. Please try again.");
+    }
+  };
+
+  const showNotification = (
+    type: "success" | "error",
+    message: string
+  ): void => {
     setNotification({ type, message, show: true });
     setTimeout(() => {
-      setNotification({ type: '', message: '', show: false });
+      setNotification({ type: "", message: "", show: false });
     }, 4000);
   };
 
-  const filteredAdmins = admins.filter(admin =>
-    admin.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    admin.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Never';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    setSearchTerm(e.target.value);
+    setPagination((prev) => ({ ...prev, page: 1 }));
   };
+
+  const handlePageChange = (newPage: number): void => {
+    setPagination((prev) => ({ ...prev, page: newPage }));
+  };
+
+  const formatDate = (dateString?: string): string => {
+    if (!dateString) return "Never";
+    try {
+      return new Date(dateString).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "Invalid Date";
+    }
+  };
+
+  const resetForm = (): void => {
+    setFormData({ username: "", email: "", password: "", confirmPassword: "" });
+    setFormErrors({});
+    setShowAddForm(false);
+  };
+
+  // Login Form Component
+  if (showLoginForm) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        </div>
+
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 w-full max-w-md border border-white/20 relative z-10">
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-purple-600 rounded-lg">
+                <Shield className="w-8 h-8 text-white" />
+              </div>
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-2">
+              Super Admin Login
+            </h1>
+            <p className="text-gray-300">
+              Sign in to access the admin dashboard
+            </p>
+          </div>
+
+          {notification.show && (
+            <div
+              className={`mb-6 p-4 rounded-lg border-l-4 ${
+                notification.type === "success"
+                  ? "bg-green-900/50 border-green-500 text-green-100"
+                  : "bg-red-900/50 border-red-500 text-red-100"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {notification.type === "success" ? (
+                  <CheckCircle className="w-5 h-5" />
+                ) : (
+                  <AlertCircle className="w-5 h-5" />
+                )}
+                <span>{notification.message}</span>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                value={loginData.email}
+                onChange={(e) =>
+                  setLoginData({ ...loginData, email: e.target.value })
+                }
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Enter your email"
+                required
+                disabled={loading}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={loginData.password}
+                  onChange={(e) =>
+                    setLoginData({ ...loginData, password: e.target.value })
+                  }
+                  className="w-full px-3 py-2 pr-10 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Enter your password"
+                  required
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                  disabled={loading}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
+            >
+              {loading ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -186,35 +595,67 @@ const SuperAdminDashboard = () => {
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
       </div>
 
-      <div className="relative z-10 container mx-auto px-4 py-8">
+      <div className="relative z-10 container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-purple-600 rounded-lg">
-              <Shield className="w-6 h-6 text-white" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-600 rounded-lg">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white">
+                  Super Admin Dashboard
+                </h1>
+                <p className="text-gray-300 text-sm sm:text-base">
+                  Welcome, {currentUser?.username} | Manage system
+                  administrators
+                </p>
+              </div>
             </div>
-            <h1 className="text-3xl font-bold text-white">Super Admin Dashboard</h1>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 backdrop-blur-sm border border-white/20"
+              >
+                <RefreshCw
+                  className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+                />
+                Refresh
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </button>
+            </div>
           </div>
-          <p className="text-gray-300">Manage system administrators and their permissions</p>
         </div>
 
         {/* Notification */}
         {notification.show && (
-          <div className={`mb-6 p-4 rounded-lg border-l-4 ${
-            notification.type === 'success' 
-              ? 'bg-green-900/50 border-green-500 text-green-100' 
-              : 'bg-red-900/50 border-red-500 text-red-100'
-          } backdrop-blur-sm`}>
+          <div
+            className={`mb-6 p-4 rounded-lg border-l-4 ${
+              notification.type === "success"
+                ? "bg-green-900/50 border-green-500 text-green-100"
+                : "bg-red-900/50 border-red-500 text-red-100"
+            } backdrop-blur-sm`}
+          >
             <div className="flex items-center gap-2">
-              {notification.type === 'success' ? (
-                <CheckCircle className="w-5 h-5" />
+              {notification.type === "success" ? (
+                <CheckCircle className="w-5 h-5 flex-shrink-0" />
               ) : (
-                <AlertCircle className="w-5 h-5" />
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
               )}
-              <span>{notification.message}</span>
-              <button 
-                onClick={() => setNotification({ ...notification, show: false })}
-                className="ml-auto text-gray-400 hover:text-white"
+              <span className="flex-1">{notification.message}</span>
+              <button
+                onClick={() =>
+                  setNotification({ ...notification, show: false })
+                }
+                className="text-gray-400 hover:text-white flex-shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -223,61 +664,85 @@ const SuperAdminDashboard = () => {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-600 rounded-lg">
-                <Users className="w-6 h-6 text-white" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-blue-600 rounded-lg">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
               <div>
-                <p className="text-gray-300 text-sm">Total Admins</p>
-                <p className="text-2xl font-bold text-white">{admins.length}</p>
+                <p className="text-gray-300 text-xs sm:text-sm">Total Admins</p>
+                <p className="text-xl sm:text-2xl font-bold text-white">
+                  {stats.total_admins}
+                </p>
               </div>
             </div>
           </div>
-          
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-600 rounded-lg">
-                <UserCheck className="w-6 h-6 text-white" />
+
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-green-600 rounded-lg">
+                <UserCheck className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
               <div>
-                <p className="text-gray-300 text-sm">Active Admins</p>
-                <p className="text-2xl font-bold text-white">{admins.filter(a => a.status === 'active').length}</p>
+                <p className="text-gray-300 text-xs sm:text-sm">
+                  Active Admins
+                </p>
+                <p className="text-xl sm:text-2xl font-bold text-white">
+                  {stats.active_admins}
+                </p>
               </div>
             </div>
           </div>
-          
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-purple-600 rounded-lg">
-                <Plus className="w-6 h-6 text-white" />
+
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-purple-600 rounded-lg">
+                <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
               <div>
-                <p className="text-gray-300 text-sm">This Month</p>
-                <p className="text-2xl font-bold text-white">2</p>
+                <p className="text-gray-300 text-xs sm:text-sm">This Month</p>
+                <p className="text-xl sm:text-2xl font-bold text-white">
+                  {stats.admins_this_month}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-orange-600 rounded-lg">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-gray-300 text-xs sm:text-sm">
+                  Total Customers
+                </p>
+                <p className="text-xl sm:text-2xl font-bold text-white">
+                  {stats.total_customers}
+                </p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Controls */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 mb-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="relative flex-1 max-w-md">
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20 mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="relative flex-1 w-full sm:max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search admins..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
                 className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               />
             </div>
-            
+
             <button
               onClick={() => setShowAddForm(true)}
-              className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
             >
               <Plus className="w-4 h-4" />
               Add New Admin
@@ -288,17 +753,17 @@ const SuperAdminDashboard = () => {
         {/* Add Admin Modal */}
         {showAddForm && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-slate-800 rounded-xl p-6 w-full max-w-md border border-slate-700">
+            <div className="bg-slate-800 rounded-xl p-6 w-full max-w-md border border-slate-700 max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-white">Add New Admin</h2>
                 <button
-                  onClick={() => setShowAddForm(false)}
+                  onClick={resetForm}
                   className="text-gray-400 hover:text-white"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -307,15 +772,24 @@ const SuperAdminDashboard = () => {
                   <input
                     type="text"
                     value={formData.username}
-                    onChange={(e) => setFormData({...formData, username: e.target.value})}
-                    className={`w-full px-3 py-2 bg-slate-700 border ${formErrors.username ? 'border-red-500' : 'border-slate-600'} rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                    onChange={(e) =>
+                      setFormData({ ...formData, username: e.target.value })
+                    }
+                    className={`w-full px-3 py-2 bg-slate-700 border ${
+                      formErrors.username
+                        ? "border-red-500"
+                        : "border-slate-600"
+                    } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
                     placeholder="Enter username"
+                    disabled={loading}
                   />
                   {formErrors.username && (
-                    <p className="text-red-400 text-sm mt-1">{formErrors.username}</p>
+                    <p className="text-red-400 text-sm mt-1">
+                      {formErrors.username}
+                    </p>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Email
@@ -323,15 +797,22 @@ const SuperAdminDashboard = () => {
                   <input
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className={`w-full px-3 py-2 bg-slate-700 border ${formErrors.email ? 'border-red-500' : 'border-slate-600'} rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    className={`w-full px-3 py-2 bg-slate-700 border ${
+                      formErrors.email ? "border-red-500" : "border-slate-600"
+                    } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
                     placeholder="Enter email"
+                    disabled={loading}
                   />
                   {formErrors.email && (
-                    <p className="text-red-400 text-sm mt-1">{formErrors.email}</p>
+                    <p className="text-red-400 text-sm mt-1">
+                      {formErrors.email}
+                    </p>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Password
@@ -340,23 +821,37 @@ const SuperAdminDashboard = () => {
                     <input
                       type={showPassword ? "text" : "password"}
                       value={formData.password}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
-                      className={`w-full px-3 py-2 pr-10 bg-slate-700 border ${formErrors.password ? 'border-red-500' : 'border-slate-600'} rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      className={`w-full px-3 py-2 pr-10 bg-slate-700 border ${
+                        formErrors.password
+                          ? "border-red-500"
+                          : "border-slate-600"
+                      } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
                       placeholder="Enter password"
+                      disabled={loading}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                      disabled={loading}
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                   {formErrors.password && (
-                    <p className="text-red-400 text-sm mt-1">{formErrors.password}</p>
+                    <p className="text-red-400 text-sm mt-1">
+                      {formErrors.password}
+                    </p>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Confirm Password
@@ -364,30 +859,43 @@ const SuperAdminDashboard = () => {
                   <input
                     type="password"
                     value={formData.confirmPassword}
-                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                    className={`w-full px-3 py-2 bg-slate-700 border ${formErrors.confirmPassword ? 'border-red-500' : 'border-slate-600'} rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
+                    className={`w-full px-3 py-2 bg-slate-700 border ${
+                      formErrors.confirmPassword
+                        ? "border-red-500"
+                        : "border-slate-600"
+                    } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
                     placeholder="Confirm password"
+                    disabled={loading}
                   />
                   {formErrors.confirmPassword && (
-                    <p className="text-red-400 text-sm mt-1">{formErrors.confirmPassword}</p>
+                    <p className="text-red-400 text-sm mt-1">
+                      {formErrors.confirmPassword}
+                    </p>
                   )}
                 </div>
-                
+
                 <div className="flex gap-3 mt-6">
                   <button
                     type="button"
-                    onClick={() => setShowAddForm(false)}
+                    onClick={resetForm}
                     className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-medium transition-colors"
+                    disabled={loading}
                   >
                     Cancel
                   </button>
                   <button
-                    type="submit"
+                    type="button"
                     onClick={handleAddAdmin}
                     disabled={loading}
                     className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
                   >
-                    {loading ? 'Adding...' : 'Add Admin'}
+                    {loading ? "Adding..." : "Add Admin"}
                   </button>
                 </div>
               </div>
@@ -401,19 +909,19 @@ const SuperAdminDashboard = () => {
             <table className="w-full">
               <thead className="bg-white/5">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                     Admin Details
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider hidden sm:table-cell">
                     Created
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider hidden md:table-cell">
                     Last Login
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                  <th className="px-4 sm:px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -421,52 +929,85 @@ const SuperAdminDashboard = () => {
               <tbody className="divide-y divide-white/10">
                 {loading ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-8 text-center text-gray-400">
+                    <td
+                      colSpan={5}
+                      className="px-4 sm:px-6 py-8 text-center text-gray-400"
+                    >
                       <div className="flex items-center justify-center gap-2">
                         <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                         Loading admins...
                       </div>
                     </td>
                   </tr>
-                ) : filteredAdmins.length === 0 ? (
+                ) : admins.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-8 text-center text-gray-400">
-                      No admins found
+                    <td
+                      colSpan={5}
+                      className="px-4 sm:px-6 py-8 text-center text-gray-400"
+                    >
+                      {searchTerm
+                        ? "No admins found matching your search"
+                        : "No admins found"}
                     </td>
                   </tr>
                 ) : (
-                  filteredAdmins.map((admin) => (
-                    <tr key={admin.id} className="hover:bg-white/5 transition-colors">
-                      <td className="px-6 py-4">
+                  admins.map((admin) => (
+                    <tr
+                      key={admin.id}
+                      className="hover:bg-white/5 transition-colors"
+                    >
+                      <td className="px-4 sm:px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center">
-                            <span className="text-white font-medium">
-                              {admin.username.charAt(0).toUpperCase()}
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-white font-medium text-sm sm:text-base">
+                              {admin.username
+                                ? admin.username.charAt(0).toUpperCase()
+                                : "A"}
                             </span>
                           </div>
-                          <div>
-                            <p className="text-white font-medium">{admin.username}</p>
-                            <p className="text-gray-400 text-sm">{admin.email}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-white font-medium truncate">
+                              {admin.username || "Unknown"}
+                            </p>
+                            <p className="text-gray-400 text-sm truncate">
+                              {admin.email || "No email"}
+                            </p>
+                            <div className="sm:hidden mt-1">
+                              <p className="text-gray-400 text-xs">
+                                Created: {formatDate(admin.created_at)}
+                              </p>
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${
+                                  admin.status === "active"
+                                    ? "bg-green-900/50 text-green-400 border border-green-700"
+                                    : "bg-red-900/50 text-red-400 border border-red-700"
+                                }`}
+                              >
+                                {admin.status || "active"}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-gray-300">
+                      <td className="px-4 sm:px-6 py-4 text-gray-300 text-sm hidden sm:table-cell">
                         {formatDate(admin.created_at)}
                       </td>
-                      <td className="px-6 py-4 text-gray-300">
+                      <td className="px-4 sm:px-6 py-4 text-gray-300 text-sm hidden md:table-cell">
                         {formatDate(admin.last_login)}
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          admin.status === 'active' 
-                            ? 'bg-green-900/50 text-green-400 border border-green-700'
-                            : 'bg-red-900/50 text-red-400 border border-red-700'
-                        }`}>
-                          {admin.status}
+                      <td className="px-4 sm:px-6 py-4 hidden lg:table-cell">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            (admin.status || "active") === "active"
+                              ? "bg-green-900/50 text-green-400 border border-green-700"
+                              : "bg-red-900/50 text-red-400 border border-red-700"
+                          }`}
+                        >
+                          {admin.status || "active"}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
+                      <td className="px-4 sm:px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleDeleteAdmin(admin.id)}
                             className="p-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors"
@@ -482,6 +1023,41 @@ const SuperAdminDashboard = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {pagination.pages > 1 && (
+            <div className="px-4 sm:px-6 py-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-sm text-gray-400">
+                Showing{" "}
+                {Math.min(
+                  (pagination.page - 1) * pagination.limit + 1,
+                  pagination.total
+                )}{" "}
+                to{" "}
+                {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
+                of {pagination.total} results
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={pagination.page <= 1}
+                  className="px-3 py-1 bg-white/10 text-white rounded-md hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  Previous
+                </button>
+                <span className="px-3 py-1 bg-purple-600 text-white rounded-md text-sm">
+                  {pagination.page}
+                </span>
+                <button
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={pagination.page >= pagination.pages}
+                  className="px-3 py-1 bg-white/10 text-white rounded-md hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
