@@ -1,3 +1,13 @@
+# ONLINESHOPPING
+
+Empowering Seamless Shopping Experiences, Anytime, Anywhere
+
+[![last commit](https://img.shields.io/badge/last%20commit-yesterday-blue)](https://github.com) [![python](https://img.shields.io/badge/python-93.5%25-blue)](https://python.org) [![languages](https://img.shields.io/badge/languages-7-blue)](https://github.com)
+
+Built with the tools and technologies:
+
+[![JSON](https://img.shields.io/badge/JSON-black)](https://json.org) [![Markdown](https://img.shields.io/badge/Markdown-red)](https://daringfireball.net/projects/markdown/) [![npm](https://img.shields.io/badge/npm-lightgrey)](https://www.npmjs.com/) [![JavaScript](https://img.shields.io/badge/JavaScript-yellow)](https://developer.mozilla.org/en-US/docs/Web/JavaScript) [![React](https://img.shields.io/badge/React-cyan)](https://reactjs.org/) [![Python](https://img.shields.io/badge/Python-blue)](https://python.org) [![TypeScript](https://img.shields.io/badge/TypeScript-purple)](https://www.typescriptlang.org/) [![Vite](https://img.shields.io/badge/Vite-orange)](https://vitejs.dev/) [![ESLint](https://img.shields.io/badge/ESLint-green)](https://eslint.org/) [![Astro](https://img.shields.io/badge/Astro-pink)](https://astro.build/)
+
 # E-Commerce Application
 
 A secure and scalable e-commerce application built with a FastAPI backend and React frontend, providing comprehensive features including product management, user authentication, order processing, and MPESA payment integration.
