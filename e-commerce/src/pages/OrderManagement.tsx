@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash2,
+  Phone,
 } from "lucide-react";
 
 // Define interfaces for type safety
@@ -74,7 +75,7 @@ interface Order {
   order_id: number;
   total: number;
   datetime: string;
-  status: "pending" | "delivered" | "cancelled";
+  status: "pending" | "delivered" | "cancelled" | "processing";
   user_id: number;
   delivery_fee: number;
   completed_at: string | null;
@@ -103,6 +104,8 @@ const OrdersManagement: React.FC = () => {
   const [selectedOrderForDelivery, setSelectedOrderForDelivery] = useState<
     number | null
   >(null);
+  const [mpesaPhone, setMpesaPhone] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState("idle");
 
   const dropdownRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
 
@@ -168,7 +171,7 @@ const OrdersManagement: React.FC = () => {
         `http://127.0.0.1:8000/admin/orders?${params.toString()}`,
         {
           headers: {
-            Authorization: ` Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }
@@ -238,6 +241,104 @@ const OrdersManagement: React.FC = () => {
     }
   };
 
+  // Initiate M-Pesa transaction
+  const initiateTransaction = async (orderId: number, phoneNumber: string, amount: number) => {
+    const transactionData = {
+      order_id: orderId,
+      phone_number: phoneNumber,
+      amount: amount,
+    };
+    const response = await fetch(
+      "http://127.0.0.1:8000/payments/lnmo/transact",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(transactionData),
+      }
+    );
+    if (!response.ok) {
+      throw new Error("Failed to initiate transaction");
+    }
+    const data = await response.json();
+    return data.CheckoutRequestID;
+  };
+
+  // Check transaction status
+  const checkTransactionStatus = async (orderId: number) => {
+    const response = await fetch(
+      "http://127.0.0.1:8000/payments/transactions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ order_id: orderId.toString() }),
+      }
+    );
+    if (!response.ok) {
+      throw new Error("Failed to check transaction status");
+    }
+    const data = await response.json();
+    return data.transaction.status;
+  };
+
+  // Handle initiate payment
+  const handleInitiatePayment = async (orderId: number, total: number) => {
+    try {
+      setPaymentStatus("processing");
+      setError(null);
+
+      const phoneRegex = /^(?:254[17]\d{8}|0[17]\d{8})$/;
+      if (!phoneRegex.test(mpesaPhone)) {
+        throw new Error("Please enter a valid Kenyan phone number");
+      }
+
+      let formattedPhone = mpesaPhone;
+      if (mpesaPhone.startsWith("0")) {
+        formattedPhone = "254" + mpesaPhone.substring(1);
+      }
+
+      const checkoutRequestID = await initiateTransaction(
+        orderId,
+        formattedPhone,
+        total
+      );
+      let attempts = 0;
+      const maxAttempts = 24; // 2 minutes with 5-second intervals
+
+      const interval = setInterval(async () => {
+        attempts++;
+        const status = await checkTransactionStatus(orderId);
+        if (status === 4) {
+          // ACCEPTED
+          clearInterval(interval);
+          await updateOrderStatus(orderId, "delivered");
+          setPaymentStatus("success");
+          setShowDeliveredModal(false);
+          setSelectedOrderForDelivery(null);
+          setMpesaPhone("");
+          toast.success("Payment confirmed and order marked as delivered.");
+        } else if (status === 3 || status === 2) {
+          // REJECTED or CANCELLED
+          clearInterval(interval);
+          setPaymentStatus("error");
+          setError("Payment was rejected or cancelled");
+        } else if (attempts >= maxAttempts) {
+          clearInterval(interval);
+          setPaymentStatus("error");
+          setError("Payment confirmation timed out");
+        }
+      }, 5000);
+    } catch (err: any) {
+      setPaymentStatus("error");
+      setError(err.message || "Failed to initiate payment");
+    }
+  };
+
   // Handle cancel order
   const cancelOrder = async (orderId: number) => {
     if (!token) {
@@ -292,7 +393,7 @@ const OrdersManagement: React.FC = () => {
   };
 
   // Handle pagination
-  const handlePageChange = (newPage: number) => {
+  const handlePageChange = ( serpentPage: number) => {
     if (newPage > 0 && newPage <= Math.ceil(total / limit)) {
       setPage(newPage);
     }
@@ -543,7 +644,7 @@ const OrdersManagement: React.FC = () => {
                                 Amount
                               </p>
                               <div className="flex items-center gap-2">
-                                <Banknote className="w-4 h-4 text-slate-400" />{" "}
+                                <Banknote className="w-4 h-4 text-slate-400" />
                                 <p className="font-semibold text-slate-900">
                                   {formatCurrency(order.total)}
                                 </p>
@@ -583,7 +684,6 @@ const OrdersManagement: React.FC = () => {
                                   (dropdownRefs.current[order.order_id] = el)
                                 }
                                 className={`absolute right-0 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-50 animate-in slide-in-from-top-2 duration-200 ${
-                                  // Check if this is one of the last few rows to show dropdown above
                                   orders.indexOf(order) >= orders.length - 2
                                     ? "bottom-full mb-2"
                                     : "top-full mt-2"
@@ -592,9 +692,7 @@ const OrdersManagement: React.FC = () => {
                                 <div className="p-1">
                                   <button
                                     onClick={() => {
-                                      navigate(
-                                        `/order-details/${order.order_id}`
-                                      );
+                                      navigate(`/order-details/${order.order_id}`);
                                       setOpenDropdown(null);
                                     }}
                                     className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-md transition-colors duration-200"
@@ -605,9 +703,7 @@ const OrdersManagement: React.FC = () => {
 
                                   {order.user && (
                                     <button
-                                      onClick={() =>
-                                        showAccountInfo(order.user!)
-                                      }
+                                      onClick={() => showAccountInfo(order.user!)}
                                       className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-md transition-colors duration-200"
                                     >
                                       <User className="w-4 h-4" />
@@ -631,9 +727,7 @@ const OrdersManagement: React.FC = () => {
                                   {order.status !== "cancelled" &&
                                     order.status !== "delivered" && (
                                       <button
-                                        onClick={() =>
-                                          handleCancelOrder(order.order_id)
-                                        }
+                                        onClick={() => handleCancelOrder(order.order_id)}
                                         className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-700 hover:bg-red-50 rounded-md transition-colors duration-200"
                                       >
                                         <Trash2 className="w-4 h-4" />
@@ -656,13 +750,9 @@ const OrdersManagement: React.FC = () => {
             {total > 0 && (
               <div className="flex items-center justify-between mt-6 z-1">
                 <p className="text-sm text-slate-600">
-                  Showing{" "}
-                  <span className="font-medium">{(page - 1) * limit + 1}</span>{" "}
-                  to{" "}
-                  <span className="font-medium">
-                    {Math.min(page * limit, total)}
-                  </span>{" "}
-                  of <span className="font-medium">{total}</span> results
+                  Showing <span className="font-medium">{(page - 1) * limit + 1}</span> to{" "}
+                  <span className="font-medium">{Math.min(page * limit, total)}</span> of{" "}
+                  <span className="font-medium">{total}</span> results
                 </p>
 
                 <div className="flex items-center gap-2">
@@ -687,7 +777,7 @@ const OrdersManagement: React.FC = () => {
                             className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
                               page === pageNum
                                 ? "bg-blue-600 text-white"
-                                : "text-slate-700 hover:bg-slate-100"
+                                : "text-slate-700 hover:bg-slate-50"
                             }`}
                           >
                             {pageNum}
@@ -754,8 +844,12 @@ const OrdersManagement: React.FC = () => {
                           : "bg-red-100 text-red-800 border border-red-200"
                       }`}
                     >
-                      <div className="bg-green-500"></div>
-                      Active
+                      <div
+                        className={`w-2 h-2 rounded-full ${
+                          accountInfo.is_active ? "bg-emerald-500" : "bg-red-500"
+                        }`}
+                      ></div>
+                      {accountInfo.is_active ? "Active" : "Inactive"}
                     </span>
                   </div>
                 </div>
@@ -798,8 +892,8 @@ const OrdersManagement: React.FC = () => {
                 </h3>
                 <p className="text-gray-600 text-center mb-6">
                   Are you sure you want to cancel order{" "}
-                  <span className="font-semibold">#{selectedOrderId}</span>?
-                  This action cannot be undone.
+                  <span className="font-semibold">#{selectedOrderId}</span>? This
+                  action cannot be undone.
                 </p>
                 <div className="flex gap-3">
                   <button
@@ -824,33 +918,106 @@ const OrdersManagement: React.FC = () => {
         {showDeliveredModal && selectedOrderForDelivery && (
           <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
-              <div className="p-6">
+              <div className="p-6 relative">
+                <button
+                  onClick={() => {
+                    setShowDeliveredModal(false);
+                    setSelectedOrderForDelivery(null);
+                    setMpesaPhone("");
+                    setPaymentStatus("idle");
+                    setError(null);
+                  }}
+                  className="absolute top-3 right-3 p-1 hover:bg-slate-100 rounded-lg transition-colors duration-200"
+                >
+                  <X className="w-5 h-5 text-slate-600" />
+                </button>
                 <div className="flex items-center justify-center w-12 h-12 mx-auto bg-emerald-100 rounded-full mb-4">
                   <CheckCircle className="w-6 h-6 text-emerald-600" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
-                  Mark as Delivered
+                  Confirm Order Delivery or Initiate Payment
                 </h3>
                 <p className="text-gray-600 text-center mb-6">
-                  Are you sure you want to mark order{" "}
+                  To confirm that order{" "}
                   <span className="font-semibold">
                     #{selectedOrderForDelivery}
                   </span>{" "}
-                  as delivered? This will update the order status to completed.
+                  has been delivered, you can either initiate an M-Pesa payment or
+                  mark it as delivered for cash payments.
                 </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowDeliveredModal(false)}
-                    className="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-colors disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      M-Pesa Phone Number (Optional)
+                    </label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        type="tel"
+                        value={mpesaPhone}
+                        onChange={(e) => setMpesaPhone(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                        placeholder="e.g., 0712345678 or 254712345678"
+                        disabled={paymentStatus === "processing"}
+                      />
+                    </div>
+                  </div>
+                  {paymentStatus === "processing" && (
+                    <div className="space-y-2">
+                      <p className="text-emerald-700 text-center">
+                        Awaiting payment confirmation...
+                      </p>
+                      <div className="flex justify-center">
+                        <svg
+                          className="animate-spin h-5 w-5 text-emerald-600"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v8z"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                  {error && paymentStatus === "error" && (
+                    <p className="text-red-600 text-center">{error}</p>
+                  )}
+                </div>
+                <div className="flex gap-3 mt-6">
                   <button
                     onClick={() => confirmDelivery(selectedOrderForDelivery)}
                     className="flex-1 px-4 py-2.5 text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    disabled={paymentStatus === "processing"}
                   >
                     <CheckCircle className="w-4 h-4" />
                     Mark Delivered
+                  </button>
+                  <button
+                    onClick={() => {
+                      const order = orders.find(
+                        (o) => o.order_id === selectedOrderForDelivery
+                      );
+                      if (order) {
+                        handleInitiatePayment(selectedOrderForDelivery, order.total);
+                      }
+                    }}
+                    className="flex-1 px-4 py-2.5 text-white bg-green-500 hover:bg-green-600 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    disabled={paymentStatus === "processing" || !mpesaPhone}
+                  >
+                    <Phone className="w-4 h-4" />
+                    Prompt Payment
                   </button>
                 </div>
               </div>
