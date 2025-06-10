@@ -1,6 +1,6 @@
 // src/pages/Login.tsx
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
@@ -20,6 +20,7 @@ interface Alert {
 }
 
 const Login: React.FC = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const { login } = useAuth();
   const [formData, setFormData] = useState<LoginFormData>({
@@ -68,9 +69,28 @@ const Login: React.FC = () => {
       showAlert("success", "Login successful! Redirecting...");
       login(response.data.access_token);
 
+      // Check if there's a redirect after login
+      const redirectPath = sessionStorage.getItem("redirectAfterLogin");
+
       // Delay navigation to show success message
       setTimeout(() => {
-        navigate("/");
+        if (redirectPath === "/checkout") {
+          const checkoutData = sessionStorage.getItem("checkoutData");
+          const parsedCheckoutData = checkoutData
+            ? JSON.parse(checkoutData)
+            : {};
+
+          sessionStorage.removeItem("redirectAfterLogin");
+          sessionStorage.removeItem("checkoutData");
+
+          navigate("/checkout", { state: parsedCheckoutData });
+        } else if (redirectPath) {
+          sessionStorage.removeItem("redirectAfterLogin");
+          sessionStorage.removeItem("checkoutData");
+          navigate(redirectPath);
+        } else {
+          navigate("/"); // Your original default navigation
+        }
       }, 1000);
     } catch (error: any) {
       console.error("Login error:", error);
@@ -147,7 +167,11 @@ const Login: React.FC = () => {
               <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl">
                 Sign in to your account
               </h1>
-
+              {location.state?.message && (
+                <div className="p-3 text-sm text-blue-800 bg-blue-100 rounded-lg dark:bg-blue-900 dark:text-blue-200">
+                  {location.state.message}
+                </div>
+              )}
               {/* Alert Component */}
               {alert && <AlertComponent alert={alert} />}
 

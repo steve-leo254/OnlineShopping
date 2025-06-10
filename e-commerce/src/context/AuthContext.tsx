@@ -1,6 +1,6 @@
-// src/context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
+
 interface JwtPayload {
   sub: string;
   id: number;
@@ -23,13 +23,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
   const [role, setRole] = useState<string | null>(null);
 
-  // Decode token to get role
+  // Decode token and check expiration
   useEffect(() => {
     if (token) {
       try {
         const decoded: JwtPayload = jwtDecode(token);
-        setRole(decoded.role);
-        setIsAuthenticated(true);
+        if (decoded.exp * 1000 < Date.now()) {
+          // Token is expired
+          setToken(null);
+          setRole(null);
+          setIsAuthenticated(false);
+          localStorage.removeItem('token');
+          localStorage.removeItem('isLoggedIn');
+        } else {
+          setRole(decoded.role);
+          setIsAuthenticated(true);
+        }
       } catch (err) {
         console.error('Invalid token:', err);
         setToken(null);

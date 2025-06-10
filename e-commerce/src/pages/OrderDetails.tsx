@@ -62,9 +62,6 @@ const OrderDetails: React.FC = () => {
   // Configuration variables for delivery
   const DELIVERY_FEE = 150; // Fixed delivery fee
 
-
-
-  
   // image endpoint
   const imgEndPoint = "http://localhost:8000";
 
@@ -124,11 +121,11 @@ const OrderDetails: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100">
-        <div className="text-center bg-white p-8 rounded-2xl shadow-xl max-w-md w-full mx-4">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100 px-4">
+        <div className="text-center bg-white p-6 sm:p-8 rounded-2xl shadow-xl max-w-md w-full">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
-              className="w-8 h-8 text-red-600"
+              className="w-6 h-6 sm:w-8 sm:h-8 text-red-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -141,13 +138,13 @@ const OrderDetails: React.FC = () => {
               />
             </svg>
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
             Oops! Something went wrong
           </h3>
-          <p className="text-red-600 text-lg mb-6">{error}</p>
+          <p className="text-red-600 text-base sm:text-lg mb-6">{error}</p>
           <button
             onClick={() => navigate(-1)}
-            className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-200 font-medium shadow-lg"
+            className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transform hover:scale-105 transition-all duration-200 font-medium shadow-lg text-sm sm:text-base"
           >
             Go Back
           </button>
@@ -158,11 +155,11 @@ const OrderDetails: React.FC = () => {
 
   if (!order) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center bg-white p-8 rounded-2xl shadow-xl">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="text-center bg-white p-6 sm:p-8 rounded-2xl shadow-xl max-w-md w-full">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
-              className="w-8 h-8 text-gray-400"
+              className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -175,7 +172,7 @@ const OrderDetails: React.FC = () => {
               />
             </svg>
           </div>
-          <p className="text-gray-600 text-lg">No order data available</p>
+          <p className="text-gray-600 text-base sm:text-lg">No order data available</p>
         </div>
       </div>
     );
@@ -212,18 +209,18 @@ const OrderDetails: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <section className="py-8 antialiased md:py-16">
-        <div className="mx-auto max-w-screen-xl px-4 2xl:px-0">
+      <section className="py-4 sm:py-6 md:py-8 lg:py-16 antialiased">
+        <div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8 2xl:px-0">
           {/* Header */}
-          <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 border border-gray-100">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 mb-6 sm:mb-8 border border-gray-100">
+            <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate">
                   Order #{order.order_id}
                 </h1>
-                <p className="text-gray-500 mt-2 flex items-center">
+                <p className="text-gray-500 mt-2 flex items-center text-sm sm:text-base">
                   <svg
-                    className="w-4 h-4 mr-2"
+                    className="w-4 h-4 mr-2 flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -235,19 +232,21 @@ const OrderDetails: React.FC = () => {
                       d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4M3 7h18l-1.35 9.45A2 2 0 0118.65 18H5.35a2 2 0 01-1.99-1.55L2 7z"
                     />
                   </svg>
-                  Ordered on{" "}
-                  {new Date(order.datetime).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  <span className="break-words">
+                    Ordered on{" "}
+                    {new Date(order.datetime).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
                 </p>
               </div>
-              <div className="mt-4 sm:mt-0">
+              <div className="flex-shrink-0">
                 <span
-                  className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold shadow-lg ${getStatusColor(
+                  className={`inline-flex items-center px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold shadow-lg ${getStatusColor(
                     order.status
                   )}`}
                 >
@@ -258,14 +257,14 @@ const OrderDetails: React.FC = () => {
             </div>
           </div>
 
-          <div className="lg:grid lg:grid-cols-3 lg:gap-8">
+          <div className="flex flex-col lg:grid lg:grid-cols-3 lg:gap-8 space-y-6 lg:space-y-0">
             {/* Order Items */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-                <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6">
-                  <h2 className="text-xl font-semibold text-white flex items-center">
+                <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 sm:p-6">
+                  <h2 className="text-lg sm:text-xl font-semibold text-white flex items-center">
                     <svg
-                      className="w-6 h-6 mr-2"
+                      className="w-5 h-5 sm:w-6 sm:h-6 mr-2 flex-shrink-0"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -285,12 +284,12 @@ const OrderDetails: React.FC = () => {
                   {order.order_details.map((item, index) => (
                     <div
                       key={item.order_detail_id}
-                      className="p-6 hover:bg-gray-50 transition-colors duration-200"
+                      className="p-4 sm:p-6 hover:bg-gray-50 transition-colors duration-200"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
-                      <div className="flex items-center gap-6">
-                        <div className="relative group">
-                          <div className="h-20 w-20 rounded-xl overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow duration-200">
+                      <div className="flex items-start sm:items-center gap-3 sm:gap-6">
+                        <div className="relative group flex-shrink-0">
+                          <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow duration-200">
                             <img
                               className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-200"
                               src={
@@ -311,29 +310,29 @@ const OrderDetails: React.FC = () => {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 text-lg mb-1">
+                          <h3 className="font-semibold text-gray-900 text-base sm:text-lg mb-1 line-clamp-2">
                             {item.product.name}
                           </h3>
                           {item.product.brand && (
-                            <p className="text-sm text-blue-600 font-medium mb-1">
+                            <p className="text-xs sm:text-sm text-blue-600 font-medium mb-1">
                               {item.product.brand}
                             </p>
                           )}
                           {item.product.description && (
-                            <p className="text-sm text-gray-600 line-clamp-2">
+                            <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 hidden sm:block">
                               {item.product.description}
                             </p>
                           )}
-                          <p className="text-xs text-gray-400 mt-2">
+                          <p className="text-xs text-gray-400 mt-1 sm:mt-2">
                             Product ID: #{item.product_id}
                           </p>
                         </div>
 
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-gray-900 mb-1">
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-lg sm:text-2xl font-bold text-gray-900 mb-1">
                             {formatCurrency(item.total_price)}
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-xs sm:text-sm text-gray-500">
                             {formatCurrency(item.product.price)} ×{" "}
                             {item.quantity}
                           </p>
@@ -344,21 +343,21 @@ const OrderDetails: React.FC = () => {
                 </div>
 
                 {/* Order Summary */}
-                <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 sm:p-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
                     Order Summary
                   </h3>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Subtotal</span>
-                      <span className="font-semibold text-gray-900">
+                      <span className="text-gray-600 text-sm sm:text-base">Subtotal</span>
+                      <span className="font-semibold text-gray-900 text-sm sm:text-base">
                         {formatCurrency(subtotal)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600 flex items-center">
+                      <span className="text-gray-600 flex items-center text-sm sm:text-base">
                         <svg
-                          className="w-4 h-4 mr-1"
+                          className="w-4 h-4 mr-1 flex-shrink-0"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -372,16 +371,16 @@ const OrderDetails: React.FC = () => {
                         </svg>
                         Delivery Fee
                       </span>
-                      <span className="font-semibold text-gray-900">
+                      <span className="font-semibold text-gray-900 text-sm sm:text-base">
                         {formatCurrency(DELIVERY_FEE)}
                       </span>
                     </div>
                     <div className="border-t border-gray-200 pt-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-xl font-bold text-gray-900">
+                        <span className="text-lg sm:text-xl font-bold text-gray-900">
                           Total
                         </span>
-                        <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                           {formatCurrency(order.total)}
                         </span>
                       </div>
@@ -392,12 +391,12 @@ const OrderDetails: React.FC = () => {
             </div>
 
             {/* Order Tracking */}
-            <div className="mt-8 lg:mt-0">
+            <div className="w-full">
               <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-                <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-6">
-                  <h3 className="text-xl font-semibold text-white flex items-center">
+                <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-4 sm:p-6">
+                  <h3 className="text-lg sm:text-xl font-semibold text-white flex items-center">
                     <svg
-                      className="w-6 h-6 mr-2"
+                      className="w-5 h-5 sm:w-6 sm:h-6 mr-2 flex-shrink-0"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -413,15 +412,15 @@ const OrderDetails: React.FC = () => {
                   </h3>
                 </div>
 
-                <div className="p-6">
-                  <div className="space-y-8">
+                <div className="p-4 sm:p-6">
+                  <div className="space-y-6 sm:space-y-8">
                     {/* Delivery Timeline */}
                     <div className="relative">
-                      <div className="flex items-center space-x-4 p-4 bg-blue-50 rounded-xl">
+                      <div className="flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 bg-blue-50 rounded-xl">
                         <div className="flex-shrink-0">
-                          <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-600 rounded-full flex items-center justify-center">
                             <svg
-                              className="w-6 h-6 text-white"
+                              className="w-5 h-5 sm:w-6 sm:h-6 text-white"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -435,11 +434,11 @@ const OrderDetails: React.FC = () => {
                             </svg>
                           </div>
                         </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-semibold text-gray-900 text-sm sm:text-base">
                             Estimated Delivery
                           </h4>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-xs sm:text-sm text-gray-600">
                             Within 48 hours after confirmation
                           </p>
                         </div>
@@ -448,15 +447,15 @@ const OrderDetails: React.FC = () => {
 
                     {/* Current Status */}
                     <div className="relative">
-                      <div className="flex items-center space-x-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl">
+                      <div className="flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl">
                         <div className="flex-shrink-0">
                           <div
-                            className={`w-12 h-12 rounded-full flex items-center justify-center ${getStatusColor(
+                            className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center ${getStatusColor(
                               order.status
                             )}`}
                           >
                             <svg
-                              className="w-6 h-6"
+                              className="w-5 h-5 sm:w-6 sm:h-6"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -470,11 +469,11 @@ const OrderDetails: React.FC = () => {
                             </svg>
                           </div>
                         </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-semibold text-gray-900 text-sm sm:text-base">
                             Current Status
                           </h4>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-xs sm:text-sm text-gray-600">
                             Your order is {order.status.toLowerCase()}
                           </p>
                         </div>
@@ -483,11 +482,11 @@ const OrderDetails: React.FC = () => {
 
                     {/* Delivery Address */}
                     <div className="relative">
-                      <div className="flex items-start space-x-4 p-4 bg-purple-50 rounded-xl">
+                      <div className="flex items-start space-x-3 sm:space-x-4 p-3 sm:p-4 bg-purple-50 rounded-xl">
                         <div className="flex-shrink-0">
-                          <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-600 rounded-full flex items-center justify-center">
                             <svg
-                              className="w-6 h-6 text-white"
+                              className="w-5 h-5 sm:w-6 sm:h-6 text-white"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -507,11 +506,11 @@ const OrderDetails: React.FC = () => {
                             </svg>
                           </div>
                         </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">
                             Delivery Address
                           </h4>
-                          <p className="text-sm text-gray-600 leading-relaxed">
+                          <p className="text-xs sm:text-sm text-gray-600 leading-relaxed break-words">
                             {formatAddress(order.address)}
                           </p>
                         </div>
@@ -521,11 +520,11 @@ const OrderDetails: React.FC = () => {
                     {/* Order Confirmation */}
                     {order.completed_at && (
                       <div className="relative">
-                        <div className="flex items-center space-x-4 p-4 bg-green-50 rounded-xl">
+                        <div className="flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 bg-green-50 rounded-xl">
                           <div className="flex-shrink-0">
-                            <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-600 rounded-full flex items-center justify-center">
                               <svg
-                                className="w-6 h-6 text-white"
+                                className="w-5 h-5 sm:w-6 sm:h-6 text-white"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -539,11 +538,11 @@ const OrderDetails: React.FC = () => {
                               </svg>
                             </div>
                           </div>
-                          <div>
-                            <h4 className="font-semibold text-gray-900">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-semibold text-gray-900 text-sm sm:text-base">
                               Order Confirmed
                             </h4>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-xs sm:text-sm text-gray-600">
                               {new Date(order.completed_at).toLocaleDateString(
                                 "en-US",
                                 {
@@ -565,13 +564,13 @@ const OrderDetails: React.FC = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="mt-8 space-y-3">
+                  <div className="mt-6 sm:mt-8 space-y-3">
                     <button
                       onClick={() => navigate("/store")}
-                      className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 font-medium shadow-lg flex items-center justify-center"
+                      className="w-full px-4 sm:px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 font-medium shadow-lg flex items-center justify-center text-sm sm:text-base"
                     >
                       <svg
-                        className="w-5 h-5 mr-2"
+                        className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -588,10 +587,10 @@ const OrderDetails: React.FC = () => {
 
                     <button
                       onClick={() => navigate("/orders-overview")}
-                      className="w-full px-6 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl hover:border-blue-300 hover:text-blue-600 transition-all duration-200 font-medium flex items-center justify-center"
+                      className="w-full px-4 sm:px-6 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl hover:border-blue-300 hover:text-blue-600 transition-all duration-200 font-medium flex items-center justify-center text-sm sm:text-base"
                     >
                       <svg
-                        className="w-5 h-5 mr-2"
+                        className="w-4 h-4 sm:w-5 sm:h-5 mr-2 flex-shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"

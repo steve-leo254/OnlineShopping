@@ -18,6 +18,9 @@ import { useAuth } from "../context/AuthContext";
 import { formatCurrency } from "../cart/formatCurrency";
 
 const Checkout = () => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
+  const [orderConfirmationData, setOrderConfirmationData] = useState<any>(null);
   const { token } = useAuth();
   const navigate = useNavigate();
   const {
@@ -225,14 +228,43 @@ const Checkout = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (formData.paymentMethod === "mpesa" && orderId) {
-      navigate("/order-confirmation", { state: { orderId } });
+      // For M-Pesa, show order confirmation modal with complete information
+      const confirmationData = {
+        orderId,
+        orderDate: new Date().toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+        name: selectedAddress
+          ? `${selectedAddress.first_name} ${selectedAddress.last_name}`
+          : `${formData.firstName} ${formData.lastName}`,
+        address:
+          deliveryMethod === "delivery" && selectedAddress
+            ? `${selectedAddress.address}, ${selectedAddress.city}, ${selectedAddress.region}`
+            : deliveryMethod === "delivery"
+            ? `${formData.address}, ${formData.city}, ${formData.county}`
+            : "Store Pickup - Main Branch",
+        phoneNumber: selectedAddress?.phone_number || formData.phone || "N/A",
+        deliveryFee: deliveryFee || 0,
+        subtotal: savedOrderDetails.subtotal || subtotal || 0,
+        total: savedOrderDetails.total || total || 0,
+        deliveryMethod,
+        paymentMethod: formData.paymentMethod,
+      };
+
+      setOrderConfirmationData(confirmationData);
+      setShowOrderConfirmation(true);
     } else if (formData.paymentMethod === "cod") {
       try {
-        const orderId = await createOrder();
-        navigate("/order-confirmation", {
-          state: {
-            orderId,
+        const newOrderId = await createOrder();
+
+        if (newOrderId) {
+          // For COD, show order confirmation modal with complete information
+          const confirmationData = {
+            orderId: newOrderId,
             orderDate: new Date().toLocaleDateString("en-US", {
               year: "numeric",
               month: "long",
@@ -240,19 +272,31 @@ const Checkout = () => {
             }),
             name: selectedAddress
               ? `${selectedAddress.first_name} ${selectedAddress.last_name}`
-              : "Store Pickup",
+              : `${formData.firstName} ${formData.lastName}`,
             address:
               deliveryMethod === "delivery" && selectedAddress
                 ? `${selectedAddress.address}, ${selectedAddress.city}, ${selectedAddress.region}`
-                : "Store Pickup",
-            phoneNumber: selectedAddress?.phone_number || "N/A",
+                : deliveryMethod === "delivery"
+                ? `${formData.address}, ${formData.city}, ${formData.county}`
+                : "Store Pickup - Main Branch",
+            phoneNumber:
+              selectedAddress?.phone_number || formData.phone || "N/A",
+            deliveryFee: deliveryFee || 0,
+            subtotal: subtotal || 0,
+            total: total || 0,
             deliveryMethod,
-            paymentMethod,
-          },
-          replace: true,
-        });
+            paymentMethod: formData.paymentMethod,
+          };
+
+          setOrderConfirmationData(confirmationData);
+          setShowOrderConfirmation(true);
+
+          // Optional: Show success toast if you have toast implemented
+          // toast.success(`Order #${newOrderId} created successfully!`);
+        }
       } catch (err) {
         setErrorMessage("Failed to place order");
+        // toast.error("Failed to place order. Please try again.");
       }
     }
   };
@@ -267,6 +311,130 @@ const Checkout = () => {
   const displayTotal = cartItems.length > 0 ? total : savedOrderDetails.total;
   const displayAddress =
     cartItems.length > 0 ? selectedAddress : savedOrderDetails.address;
+
+  const OrderConfirmationModal = () => {
+    if (!showOrderConfirmation || !orderConfirmationData) return null;
+
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-transparent bg-opacity-20 p-4"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setShowOrderConfirmation(false);
+            navigate(`/order-details/${orderConfirmationData.orderId}`);
+          }
+        }}
+      >
+        <div className="bg-white  rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh]  border border-gray-100">
+          <div className="p-6 sm:p-8 relative">
+            <button
+              onClick={() => {
+                setShowOrderConfirmation(false);
+                navigate(`/order-details/${orderConfirmationData.orderId}`);
+              }}
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-all"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            {/* Header with Thank You Message */}
+            <div className="text-center mb-6">
+              {" "}
+              <div className="w-16 h-16 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <svg
+                  className="w-8 h-8 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent mb-2">
+                Thank You!
+              </h3>
+              <p className="text-gray-600 text-base">
+                Your order has been successfully placed
+              </p>
+            </div>
+
+            {/* Order Details Card */}
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50  p-5 rounded-xl mb-6 border border-blue-100">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-lg font-bold text-gray-900 ">
+                    Order #{orderConfirmationData.orderId}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {orderConfirmationData.orderDate}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    {formatCurrency(orderConfirmationData.total)}
+                  </p>
+                  <p className="text-xs text-gray-500">Total Amount</p>
+                </div>
+              </div>
+            </div>
+
+            {/* What's Next Section */}
+            <div className="mb-6 p-4 bg-blue-50  rounded-xl border border-blue-200">
+              <h4 className="font-semibold text-blue-900 mb-2">What's Next?</h4>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• You'll receive order updates via SMS/email</li>
+                <li>
+                  • Our team will prepare your order for{" "}
+                  {orderConfirmationData.deliveryMethod === "delivery"
+                    ? "delivery"
+                    : "pickup"}
+                </li>
+                <li>• Estimated delivery: 2-4 business days</li>
+              </ul>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowOrderConfirmation(false);
+                  navigate("/store");
+                }}
+                className="flex-1 bg-gray-100 text-gray-800 px-6 py-3 rounded-xl hover:bg-gray-200 transition-all duration-300 font-medium border border-gray-200 "
+              >
+                Continue Shopping
+              </button>
+              <button
+                onClick={() => {
+                  setShowOrderConfirmation(false);
+                  navigate("/orders-overview");
+                }}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
+                View Orders
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-4 sm:py-8">
@@ -364,13 +532,25 @@ const Checkout = () => {
                 </div>
 
                 <div className="flex justify-end mt-6 sm:mt-8">
-                  <button
-                    type="button"
-                    onClick={() => handleStepChange(2)}
-                    className="px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 text-sm sm:text-base"
-                  >
-                    Continue to Payment
-                  </button>
+                  <div className="relative inline-block">
+                    <button
+                      type="button"
+                      disabled={!selectedAddress}
+                      onClick={() => handleStepChange(2)}
+                      onMouseEnter={() => setShowTooltip(true)}
+                      onMouseLeave={() => setShowTooltip(false)}
+                      className="disabled:opacity-50 disabled:cursor-not-allowed px-6 sm:px-8 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 text-sm sm:text-base"
+                    >
+                      Continue to Payment
+                    </button>
+
+                    {!selectedAddress && showTooltip && (
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-red-600 text-white text-xs rounded-lg whitespace-nowrap z-50 shadow-lg">
+                        Please select an address to continue
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-red-600"></div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -707,6 +887,7 @@ const Checkout = () => {
           </div>
         </div>
       </div>
+      <OrderConfirmationModal />
     </div>
   );
 };
