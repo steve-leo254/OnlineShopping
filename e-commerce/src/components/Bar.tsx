@@ -215,6 +215,18 @@ const Bar: React.FC = () => {
                       </Link>
                     </li>
                   )}
+                  {role === "admin" && (
+                    <li>
+                      <Link
+                        to="/AdminPage"
+                        title=""
+                        className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
+                      >
+                        {" "}
+                        AdminPage{" "}
+                      </Link>
+                    </li>
+                  )}
                 </ul>
 
                 <div className="p-2 text-sm font-medium text-gray-900 ">

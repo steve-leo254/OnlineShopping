@@ -81,10 +81,10 @@ class LNMORepository:
                 party_a=data["phone_number"],
                 party_b=self.MPESA_LNMO_SHORT_CODE,
                 account_reference=str(data["order_id"]),
-                transaction_category=0,  # PURCHASE_ORDER
-                transaction_type=1,      # CREDIT
-                transaction_channel=1,   # LNMO
-                transaction_aggregator=0, # MPESA_KE
+                transaction_category=0,  
+                transaction_type=1,      
+                transaction_channel=1,  
+                transaction_aggregator=0, 
                 transaction_id=response_data.get("CheckoutRequestID"),
                 transaction_amount=Decimal(str(data["amount"])),
                 transaction_code=None,
@@ -93,7 +93,7 @@ class LNMORepository:
                 _feedback=response_data,
                 _status=models.TransactionStatus.PROCESSING,
                 user_id=user_id,
-                # order_id=None  # Will be linked when order is created
+                # order_id=None  
             )
 
             db.add(transaction)
