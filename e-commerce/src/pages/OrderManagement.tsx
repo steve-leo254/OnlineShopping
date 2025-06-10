@@ -99,6 +99,10 @@ const OrdersManagement: React.FC = () => {
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
+  const [showDeliveredModal, setShowDeliveredModal] = useState(false);
+  const [selectedOrderForDelivery, setSelectedOrderForDelivery] = useState<
+    number | null
+  >(null);
 
   const dropdownRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
 
@@ -351,6 +355,20 @@ const OrdersManagement: React.FC = () => {
     setOpenDropdown(null);
   };
 
+  // Handle mark as delivered modal
+  const handleMarkAsDelivered = (orderId: number) => {
+    setSelectedOrderForDelivery(orderId);
+    setShowDeliveredModal(true);
+    setOpenDropdown(null);
+  };
+
+  // Handle confirm delivery
+  const confirmDelivery = async (orderId: number) => {
+    await updateOrderStatus(orderId, "delivered");
+    setShowDeliveredModal(false);
+    setSelectedOrderForDelivery(null);
+  };
+
   // Fetch orders on mount and when page or status changes
   useEffect(() => {
     fetchOrders();
@@ -601,10 +619,7 @@ const OrdersManagement: React.FC = () => {
                                     order.status !== "cancelled" && (
                                       <button
                                         onClick={() =>
-                                          updateOrderStatus(
-                                            order.order_id,
-                                            "delivered"
-                                          )
+                                          handleMarkAsDelivered(order.order_id)
                                         }
                                         className="w-full flex items-center gap-3 px-3 py-2 text-sm text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors duration-200"
                                       >
@@ -798,6 +813,44 @@ const OrdersManagement: React.FC = () => {
                     className="flex-1 px-4 py-2.5 text-white bg-red-600 hover:bg-red-700 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     Cancel Order
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mark as Delivered Modal */}
+        {showDeliveredModal && selectedOrderForDelivery && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
+              <div className="p-6">
+                <div className="flex items-center justify-center w-12 h-12 mx-auto bg-emerald-100 rounded-full mb-4">
+                  <CheckCircle className="w-6 h-6 text-emerald-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+                  Mark as Delivered
+                </h3>
+                <p className="text-gray-600 text-center mb-6">
+                  Are you sure you want to mark order{" "}
+                  <span className="font-semibold">
+                    #{selectedOrderForDelivery}
+                  </span>{" "}
+                  as delivered? This will update the order status to completed.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDeliveredModal(false)}
+                    className="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => confirmDelivery(selectedOrderForDelivery)}
+                    className="flex-1 px-4 py-2.5 text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Mark Delivered
                   </button>
                 </div>
               </div>
