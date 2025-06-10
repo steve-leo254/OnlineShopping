@@ -956,7 +956,7 @@ const OrdersManagement: React.FC = () => {
                         type="tel"
                         value={mpesaPhone}
                         onChange={(e) => setMpesaPhone(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                        className="text-gray-500 w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
                         placeholder="e.g., 0712345678 or 254712345678"
                         disabled={paymentStatus === "processing"}
                       />
