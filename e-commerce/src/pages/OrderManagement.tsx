@@ -1,8 +1,25 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
+import { formatCurrency } from "../cart/formatCurrency";
+import {
+  Search,
+  Filter,
+  MoreVertical,
+  Eye,
+  X,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  User,
+  Calendar,
+  Banknote,
+  Package,
+  ChevronLeft,
+  ChevronRight,
+  Trash2,
+} from "lucide-react";
 
 // Define interfaces for type safety
 interface Address {
@@ -66,8 +83,8 @@ interface Order {
   order_details?: OrderDetail[];
 }
 
-const OrdersMangement: React.FC = () => {
-  const { token } = useAuth();
+const OrdersManagement: React.FC = () => {
+  const { token, role } = useAuth();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [total, setTotal] = useState(0);
@@ -79,20 +96,18 @@ const OrdersMangement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [accountInfo, setAccountInfo] = useState<User | null>(null);
-
-  // New state for dropdown and modal management
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
 
   const dropdownRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
 
-  // Status options aligned with backend OrderStatus enum
   const statusOptions = [
     { value: "", label: "All Statuses" },
     { value: "pending", label: "Pending" },
     { value: "delivered", label: "Delivered" },
     { value: "cancelled", label: "Cancelled" },
+    { value: "processing", label: "Processed" },
   ];
 
   // Handle clicks outside dropdown to close it
@@ -149,7 +164,7 @@ const OrdersMangement: React.FC = () => {
         `http://127.0.0.1:8000/admin/orders?${params.toString()}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: ` Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }
@@ -189,33 +204,68 @@ const OrdersMangement: React.FC = () => {
     }
 
     try {
-      const response = await axios.put(
+      const response = await fetch(
         `http://127.0.0.1:8000/update-order-status/${orderId}`,
-        { status: newStatus },
         {
+          method: "PUT",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({ status: newStatus }),
         }
       );
 
-      if (response.status === 200) {
-        toast.success(`Order status updated to ${newStatus}.`);
-        fetchOrders();
-        setOpenDropdown(null); // Close dropdown after action
-      } else {
-        const errorData = response.data;
-        setError(
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
           errorData.detail || `Failed to update order status to ${newStatus}.`
         );
       }
+
+      toast.success(`Order status updated to ${newStatus}.`);
+      fetchOrders(); // Refresh orders after status update
+      setOpenDropdown(null);
     } catch (error: any) {
       console.error("Error updating order status:", error);
       setError(
-        error.response?.data?.detail ||
-          "Error updating order status. Please try again."
+        error.message || "Error updating order status. Please try again."
       );
+    }
+  };
+
+  // Handle cancel order
+  const cancelOrder = async (orderId: number) => {
+    if (!token) {
+      setError("No authentication token found. Please log in.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/update-order-status/${orderId}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: "cancelled" }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to cancel order.");
+      }
+
+      toast.success("Order cancelled successfully.");
+      setShowDeleteModal(false);
+      setSelectedOrderId(null);
+      fetchOrders();
+    } catch (error: any) {
+      console.error("Error cancelling order:", error);
+      setError(error.message || "Error cancelling order. Please try again.");
     }
   };
 
@@ -223,13 +273,13 @@ const OrdersMangement: React.FC = () => {
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     setSelectedStatus(value || null);
-    setPage(1); // Reset to first page
+    setPage(1);
   };
 
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
-    setPage(1); // Reset to first page
+    setPage(1);
   };
 
   // Handle search button click
@@ -253,122 +303,36 @@ const OrdersMangement: React.FC = () => {
     });
   };
 
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-KE", {
-      style: "currency",
-      currency: "KES",
-    }).format(amount);
-  };
-
-  // Map API status to frontend display
-  const getStatusBadge = (status) => {
+  // Get status configuration
+  const getStatusConfig = (status: string) => {
     switch (status) {
-      case "processing":
-        return {
-          label: "Processed",
-          className: "bg-blue-200 text-white dark:bg-blue-900 dark:text-white",
-          icon: (
-            <svg
-              className="me-1 h-3 w-3"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M13 7h6l2 4m-8-4v8m0-8V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v9h2m8 0H9m4 0h2m4 0h2v-4m0 0h-5m3.5 5.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm-10 0a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"
-              />
-            </svg>
-          ),
-        };
       case "pending":
         return {
           label: "Pending",
-          className:
-            "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-          icon: (
-            <svg
-              className="me-1 h-3 w-3"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M13 7h6l2 4m-8-4v8m0-8V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v9h2m8 0H9m4 0h2m4 0h2v-4m0 0h-5m3.5 5.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm-10 0a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"
-              />
-            </svg>
-          ),
+          color: "bg-amber-100 text-amber-800 border-amber-200",
+          icon: <Clock className="w-3 h-3" />,
+          dotColor: "bg-amber-500",
         };
       case "delivered":
         return {
-          label: "Confirmed",
-          className:
-            "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-          icon: (
-            <svg
-              className="me-1 h-3 w-3"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M5 11.917 9.724 16.5 19 7.5"
-              />
-            </svg>
-          ),
+          label: "Delivered",
+          color: "bg-emerald-100 text-emerald-800 border-emerald-200",
+          icon: <CheckCircle className="w-3 h-3" />,
+          dotColor: "bg-emerald-500",
         };
       case "cancelled":
         return {
           label: "Cancelled",
-          className:
-            "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-          icon: (
-            <svg
-              className="me-1 h-3 w-3"
-              aria-hidden="true"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M6 18 17.94 6M18 18 6.06 6"
-              />
-            </svg>
-          ),
+          color: "bg-red-100 text-red-800 border-red-200",
+          icon: <X className="w-3 h-3" />,
+          dotColor: "bg-red-500",
         };
       default:
         return {
           label: status,
-          className:
-            "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
-          icon: null,
+          color: "bg-blue-100 text-blue-800 border-blue-200",
+          icon: <Clock className="w-3 h-3" />,
+          dotColor: "bg-blue-500",
         };
     }
   };
@@ -377,430 +341,454 @@ const OrdersMangement: React.FC = () => {
   const showAccountInfo = (user: User) => {
     setAccountInfo(user);
     setShowAccountModal(true);
-    setOpenDropdown(null); // Close dropdown
+    setOpenDropdown(null);
   };
 
   // Handle cancel order modal
   const handleCancelOrder = (orderId: number) => {
     setSelectedOrderId(orderId);
     setShowDeleteModal(true);
-    setOpenDropdown(null); // Close dropdown
+    setOpenDropdown(null);
   };
 
-  // Fetch orders on mount and when page, status, or search changes
+  // Fetch orders on mount and when page or status changes
   useEffect(() => {
     fetchOrders();
-  }, [page, selectedStatus, navigate]);
+  }, [page, selectedStatus, navigate, token]);
 
   return (
-    <>
-      <section className="bg-white py-8 antialiased dark:bg-gray-900 md:py-8">
-        <div className="mx-auto max-w-screen-lg px-4 2xl:px-0">
-          <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white sm:text-2xl md:mb-6">
-            Manage Orders
-          </h2>
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-1 max-w-md">
-              <div className="relative flex-1">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <svg
-                    className="w-4 h-4 text-gray-500 dark:text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                Order Management
+              </h1>
+              <p className="text-slate-600 mt-1">
+                Manage and track all customer orders in one place
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="bg-white rounded-lg px-4 py-2 shadow-sm border border-slate-200">
+                <div className="flex items-center gap-3">
+                  <Package className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <p className="text-sm text-slate-600">Total Orders</p>
+                    <p className="font-semibold text-slate-900">{total}</p>
+                  </div>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Search and Filter Section */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Search Input */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
                 <input
-                  type="search"
-                  id="customer-search"
-                  className="block w-full p-3 pl-10 text-sm text-gray-900 border border-gray-300 rounded-l-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  type="text"
                   placeholder="Search by customer name..."
+                  className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-slate-50 focus:bg-white"
                   value={searchQuery}
                   onChange={handleSearchChange}
                 />
               </div>
+
+              {/* Status Filter */}
+              <div className="relative">
+                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <select
+                  className="appearance-none pl-10 pr-8 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-slate-50 focus:bg-white min-w-48"
+                  onChange={handleStatusChange}
+                  value={selectedStatus || ""}
+                >
+                  {statusOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Search Button */}
               <button
                 onClick={handleSearch}
-                className="px-4 py-3 text-sm font-medium text-white bg-blue-700 rounded-r-lg border border-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md font-medium"
               >
                 Search
               </button>
             </div>
-            <div className="flex gap-3">
-              <select
-                className="block w-48 rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500"
-                onChange={handleStatusChange}
-                value={selectedStatus || ""}
-              >
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+          </div>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+              <p className="text-red-800">{error}</p>
             </div>
           </div>
+        )}
 
-          {error && (
-            <div className="mb-4 text-red-600 dark:text-red-400">{error}</div>
-          )}
-          {loading ? (
-            <div className="text-center text-gray-500 dark:text-gray-400">
-              Loading orders...
+        {/* Loading State */}
+        {loading ? (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12">
+            <div className="flex flex-col items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mb-4"></div>
+              <p className="text-slate-600">Loading orders...</p>
             </div>
-          ) : (
-            <>
-              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800 md:p-8">
-                <h3 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
-                  Latest Orders
-                </h3>
-                {orders.length === 0 ? (
-                  <div className="text-center text-gray-500 dark:text-gray-400">
-                    No orders found.
-                  </div>
-                ) : (
-                  orders.map((order) => {
-                    const badge = getStatusBadge(order.status); // Compute badge once per order
+          </div>
+        ) : (
+          <>
+            {/* Orders List */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="p-6 border-b border-slate-200">
+                <h2 className="text-xl font-semibold text-slate-900">
+                  Recent Orders
+                </h2>
+              </div>
+
+              {orders.length === 0 ? (
+                <div className="p-12 text-center">
+                  <Package className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">
+                    No orders found
+                  </h3>
+                  <p className="text-slate-600">
+                    Try adjusting your search or filter criteria
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-200">
+                  {orders.map((order) => {
+                    const statusConfig = getStatusConfig(order.status);
                     return (
                       <div
                         key={order.order_id}
-                        className="flex flex-wrap items-center gap-y-4 border-b border-gray-200 py-4 dark:border-gray-700 md:py-5"
+                        className="p-6 hover:bg-slate-50 transition-colors duration-200"
                       >
-                        <dl className="w-1/2 sm:w-48">
-                          <dt className="text-base font-medium text-gray-500 dark:text-gray-400">
-                            Order ID:
-                          </dt>
-                          <dd className="mt-1.5 text-base font-semibold text-gray-900 dark:text-white">
-                            <a
-                              href="#"
-                              className="hover:underline"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                navigate(`/admin/orders/${order.order_id}`);
-                              }}
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 grid grid-cols-1 md:grid-cols-5 gap-4">
+                            {/* Order ID */}
+                            <div>
+                              <p className="text-sm font-medium text-slate-500 mb-1">
+                                Order ID
+                              </p>
+                              <button
+                                onClick={() =>
+                                  navigate(`/order-details/${order.order_id}`)
+                                }
+                                className="text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-200"
+                              >
+                                #{order.order_id}
+                              </button>
+                            </div>
+
+                            {/* Customer */}
+                            <div>
+                              <p className="text-sm font-medium text-slate-500 mb-1">
+                                Customer
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <User className="w-4 h-4 text-slate-400" />
+                                <p className="font-medium text-slate-900">
+                                  {order.address
+                                    ? `${order.address.first_name} ${order.address.last_name}`
+                                    : order.user
+                                    ? order.user.username
+                                    : "N/A"}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Date */}
+                            <div>
+                              <p className="text-sm font-medium text-slate-500 mb-1">
+                                Date
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-slate-400" />
+                                <p className="text-slate-900">
+                                  {formatDate(order.datetime)}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Amount */}
+                            <div>
+                              <p className="text-sm font-medium text-slate-500 mb-1">
+                                Amount
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <Banknote className="w-4 h-4 text-slate-400" />{" "}
+                                <p className="font-semibold text-slate-900">
+                                  {formatCurrency(order.total)}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Status */}
+                            <div>
+                              <p className="text-sm font-medium text-slate-500 mb-1">
+                                Status
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className={`w-2 h-2 rounded-full ${statusConfig.dotColor}`}
+                                ></div>
+                                <span
+                                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${statusConfig.color}`}
+                                >
+                                  {statusConfig.icon}
+                                  {statusConfig.label}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Actions Dropdown */}
+                          <div className="relative ml-4">
+                            <button
+                              onClick={() => toggleDropdown(order.order_id)}
+                              className="p-2 hover:bg-slate-100 rounded-lg transition-colors duration-200"
                             >
-                              #{order.order_id}
-                            </a>
-                          </dd>
-                        </dl>
-                        <dl className="w-1/2 sm:w-48">
-                          <dt className="text-base font-medium text-gray-500 dark:text-gray-400">
-                            Customer Name:
-                          </dt>
-                          <dd className="mt-1.5 text-base font-semibold text-gray-900 dark:text-white">
-                            {order.address
-                              ? `${order.address.first_name} ${order.address.last_name}`
-                              : order.user
-                              ? order.user.username
-                              : "N/A"}
-                          </dd>
-                        </dl>
-                        <dl className="w-1/2 sm:w-1/4 md:flex-1 lg:w-auto">
-                          <dt className="text-base font-medium text-gray-500 dark:text-gray-400">
-                            Date:
-                          </dt>
-                          <dd className="mt-1.5 text-base font-semibold text-gray-900 dark:text-white">
-                            {formatDate(order.datetime)}
-                          </dd>
-                        </dl>
-                        <dl className="w-1/2 sm:w-1/5 md:flex-1 lg:w-auto">
-                          <dt className="text-base font-medium text-gray-500 dark:text-gray-400">
-                            Price:
-                          </dt>
-                          <dd className="mt-1.5 text-base font-semibold text-gray-900 dark:text-white">
-                            {formatCurrency(order.total)}
-                          </dd>
-                        </dl>
-                        <dl className="w-1/2 sm:w-1/4 sm:flex-1 lg:w-auto">
-                          <dt className="text-base font-medium text-gray-500 dark:text-gray-400">
-                            Status:
-                          </dt>
-                          <dd
-                            className={`me-2 mt-1.5 inline-flex shrink-0 items-center rounded px-2.5 py-0.5 text-xs font-medium ${badge.className}`}
-                          >
-                            {badge.icon}
-                            {badge.label}
-                          </dd>
-                        </dl>
-                        {/* Rest of the JSX (Actions dropdown) remains unchanged */}
-                        <div className="w-full sm:flex sm:w-32 sm:items-center sm:justify-end sm:gap-4 relative">
-                          <button
-                            type="button"
-                            className="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 md:w-auto"
-                            onClick={() => toggleDropdown(order.order_id)}
-                          >
-                            Actions
-                            <svg
-                              className="-me-0.5 ms-1.5 h-4 w-4"
-                              aria-hidden="true"
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="24"
-                              height="24"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                stroke="currentColor"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="m19 9-7 7-7-7"
-                              />
-                            </svg>
-                          </button>
-                          {openDropdown === order.order_id && (
-                            <div
-                              ref={(el) =>
-                                (dropdownRefs.current[order.order_id] = el)
-                              }
-                              className="absolute right-0 top-full mt-1 z-10 w-48 divide-y divide-gray-100 rounded-lg bg-white shadow-lg dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
-                            >
-                              <ul className="p-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400">
-                                <li>
+                              <MoreVertical className="w-5 h-5 text-slate-600" />
+                            </button>
+
+                            {openDropdown === order.order_id && (
+                              <div
+                                ref={(el) =>
+                                  (dropdownRefs.current[order.order_id] = el)
+                                }
+                                className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-50 animate-in slide-in-from-top-2 duration-200"
+                              >
+                                <div className="p-1">
                                   <button
-                                    className="group inline-flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white"
                                     onClick={() => {
                                       navigate(
                                         `/order-details/${order.order_id}`
                                       );
                                       setOpenDropdown(null);
                                     }}
+                                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-md transition-colors duration-200"
                                   >
-                                    <svg
-                                      className="me-1.5 h-4 w-4 text-gray-400 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white"
-                                      aria-hidden="true"
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      width="24"
-                                      height="24"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        d="M21 12c0 1.2-4.03 6-9 6s-9-4.8-9-6c0-1.2 4.03-6 9-6s9 4.8 9 6Z"
-                                      />
-                                      <path
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                                      />
-                                    </svg>
-                                    Order details
+                                    <Eye className="w-4 h-4" />
+                                    View Details
                                   </button>
-                                </li>
-                                {order.status !== "cancelled" &&
-                                  order.status !== "delivered" && (
-                                    <li>
-                                      <button
-                                        className="group inline-flex w-full items-center rounded-md px-3 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                                        onClick={() =>
-                                          updateOrderStatus(
-                                            order.order_id,
-                                            "cancelled"
-                                          )
-                                        }
-                                      >
-                                        <svg
-                                          className="me-1.5 h-4 w-4"
-                                          aria-hidden="true"
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          width="24"
-                                          height="24"
-                                          fill="none"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <path
-                                            stroke="currentColor"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1M6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z"
-                                          />
-                                        </svg>
-                                        Cancel order
-                                      </button>
-                                    </li>
+
+                                  {order.user && (
+                                    <button
+                                      onClick={() =>
+                                        showAccountInfo(order.user!)
+                                      }
+                                      className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-md transition-colors duration-200"
+                                    >
+                                      <User className="w-4 h-4" />
+                                      Account Info
+                                    </button>
                                   )}
-                                <li>
-                                  <button
-                                    className="group inline-flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-500 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white"
-                                    onClick={() =>
-                                      order.user && showAccountInfo(order.user)
-                                    }
-                                  >
-                                    <svg
-                                      className="me-1.5 h-4 w-4 text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"
-                                      aria-hidden="true"
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      width="24"
-                                      height="24"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        stroke="currentColor"
-                                        strokeLinecap="round"
-                                        strokeWidth="2"
-                                        d="M16 12a4 4 0 1 0-0-8 4 4 0 0 0 0 8z"
-                                      />
-                                      <path
-                                        stroke="currentColor"
-                                        strokeLinecap="round"
-                                        strokeWidth="2"
-                                        d="M3 20v-1 a4 4 0 0 1 4-4 h3"
-                                      />
-                                    </svg>
-                                    Account info
-                                  </button>
-                                </li>
-                                {order.status !== "delivered" &&
-                                  order.status !== "cancelled" && (
-                                    <li>
+
+                                  {order.status !== "delivered" &&
+                                    order.status !== "cancelled" && (
                                       <button
-                                        className="group inline-flex w-full items-center rounded-md px-3 py-2 text-sm text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
                                         onClick={() =>
                                           updateOrderStatus(
                                             order.order_id,
                                             "delivered"
                                           )
                                         }
+                                        className="w-full flex items-center gap-3 px-3 py-2 text-sm text-emerald-700 hover:bg-emerald-50 rounded-md transition-colors duration-200"
                                       >
-                                        <svg
-                                          className="me-1.5 h-4 w-4 text-blue-400 group-hover:text-blue-900 dark:group-hover:text-white"
-                                          aria-hidden="true"
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          width="24"
-                                          height="24"
-                                          fill="none"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <path
-                                            stroke="currentColor"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M5 11.917 9.724 16.5 19 7.5"
-                                          />
-                                        </svg>
+                                        <CheckCircle className="w-4 h-4" />
                                         Mark as Delivered
                                       </button>
-                                    </li>
-                                  )}
-                              </ul>
-                            </div>
-                          )}
+                                    )}
+
+                                  {order.status !== "cancelled" &&
+                                    order.status !== "delivered" && (
+                                      <button
+                                        onClick={() =>
+                                          handleCancelOrder(order.order_id)
+                                        }
+                                        className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-700 hover:bg-red-50 rounded-md transition-colors duration-200"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                        Cancel Order
+                                      </button>
+                                    )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
-                  })
-                )}
-              </div>
+                  })}
+                </div>
+              )}
+            </div>
 
-              {/* Pagination Controls */}
-              {total > 0 && (
-                <div className="mt-6 flex justify-center gap-4">
+            {/* Pagination */}
+            {total > 0 && (
+              <div className="flex items-center justify-between mt-6 z-1">
+                <p className="text-sm text-slate-600">
+                  Showing{" "}
+                  <span className="font-medium">{(page - 1) * limit + 1}</span>{" "}
+                  to{" "}
+                  <span className="font-medium">
+                    {Math.min(page * limit, total)}
+                  </span>{" "}
+                  of <span className="font-medium">{total}</span> results
+                </p>
+
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => handlePageChange(page - 1)}
                     disabled={page === 1}
-                    className="px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-50 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700"
+                    className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                   >
+                    <ChevronLeft className="w-4 h-4" />
                     Previous
                   </button>
-                  <span className="self-center text-sm text-gray-700 dark:text-gray-300">
-                    Page {page} of {Math.ceil(total / limit)}
-                  </span>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from(
+                      { length: Math.min(5, Math.ceil(total / limit)) },
+                      (_, i) => {
+                        const pageNum = i + 1;
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => handlePageChange(pageNum)}
+                            className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                              page === pageNum
+                                ? "bg-blue-600 text-white"
+                                : "text-slate-700 hover:bg-slate-100"
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      }
+                    )}
+                  </div>
+
                   <button
                     onClick={() => handlePageChange(page + 1)}
                     disabled={page === Math.ceil(total / limit)}
-                    className="px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 disabled:opacity-50 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700"
+                    className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                   >
                     Next
+                    <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
-              )}
-            </>
-          )}
+              </div>
+            )}
+          </>
+        )}
 
-          {/* Delete Order Modal */}
-          <div
-            id="deleteOrderModal"
-            tabIndex={-1}
-            aria-hidden="true"
-            className="fixed left-0 right-0 top-0 z-50 hidden w-full items-center justify-center overflow-y-auto overflow-x-hidden h-full bg-gray-900/50 md:h-full"
-          >
-            <div className="relative h-full w-full max-w-md p-4 md:h-auto">
-              <div className="relative rounded-lg bg-white p-4 text-center shadow dark:bg-gray-800 sm:p-5">
-                <button
-                  type="button"
-                  className="absolute right-2.5 top-2.5 ml-auto inline-flex items-center rounded-lg bg-transparent p-1.5 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white"
-                  data-modal-toggle="deleteOrderModal"
-                  onClick={() => setSelectedOrderId(null)}
-                >
-                  <svg
-                    aria-hidden="true"
-                    className="h-5 w-5"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    xmlns="http://www.w3.org/2000/svg"
+        {/* Account Info Modal */}
+        {showAccountModal && accountInfo && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    Account Information
+                  </h3>
+                  <button
+                    onClick={() => setShowAccountModal(false)}
+                    className="p-1 hover:bg-slate-100 rounded-lg transition-colors duration-200"
                   >
-                    <path
-                      fillRule="evenodd"
-                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <span className="sr-only">Close modal</span>
-                </button>
-                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100 p-2 dark:bg-gray-800">
-                  <svg
-                    className="h-6 w-6 text-gray-500 dark:text-gray-400"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1M6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z"
-                    />
-                  </svg>
-                  <span className="sr-only">Danger icon</span>
+                    <X className="w-5 h-5 text-slate-600" />
+                  </button>
                 </div>
-                <p className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium text-slate-500">
+                      Username
+                    </p>
+                    <p className="text-slate-900">{accountInfo.username}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-500">Email</p>
+                    <p className="text-slate-900">
+                      {accountInfo.email || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-500">Role</p>
+                    <p className="text-slate-900">{role || "N/A"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-500">Status</p>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
+                        accountInfo.is_active
+                          ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                          : "bg-red-100 text-red-800 border border-red-200"
+                      }`}
+                    >
+                      <div className="bg-green-500"></div>
+                      Active
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={() => setShowAccountModal(false)}
+                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors duration-200 font-medium"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Order Modal */}
+        {showDeleteModal && selectedOrderId && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    Cancel Order
+                  </h3>
+                  <button
+                    onClick={() => setShowDeleteModal(false)}
+                    className="p-1 hover:bg-slate-100 rounded-lg transition-colors duration-200"
+                  >
+                    <X className="w-5 h-5 text-slate-600" />
+                  </button>
+                </div>
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100">
+                  <Trash2 className="h-6 w-6 text-gray-500" />
+                </div>
+                <p className="mb-4 text-lg font-semibold text-slate-900">
                   Are you sure you want to cancel order #{selectedOrderId}?
                 </p>
-                <p className="mb-4 text-sm text-gray-500 dark:text-gray-300">
+                <p className="mb-4 text-sm text-slate-600">
                   This action cannot be undone.
                 </p>
                 <div className="flex justify-center items-center space-x-4">
                   <button
-                    data-modal-toggle="deleteOrderModal"
-                    type="button"
-                    className="py-2 px-3 text-sm font-medium text-gray-500 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-primary-300 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600"
-                    onClick={() => setSelectedOrderId(null)}
+                    onClick={() => setShowDeleteModal(false)}
+                    className="py-2 px-3 text-sm font-medium text-slate-700 bg-white rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors duration-200"
                   >
                     No, cancel
                   </button>
                   <button
-                    type="submit"
-                    className="py-2 px-3 text-sm font-medium text-center text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-900"
-                    onClick={() =>
-                      selectedOrderId && cancelOrder(selectedOrderId)
-                    }
+                    onClick={() => cancelOrder(selectedOrderId)}
+                    className="py-2 px-3 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-200"
                   >
                     Yes, I'm sure
                   </button>
@@ -808,87 +796,10 @@ const OrdersMangement: React.FC = () => {
               </div>
             </div>
           </div>
-
-          {/* Account Information Modal */}
-          <div
-            id="accountInfoModal"
-            tabIndex={-1}
-            aria-hidden="true"
-            className="fixed left-0 top-0 z-50 hidden w-full items-center justify-center overflow-y-auto overflow-x-hidden h-full bg-gray-900/50 md:h-full"
-          >
-            <div className="relative h-full w-full max-w-md p-4 md:h-auto">
-              <div className="relative rounded-lg bg-white p-4 text-center shadow dark:bg-gray-900 sm:p-5">
-                <button
-                  type="button"
-                  className="absolute right-2.5 top-2.5 ml-auto inline-flex items-center rounded-lg bg-transparent p-0.5 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white"
-                  data-modal-toggle="accountInfoModal"
-                  onClick={() => setAccountInfo(null)}
-                >
-                  <svg
-                    aria-hidden="true"
-                    className="w-5 h-5"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M4.293 4.293a1 1 0 0 0 1.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <span className="sr-only">Close modal</span>
-                </button>
-                <h3 className="mb-4 text-lg font-medium text-gray-900 dark:text-white">
-                  Account Details
-                </h3>
-                {accountInfo ? (
-                  <div className="text-left text-gray-600 dark:text-gray-300">
-                    <p className="mb-2">
-                      <span className="font-semibold text-gray-800 dark:text-gray-200">
-                        Username:
-                      </span>{" "}
-                      {accountInfo.username}
-                    </p>
-                    <p className="mb-2">
-                      <span className="font-semibold text-gray-800 dark:text-gray-200">
-                        Email:
-                      </span>{" "}
-                      {accountInfo.email || "N/A"}
-                    </p>
-                    <p className="mb-2">
-                      <span className="font-semibold text-gray-800 dark:text-gray-200">
-                        Role:
-                      </span>{" "}
-                      {accountInfo.role || "N/A"}
-                    </p>
-                    <p className="mb-2">
-                      <span className="font-semibold text-gray-800 dark:text-gray-200">
-                        Status:
-                      </span>{" "}
-                      {accountInfo.is_active ? "Active" : "Inactive"}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-gray-600 dark:text-gray-300">
-                    No account information available.
-                  </p>
-                )}
-                <button
-                  data-modal-toggle="accountInfoModal"
-                  type="button"
-                  className="mt-4 px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600"
-                  onClick={() => setAccountInfo(null)}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </>
+        )}
+      </div>
+    </div>
   );
 };
 
-export default OrdersMangement;
+export default OrdersManagement;
