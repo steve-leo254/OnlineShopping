@@ -23,6 +23,7 @@ import NotFound from "./pages/NotFound";
 import Payment from "./pages/Payment";
 import CategoryForm from "./components/AddCategory";
 import AboutPage from "./pages/AboutUs";
+import AccountProfile from "./pages/MyProfile";
 function App() {
   return (
     <AuthProvider>
@@ -65,6 +66,7 @@ function App() {
               <Route path="/category" element={<CategoryForm />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="*" element={<NotFound />} />
+              <Route path="/MyProfile" element={<AccountProfile />} />
             </Route>
             {/* </Route> */}
           </Routes>
