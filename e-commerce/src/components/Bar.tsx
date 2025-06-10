@@ -28,7 +28,7 @@ const Bar: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-8">
               <div className="shrink-5">
-                <Link to="#" title="" className="">
+                <Link to="https://www.instagram.com/flowtechs_ltd" title="" className="">
                   {/* <img
                     className="block w-auto h-8 dark:hidden"
                     src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/logo-full.svg"

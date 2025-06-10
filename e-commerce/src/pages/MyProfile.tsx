@@ -260,7 +260,7 @@ const AccountProfile: React.FC = () => {
             Account Overview
           </h1>
           <p className="text-slate-600 text-sm sm:text-base lg:text-lg">
-            Manage your profile, orders, and preferences
+            Your profile, orders, and preferences
           </p>
         </div>
 
