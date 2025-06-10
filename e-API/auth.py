@@ -193,3 +193,26 @@ async def reset_password(token: str, reset_password_request: ResetPasswordReques
     except jwt.DecodeError:
         logger.warning("Invalid reset token")
         raise HTTPException(status_code=401, detail="Invalid token")
+    
+
+
+@router.get("/me", status_code=status.HTTP_200_OK)
+async def get_current_user(db: db_dependency, user: dict = Depends(get_active_user)):
+    """Get current authenticated user information"""
+    try:
+        # Get the user from database using the ID from the token
+        current_user = db.query(Users).filter(Users.id == user["id"]).first()
+        if not current_user:
+            logger.warning(f"User not found in database: {user['id']}")
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        logger.info(f"Retrieved user info for: {current_user.username}")
+        return {
+            "id": current_user.id,
+            "username": current_user.username,
+            "email": current_user.email,
+            "role": current_user.role.value
+        }
+    except Exception as e:
+        logger.error(f"Error retrieving user info: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")

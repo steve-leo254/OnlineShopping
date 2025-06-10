@@ -27,7 +27,7 @@ type Address = {
 };
 
 type DeliveryMethod = "pickup" | "delivery" | null;
-type PaymentMethod = "pay-now" | "pay-later" | null;
+type PaymentMethod = "pay-online" | "pay-later" | null;
 
 type ShoppingCartContext = {
   addToCart: (product: {
