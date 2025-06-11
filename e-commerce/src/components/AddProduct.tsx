@@ -71,6 +71,19 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
     fetchCategories();
   }, []);
 
+  // Calculate selling price whenever original_price or discount changes
+  useEffect(() => {
+    if (formData.original_price > 0) {
+      const discountAmount = (formData.original_price * formData.discount) / 100;
+      const calculatedPrice = formData.original_price - discountAmount;
+      
+      setFormData(prev => ({
+        ...prev,
+        price: Math.round(calculatedPrice * 100) / 100 // Round to 2 decimal places
+      }));
+    }
+  }, [formData.original_price, formData.discount]);
+
   // Handle form input changes
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -346,22 +359,6 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Selling Price *
-                </label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  min="0"
-                  step="0.01"
-                  className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                  placeholder="0.00"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Discount (%)
                 </label>
                 <input
@@ -374,6 +371,25 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                   className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                   placeholder="0"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Selling Price (Auto-calculated)
+                </label>
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price}
+                  min="0"
+                  step="0.01"
+                  className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100 cursor-not-allowed"
+                  placeholder="0.00"
+                  readOnly
+                  disabled
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Calculated as: Original Price - (Original Price × Discount %)
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
