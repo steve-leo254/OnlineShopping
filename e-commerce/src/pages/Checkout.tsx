@@ -109,8 +109,31 @@ const Checkout = () => {
       },
       body: JSON.stringify(cartPayload),
     });
+
     if (!response.ok) {
-      throw new Error("Failed to create order");
+      const errorData = await response.json().catch(() => null);
+
+      // Handle specific error cases
+      if (
+        response.status === 400 &&
+        errorData?.detail?.includes("Insufficient stock")
+      ) {
+        const error = new Error(
+          "Insufficient stock for some items in your cart"
+        );
+        error.details = errorData.detail;
+        throw error;
+      } else if (response.status === 401) {
+        throw new Error("Authentication failed. Please log in again.");
+      } else if (response.status === 404) {
+        throw new Error("Order service not available. Please try again later.");
+      } else if (response.status >= 500) {
+        throw new Error("Server error. Please try again in a few minutes.");
+      } else {
+        throw new Error(
+          errorData?.detail || errorData?.message || "Failed to create order"
+        );
+      }
     }
     clearCart();
     const data = await response.json();

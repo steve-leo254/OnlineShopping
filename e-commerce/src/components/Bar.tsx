@@ -28,7 +28,7 @@ const Bar: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-8">
               <div className="shrink-5">
-                <Link to="#" title="" className="">
+                <Link to="https://www.instagram.com/flowtechs_ltd" title="" className="">
                   {/* <img
                     className="block w-auto h-8 dark:hidden"
                     src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/logo-full.svg"
@@ -36,7 +36,7 @@ const Bar: React.FC = () => {
                   /> */}
                   <img
                     className="hidden w-auto h-20 dark:block"
-                    src="/flowtechlogo.png"
+                    src="/flowtecho.png"
                     alt=""
                   />
                 </Link>
@@ -212,6 +212,30 @@ const Bar: React.FC = () => {
                       >
                         {" "}
                         Products{" "}
+                      </Link>
+                    </li>
+                  )}
+                  {role === "admin" && (
+                    <li>
+                      <Link
+                        to="/AdminPage"
+                        title=""
+                        className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
+                      >
+                        {" "}
+                        AdminPage{" "}
+                      </Link>
+                    </li>
+                  )}
+                  {role === "admin" && (
+                    <li>
+                      <Link
+                        to="/Orders-management"
+                        title=""
+                        className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
+                      >
+                        {" "}
+                        ALL Orders{" "}
                       </Link>
                     </li>
                   )}

@@ -82,6 +82,15 @@ const AddDeliveryDetails: React.FC = () => {
     }));
   };
 
+  // Function to close the modal
+  const closeModal = () => {
+    const modal = document.getElementById("addBillingInformationModal");
+    if (modal) {
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) {
@@ -138,7 +147,7 @@ const AddDeliveryDetails: React.FC = () => {
       });
 
       // Close modal
-      document.getElementById("close-modal-button")?.click();
+      closeModal();
     } catch (err) {
       toast.error("Login required", {
         style: { border: "1px solid #ef4444", color: "#111827" },
@@ -168,8 +177,8 @@ const AddDeliveryDetails: React.FC = () => {
               </h2>
               <button
                 type="button"
+                onClick={closeModal}
                 className="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white"
-                data-modal-toggle="addBillingInformationModal"
               >
                 <svg
                   className="h-3 w-3"
@@ -369,7 +378,7 @@ const AddDeliveryDetails: React.FC = () => {
                 <button
                   type="button"
                   id="close-modal-button"
-                  data-modal-toggle="addBillingInformationModal"
+                  onClick={closeModal}
                   className="me-2 rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700"
                 >
                   Cancel

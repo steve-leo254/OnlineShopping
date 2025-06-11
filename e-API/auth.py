@@ -1,11 +1,14 @@
 from datetime import timedelta, datetime
-from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Annotated ,Optional
+from fastapi import APIRouter, Depends, HTTPException ,Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from starlette import status
 from database import db_dependency
 from models import Users
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from starlette import status
+
+from fastapi.security import  OAuth2PasswordBearer
 import jwt
 from pydantic_models import (
     CreateUserRequest,
@@ -14,7 +17,8 @@ from pydantic_models import (
     LoginUserRequest,
     ForgotPasswordRequest,
     ResetPasswordRequest,
-    TokenVerificationResponse
+    TokenVerificationResponse,
+    Role
 )
 from passlib.context import CryptContext
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
@@ -216,3 +220,235 @@ async def get_current_user(db: db_dependency, user: dict = Depends(get_active_us
     except Exception as e:
         logger.error(f"Error retrieving user info: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
+    
+
+
+
+def require_super_admin(current_user: dict = Depends(get_active_user)):
+    """Dependency to ensure only super admins can access these endpoints"""
+    if current_user["role"] != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only super admins can access this resource"
+        )
+    return current_user
+
+@router.get("/users", status_code=status.HTTP_200_OK)
+async def get_all_admins(
+    db: db_dependency,
+    current_user: dict = Depends(require_super_admin),
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=100),
+    search: Optional[str] = Query(None)
+):
+    """Get all admin users with pagination and search"""
+    try:
+        # Base query for admin users only
+        query = db.query(Users).filter(Users.role == Role.ADMIN)
+        
+        # Add search filter if provided
+        if search:
+            search_term = f"%{search.lower()}%"
+            query = query.filter(
+                (func.lower(Users.username).like(search_term)) |
+                (func.lower(Users.email).like(search_term))
+            )
+        
+        # Get total count for pagination
+        total = query.count()
+        
+        # Apply pagination
+        offset = (page - 1) * limit
+        admins = query.offset(offset).limit(limit).all()
+        
+        # Convert to response format
+        admin_list = []
+        for admin in admins:
+            admin_dict = {
+                "id": admin.id,
+                "username": admin.username,
+                "email": admin.email,
+                "role": admin.role.value,
+                "created_at": admin.created_at.isoformat() if admin.created_at else None,
+                "last_login": admin.last_login.isoformat() if hasattr(admin, 'last_login') and admin.last_login else None,
+                "status": "active"  # Add status logic if you have it in your model
+            }
+            admin_list.append(admin_dict)
+        
+        # Calculate pagination info
+        pages = (total + limit - 1) // limit
+        
+        logger.info(f"Retrieved {len(admin_list)} admins (page {page}/{pages})")
+        
+        return {
+            "items": admin_list,
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "pages": pages
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching admins: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch admin users"
+        )
+
+@router.get("/users/{admin_id}", status_code=status.HTTP_200_OK)
+async def get_admin_by_id(
+    admin_id: int,
+    db: db_dependency,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Get specific admin by ID"""
+    try:
+        admin = db.query(Users).filter(
+            Users.id == admin_id,
+            Users.role == Role.ADMIN
+        ).first()
+        
+        if not admin:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Admin not found"
+            )
+        
+        return {
+            "id": admin.id,
+            "username": admin.username,
+            "email": admin.email,
+            "role": admin.role.value,
+            "created_at": admin.created_at.isoformat() if admin.created_at else None,
+            "last_login": admin.last_login.isoformat() if hasattr(admin, 'last_login') and admin.last_login else None,
+            "status": "active"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching admin {admin_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch admin"
+        )
+
+@router.delete("/users/{admin_id}", status_code=status.HTTP_200_OK)
+async def delete_admin(
+    admin_id: int,
+    db: db_dependency,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Delete an admin user"""
+    try:
+        # Prevent self-deletion
+        if current_user["id"] == admin_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot delete your own account"
+            )
+        
+        admin = db.query(Users).filter(
+            Users.id == admin_id,
+            Users.role == Role.ADMIN
+        ).first()
+        
+        if not admin:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Admin not found"
+            )
+        
+        # Store admin info for logging before deletion
+        admin_username = admin.username
+        
+        db.delete(admin)
+        db.commit()
+        
+        logger.info(f"Admin {admin_username} (ID: {admin_id}) deleted by {current_user['username']}")
+        
+        return {"message": f"Admin {admin_username} deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting admin {admin_id}: {str(e)}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete admin"
+        )
+
+@router.get("/stats", status_code=status.HTTP_200_OK)
+async def get_admin_stats(
+    db: db_dependency,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Get admin statistics for dashboard"""
+    try:
+        # Count total admins
+        total_admins = db.query(Users).filter(Users.role == Role.ADMIN).count()
+        
+        # Count active admins (assuming all are active for now)
+        active_admins = total_admins
+        
+        # Count admins created this month
+        current_month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        admins_this_month = db.query(Users).filter(
+            Users.role == Role.ADMIN,
+            Users.created_at >= current_month_start
+        ).count()
+        
+        # Count total customers for additional context
+        total_customers = db.query(Users).filter(Users.role == Role.CUSTOMER).count()
+        
+        logger.info(f"Admin statistics retrieved by {current_user['username']}")
+        
+        return {
+            "total_admins": total_admins,
+            "active_admins": active_admins,
+            "admins_this_month": admins_this_month,
+            "total_customers": total_customers
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching admin stats: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch admin statistics"
+        )
+
+@router.put("/users/{admin_id}/status", status_code=status.HTTP_200_OK)
+async def update_admin_status(
+    admin_id: int,
+    db: db_dependency,
+    current_user: dict = Depends(require_super_admin)
+):
+    """Toggle admin status (if you implement status field in future)"""
+    try:
+        admin = db.query(Users).filter(
+            Users.id == admin_id,
+            Users.role == Role.ADMIN
+        ).first()
+        
+        if not admin:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Admin not found"
+            )
+        
+        # For now, just return success since status field doesn't exist yet
+        # In future, you can add status field to Users model and toggle it here
+        
+        logger.info(f"Admin {admin.username} status updated by {current_user['username']}")
+        
+        return {"message": "Admin status updated successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating admin status {admin_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update admin status"
+        )

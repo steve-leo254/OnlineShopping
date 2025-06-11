@@ -24,6 +24,7 @@ import Payment from "./pages/Payment";
 import CategoryForm from "./components/AddCategory";
 import AboutPage from "./pages/AboutUs";
 import AccountProfile from "./pages/MyProfile";
+import SuperAdminDashboard from "./pages/AdminPage";
 
 
 
@@ -51,6 +52,7 @@ function App() {
               <Route index element={<Home />} />
               <Route path="/products" element={<Products />} />
               <Route path="/store" element={<Store />} />
+              <Route path="/AdminPage" element={<SuperAdminDashboard />} />
               <Route path="/shopping-cart" element={<ShoppingCart />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/order-summary" element={<OrderSummary />} />

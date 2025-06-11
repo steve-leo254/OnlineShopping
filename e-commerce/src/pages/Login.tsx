@@ -156,11 +156,11 @@ const Login: React.FC = () => {
             className="flex items-center mb-6 text-2xl font-semibold text-gray-900"
           >
             <img
-              className="w-8 h-8 mr-2"
-              src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/logo.svg"
+              className="w-20 h-20 mr-4"
+              src="/logos.png"
               alt="logo"
             />
-            Flowbite
+            FlowTech
           </a>
           <div className="w-full bg-white rounded-lg shadow sm:max-w-md xl:p-0">
             <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
