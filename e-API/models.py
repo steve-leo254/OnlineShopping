@@ -15,6 +15,7 @@ class TransactionStatus(enum.Enum):
 class Role(enum.Enum):
     ADMIN = "admin"
     CUSTOMER = "customer"
+    SUPERADMIN = "SUPERADMIN"
 
 class OrderStatus(enum.Enum):
     PENDING = "pending"

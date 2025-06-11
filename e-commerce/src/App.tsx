@@ -25,6 +25,7 @@ import CategoryForm from "./components/AddCategory";
 import AboutPage from "./pages/AboutUs";
 import AccountProfile from "./pages/MyProfile";
 import SuperAdminDashboard from "./pages/AdminPage";
+import SuperAdminRegister from "./pages/SuperAdmin";
 
 
 
@@ -71,6 +72,7 @@ function App() {
               <Route path="/category" element={<CategoryForm />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="*" element={<NotFound />} />
+              <Route path="/SuperAdmin" element={<SuperAdminRegister />} />
               <Route path="/MyProfile" element={<AccountProfile />} />
             </Route>
             {/* </Route> */}
