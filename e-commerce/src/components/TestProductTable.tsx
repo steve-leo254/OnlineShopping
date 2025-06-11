@@ -11,6 +11,8 @@ import {
   Eye,
 } from "lucide-react";
 import { useFetchProducts } from "./UseFetchProducts";
+import UpdateProductModal from "./UpdateProductModal";
+
 
 const ProductsTable = () => {
   const { isLoading, products, totalPages, totalItems, error, fetchProducts } =
@@ -26,6 +28,8 @@ const ProductsTable = () => {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [categories, setCategories] = useState([]);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [selectedProductForEdit, setSelectedProductForEdit] = useState(null);
 
   const limit = 10;
 
@@ -141,8 +145,16 @@ const ProductsTable = () => {
   };
 
   const handleEdit = (product) => {
-    console.log("Edit product:", product);
+    setSelectedProductForEdit(product);
+    setShowUpdateModal(true);
     setOpenDropdown(null);
+  };
+
+  const handleModalClose = () => {
+    setShowUpdateModal(false);
+    setSelectedProductForEdit(null);
+    // Refresh the products data
+    fetchProducts(currentPage, limit, searchQuery, selectedCategory);
   };
 
   const handleDelete = (product) => {
@@ -185,9 +197,7 @@ const ProductsTable = () => {
 
   // Calculate stats based on all products
   const inStockCount = products.filter((p) => p.stock_quantity > 0).length;
-  const lowStockCount = products.filter(
-    (p) => p.stock_quantity <= 5 && p.stock_quantity > 0
-  ).length;
+  const lowStockCount = products.filter((p) => p.stock_quantity <= 5).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 sm:p-6">
@@ -582,6 +592,13 @@ const ProductsTable = () => {
           </div>
         </div>
       </div>
+      {showUpdateModal && (
+        <UpdateProductModal
+          isOpen={showUpdateModal}
+          onClose={handleModalClose}
+          productToEdit={selectedProductForEdit}
+        />
+      )}
     </div>
   );
 };
