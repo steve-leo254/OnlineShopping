@@ -366,7 +366,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     placeholder="Enter product name"
                     required
                   />
@@ -380,7 +380,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     name="brand"
                     value={formData.brand}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     placeholder="Enter brand name"
                   />
                 </div>
@@ -392,7 +392,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     name="category_id"
                     value={formData.category_id ?? ""}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   >
                     <option value="">Select category</option>
                     {categories.map((category) => (
@@ -411,7 +411,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     name="barcode"
                     value={formData.barcode}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     placeholder="Enter barcode"
                     required
                   />
@@ -437,7 +437,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     onChange={handleChange}
                     min="0"
                     step="0.01"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="0.00"
                     required
                   />
@@ -453,7 +453,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     onChange={handleChange}
                     min="0"
                     step="0.01"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="0.00"
                     required
                   />
@@ -469,7 +469,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     onChange={handleChange}
                     min="0"
                     step="0.01"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="0.00"
                     required
                   />
@@ -485,7 +485,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     onChange={handleChange}
                     min="0"
                     max="100"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="0"
                   />
                 </div>
@@ -499,7 +499,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     value={formData.stock_quantity}
                     onChange={handleChange}
                     min="0"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="0"
                     required
                   />
@@ -526,7 +526,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     min="0"
                     max="5"
                     step="0.1"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
+                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
                     placeholder="4.5"
                   />
                 </div>
@@ -540,7 +540,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     value={formData.reviews}
                     onChange={handleChange}
                     min="0"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
+                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
                     placeholder="0"
                   />
                 </div>
@@ -617,7 +617,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                 value={formData.description}
                 onChange={handleChange}
                 rows={4}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
                 placeholder="Write a detailed product description..."
               />
             </div>
