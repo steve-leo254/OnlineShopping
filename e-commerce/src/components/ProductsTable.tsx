@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useFetchProducts } from "./UseFetchProducts";
 import UpdateProductModal from "./UpdateProductModal";
-
+import AddProduct from "./AddProduct";
 
 const ProductsTable = () => {
   const { isLoading, products, totalPages, totalItems, error, fetchProducts } =
@@ -30,6 +30,7 @@ const ProductsTable = () => {
   const [categories, setCategories] = useState([]);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [selectedProductForEdit, setSelectedProductForEdit] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const limit = 10;
 
@@ -60,6 +61,15 @@ const ProductsTable = () => {
   const handleCategoryFilter = (categoryId) => {
     setSelectedCategory(categoryId);
     setCurrentPage(1);
+  };
+
+  const handleAddProduct = () => {
+    setShowAddModal(true);
+  };
+
+  const handleAddModalClose = () => {
+    setShowAddModal(false);
+    fetchProducts(currentPage, limit, searchQuery, selectedCategory);
   };
 
   const startItem = (currentPage - 1) * limit + 1;
@@ -296,7 +306,10 @@ const ProductsTable = () => {
                   Filter
                 </button>
 
-                <button className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl">
+                <button
+                  onClick={handleAddProduct}
+                  className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                >
                   <Plus className="w-4 h-4" />
                   Add Product
                 </button>
@@ -440,9 +453,7 @@ const ProductsTable = () => {
                               <h3 className="font-semibold text-gray-900">
                                 {product.name}
                               </h3>
-                              <p className="text-sm text-gray-500 mt-1 max-w-xs truncate">
-                                {product.description || "No description"}
-                              </p>
+                              
                             </div>
                           </div>
                         </td>
@@ -598,6 +609,20 @@ const ProductsTable = () => {
           onClose={handleModalClose}
           productToEdit={selectedProductForEdit}
         />
+      )}
+
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div
+              className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
+              onClick={handleAddModalClose}
+            ></div>
+            <div className="relative inline-block w-full max-w-4xl overflow-hidden text-left align-bottom transition-all transform bg-white rounded-2xl shadow-xl sm:align-middle">
+              <AddProduct onClose={handleAddModalClose} />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
