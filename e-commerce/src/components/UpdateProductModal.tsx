@@ -55,10 +55,10 @@ interface UpdateProductModalProps {
   productToEdit: Product | null;
 }
 
-const UpdateProductModal: React.FC<UpdateProductModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  productToEdit 
+const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
+  isOpen,
+  onClose,
+  productToEdit,
 }) => {
   const imgEndpoint = "http://localhost:8000";
   const { token, role } = useAuth();
@@ -86,21 +86,33 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
+  // Function to calculate selling price based on original price and discount
+  const calculateSellingPrice = (originalPrice: number, discount: number): number => {
+    if (originalPrice <= 0) return 0;
+    if (discount < 0) discount = 0;
+    if (discount > 100) discount = 100;
+    
+    const discountAmount = (originalPrice * discount) / 100;
+    return Number((originalPrice - discountAmount).toFixed(2));
+  };
+
   // Fetch categories and set initial form data
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get<Category[]>("http://localhost:8000/public/categories");
+        const response = await axios.get<Category[]>(
+          "http://localhost:8000/public/categories"
+        );
         setCategories(response.data);
       } catch (err) {
         toast.error("Failed to fetch categories");
         console.error("Error fetching categories:", err);
       }
     };
-    
+
     if (isOpen) {
       fetchCategories();
-      
+
       // Set form data when productToEdit changes
       if (productToEdit) {
         setFormData({
@@ -133,26 +145,37 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
     >
   ) => {
     const { name, value, type } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]:
-        type === "checkbox"
-          ? (e.target as HTMLInputElement).checked
-          : name === "cost" ||
-            name === "price" ||
-            name === "original_price" ||
-            name === "stock_quantity" ||
-            name === "barcode" ||
-            name === "rating" ||
-            name === "reviews" ||
-            name === "discount"
-          ? Number(value) || 0
-          : name === "category_id"
-          ? value
-            ? Number(value)
-            : null
-          : value,
-    }));
+    
+    let newFormData = { ...formData };
+    
+    // Update the changed field
+    if (type === "checkbox") {
+      newFormData[name as keyof ProductForm] = (e.target as HTMLInputElement).checked as any;
+    } else if (
+      name === "cost" ||
+      name === "price" ||
+      name === "original_price" ||
+      name === "stock_quantity" ||
+      name === "barcode" ||
+      name === "rating" ||
+      name === "reviews" ||
+      name === "discount"
+    ) {
+      newFormData[name as keyof ProductForm] = (Number(value) || 0) as any;
+    } else if (name === "category_id") {
+      newFormData[name] = value ? Number(value) : null;
+    } else {
+      newFormData[name as keyof ProductForm] = value as any;
+    }
+
+    // Auto-calculate selling price when original_price or discount changes
+    if (name === "original_price" || name === "discount") {
+      const originalPrice = name === "original_price" ? (Number(value) || 0) : newFormData.original_price;
+      const discount = name === "discount" ? (Number(value) || 0) : newFormData.discount;
+      newFormData.price = calculateSellingPrice(originalPrice, discount);
+    }
+
+    setFormData(newFormData);
   };
 
   // Handle image file selection
@@ -291,7 +314,11 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
       return;
     }
 
-    if (!window.confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this product? This action cannot be undone."
+      )
+    ) {
       return;
     }
 
@@ -332,7 +359,9 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                 <Package className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Edit Product</h2>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Edit Product
+                </h2>
                 <p className="text-sm text-gray-600">
                   {productToEdit?.name || "Update product information"}
                 </p>
@@ -460,22 +489,6 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Current Price *
-                  </label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleChange}
-                    min="0"
-                    step="0.01"
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Discount (%)
                   </label>
                   <input
@@ -488,6 +501,23 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     placeholder="0"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Selling Price (Auto-calculated)
+                  </label>
+                  <input
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    step="0.01"
+                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100 cursor-not-allowed transition-all"
+                    placeholder="0.00"
+                    readOnly
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Calculated as: Original Price - (Original Price × Discount ÷ 100)
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -563,7 +593,11 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                 {imagePreview && (
                   <div className="flex justify-center">
                     <img
-                      src={imagePreview.startsWith('data:') ? imagePreview : `${imgEndpoint}${imagePreview}`}
+                      src={
+                        imagePreview.startsWith("data:")
+                          ? imagePreview
+                          : `${imgEndpoint}${imagePreview}`
+                      }
                       alt="Product preview"
                       className="w-32 h-32 object-cover rounded-xl border-2 border-gray-200 shadow-sm"
                     />
@@ -643,7 +677,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                 )}
                 {isUpdating ? "Updating..." : "Update Product"}
               </button>
-              
+
               <button
                 type="button"
                 onClick={handleDelete}
