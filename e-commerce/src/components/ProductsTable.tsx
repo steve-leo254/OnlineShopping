@@ -1,583 +1,605 @@
-import React, {useState} from "react";
+import React, { useState, useEffect } from "react";
+import {
+  Search,
+  Plus,
+  Filter,
+  MoreVertical,
+  Edit,
+  Trash2,
+  Package,
+  TrendingUp,
+  Eye,
+} from "lucide-react";
 import { useFetchProducts } from "./UseFetchProducts";
-import { useEffect } from "react";
-import type { Product } from "./UseFetchProducts";
+import UpdateProductModal from "./UpdateProductModal";
 
-const ProductsTable: React.FC = () => {
+
+const ProductsTable = () => {
   const { isLoading, products, totalPages, totalItems, error, fetchProducts } =
     useFetchProducts();
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedBrand, setSelectedBrand] = useState("");
+  const [selectedStockLevel, setSelectedStockLevel] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [selectedProductForEdit, setSelectedProductForEdit] = useState(null);
 
-  const limit = 10; // Matches the limit used in fetchProducts
+  const limit = 10;
 
-  // Fetch products on mount and when page or search changes
   useEffect(() => {
-    fetchProducts(currentPage, limit, searchQuery);
-  }, [currentPage, searchQuery, fetchProducts]);
+    fetchProducts(currentPage, limit, searchQuery, selectedCategory);
+  }, [currentPage, searchQuery, selectedCategory, fetchProducts]);
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearch = (e) => {
     setSearchQuery(e.target.value);
-    setCurrentPage(1); // Reset to first page on new search
+    setCurrentPage(1);
   };
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
   };
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/public/categories"); // Replace with your actual endpoint
+      const data = await response.json();
+      setCategories(data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
 
-  // Calculate the range for "Showing X-Y of Z"
+  const handleCategoryFilter = (categoryId) => {
+    setSelectedCategory(categoryId);
+    setCurrentPage(1);
+  };
+
   const startItem = (currentPage - 1) * limit + 1;
   const endItem = Math.min(currentPage * limit, totalItems);
 
-  // Generate pagination items (show limited pages with ellipsis)
   const getPaginationItems = () => {
     const items = [];
-    const maxPagesToShow = 5; // Show up to 5 page numbers
+    const maxPagesToShow = 5;
     let startPage = Math.max(1, currentPage - 2);
     let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
 
-    // Adjust startPage if endPage is at the max
     if (endPage - startPage + 1 < maxPagesToShow) {
       startPage = Math.max(1, endPage - maxPagesToShow + 1);
     }
 
-    // Add first page and ellipsis if needed
     if (startPage > 1) {
       items.push(
-        <li key="1">
-          <button
-            onClick={() => handlePageChange(1)}
-            className="flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
-          >
-            1
-          </button>
-        </li>
+        <button
+          key="1"
+          onClick={() => handlePageChange(1)}
+          className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors"
+        >
+          1
+        </button>
       );
       if (startPage > 2) {
         items.push(
-          <li key="start-ellipsis">
-            <span className="flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400">
-              ...
-            </span>
-          </li>
+          <span key="start-ellipsis" className="px-3 py-2 text-gray-500">
+            ...
+          </span>
         );
       }
     }
 
-    // Add page numbers
     for (let page = startPage; page <= endPage; page++) {
       items.push(
-        <li key={page}>
-          <button
-            onClick={() => handlePageChange(page)}
-            aria-current={page === currentPage ? 'page' : undefined}
-            className={`flex items-center justify-center text-sm py-2 px-3 leading-tight border border-gray-300 ${
-              page === currentPage
-                ? 'z-10 text-blue-600 bg-blue-50 border-blue-300 hover:bg-blue-100 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-700 dark:text-white'
-                : 'text-gray-500 bg-white hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white'
-            }`}
-          >
-            {page}
-          </button>
-        </li>
+        <button
+          key={page}
+          onClick={() => handlePageChange(page)}
+          className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+            page === currentPage
+              ? "bg-blue-600 text-white shadow-sm"
+              : "text-gray-500 bg-white border border-gray-300 hover:bg-gray-50 hover:text-gray-700"
+          }`}
+        >
+          {page}
+        </button>
       );
     }
 
-    // Add last page and ellipsis if needed
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
         items.push(
-          <li key="end-ellipsis">
-            <span className="flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400">
-              ...
-            </span>
-          </li>
+          <span key="end-ellipsis" className="px-3 py-2 text-gray-500">
+            ...
+          </span>
         );
       }
       items.push(
-        <li key={totalPages}>
-          <button
-            onClick={() => handlePageChange(totalPages)}
-            className="flex items-center justify-center text-sm py-2 px-3 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
-          >
-            {totalPages}
-          </button>
-        </li>
+        <button
+          key={totalPages}
+          onClick={() => handlePageChange(totalPages)}
+          className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors"
+        >
+          {totalPages}
+        </button>
       );
     }
 
     return items;
   };
+
+  const getStockStatus = (stock) => {
+    if (stock > 20)
+      return { text: "In Stock", color: "bg-emerald-100 text-emerald-800" };
+    if (stock > 5)
+      return { text: "Low Stock", color: "bg-amber-100 text-amber-800" };
+    return { text: "Out of Stock", color: "bg-red-100 text-red-800" };
+  };
+
+  const toggleDropdown = (productId) => {
+    setOpenDropdown(openDropdown === productId ? null : productId);
+  };
+
+  const handleEdit = (product) => {
+    setSelectedProductForEdit(product);
+    setShowUpdateModal(true);
+    setOpenDropdown(null);
+  };
+
+  const handleModalClose = () => {
+    setShowUpdateModal(false);
+    setSelectedProductForEdit(null);
+    // Refresh the products data
+    fetchProducts(currentPage, limit, searchQuery, selectedCategory);
+  };
+
+  const handleDelete = (product) => {
+    console.log("Delete product:", product);
+    setOpenDropdown(null);
+  };
+
+  // Get unique brands from current products
+  const uniqueBrands = [...new Set(products.map((product) => product.brand))];
+
+  // Filter products based on local filters (brand, stock level, price range)
+  const filteredProducts = products.filter((product) => {
+    if (selectedBrand && product.brand !== selectedBrand) return false;
+    if (selectedStockLevel) {
+      const stock = product.stock_quantity;
+      if (selectedStockLevel === "In Stock" && stock <= 20) return false;
+      if (selectedStockLevel === "Low Stock" && (stock <= 5 || stock > 20))
+        return false;
+      if (selectedStockLevel === "Out of Stock" && stock > 0) return false;
+    }
+    if (minPrice && product.price < parseFloat(minPrice)) return false;
+    if (maxPrice && product.price > parseFloat(maxPrice)) return false;
+    return true;
+  });
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest(".dropdown-container")) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  // Calculate stats based on all products
+  const inStockCount = products.filter((p) => p.stock_quantity > 0).length;
+  const lowStockCount = products.filter((p) => p.stock_quantity <= 5).length;
+
   return (
-    <>
-      {/* <!-- Start block --> */}
-      <section className="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-        <div className="mx-auto max-w-screen-xl px-4 lg:px-12">
-          {/* <!-- Start coding here --> */}
-          <div className="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-            <div className="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">
-              <div className="w-full md:w-1/2">
-                {/* ================SEARCH================== */}
-                <form className="flex items-center">
-                  <label htmlFor="simple-search" className="sr-only">
-                    Search
-                  </label>
-                  <div className="relative w-full">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                      <svg
-                        aria-hidden="true"
-                        className="w-5 h-5 text-gray-500 dark:text-gray-400"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          fill-rule="evenodd"
-                          d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                          clip-rule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                    <input
-                      type="text"
-                      id="simple-search"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                      placeholder="Search"
-                      required
-                      value={searchQuery}
-                      onChange={handleSearch}
-                    />
-                  </div>
-                </form>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-blue-600 rounded-xl">
+              <Package className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900">Products</h1>
+          </div>
+          <p className="text-gray-600">
+            Manage your product inventory and track performance
+          </p>
+        </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600">{error}</p>
+          </div>
+        )}
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">
+                  Total Products
+                </p>
+                <p className="text-2xl font-bold text-gray-900">{totalItems}</p>
               </div>
-              <div className="w-full md:w-auto flex flex-col md:flex-row space-y-2 md:space-y-0 items-stretch md:items-center justify-end md:space-x-3 flex-shrink-0">
+              <div className="p-3 bg-blue-100 rounded-xl">
+                <Package className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">In Stock</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {inStockCount}
+                </p>
+              </div>
+              <div className="p-3 bg-emerald-100 rounded-xl">
+                <TrendingUp className="w-6 h-6 text-emerald-600" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Low Stock</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {lowStockCount}
+                </p>
+              </div>
+              <div className="p-3 bg-amber-100 rounded-xl">
+                <Eye className="w-6 h-6 text-amber-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Table Container */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          {/* Table Header */}
+          <div className="p-6 border-b border-gray-100">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              {/* Search */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={handleSearch}
+                  className="text-gray-500 w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-3">
                 <button
-                  type="button"
-                  id="createProductModalButton"
-                  data-modal-target="createProductModal"
-                  data-modal-toggle="createProductModal"
-                  className="bg-blue-600 flex items-center justify-center text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
+                    showFilters
+                      ? "bg-blue-600 text-white shadow-lg"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
                 >
-                  <svg
-                    className="h-3.5 w-3.5 mr-2"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                  >
-                    <path
-                      clip-rule="evenodd"
-                      fill-rule="evenodd"
-                      d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                    />
-                  </svg>
-                  Add product
+                  <Filter className="w-4 h-4" />
+                  Filter
                 </button>
 
-                <div className="flex items-center space-x-3 w-full md:w-auto">
-                  <button
-                    id="actionsDropdownButton"
-                    data-dropdown-toggle="actionsDropdown"
-                    className="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
-                    type="button"
-                  >
-                    <svg
-                      className="-ml-1 mr-1.5 w-5 h-5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      xmlns="http://www.w3.org/2000/svg"
-                      aria-hidden="true"
-                    >
-                      <path
-                        clip-rule="evenodd"
-                        fill-rule="evenodd"
-                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                      />
-                    </svg>
-                    Actions
-                  </button>
-                  <div
-                    id="actionsDropdown"
-                    className="hidden z-10 w-44 bg-white rounded divide-y divide-gray-100 shadow dark:bg-gray-700 dark:divide-gray-600"
-                  >
-                    <ul
-                      className="py-1 text-sm text-gray-700 dark:text-gray-200"
-                      aria-labelledby="actionsDropdownButton"
-                    >
-                      <li>
-                        <button
-                          type="button"
-                          data-modal-target="updateProductModal"
-                          data-modal-toggle="updateProductModal"
-                          className="flex w-full items-center py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white text-gray-700 dark:text-gray-200"
-                        >
-                          <svg
-                            className="w-4 h-4 mr-2"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                            aria-hidden="true"
-                          >
-                            <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
-                            <path
-                              fill-rule="evenodd"
-                              clip-rule="evenodd"
-                              d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"
-                            />
-                          </svg>
-                          Edit
-                        </button>
-                      </li>
-                    </ul>
-                    <div className="py-1">
-                      <a
-                        href="#"
-                        className="block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
-                      >
-                        Delete all
-                      </a>
-                    </div>
-                  </div>
-                  <button
-                    id="filterDropdownButton"
-                    data-dropdown-toggle="filterDropdown"
-                    className="w-full md:w-auto flex items-center justify-center py-2 px-4 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700"
-                    type="button"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      aria-hidden="true"
-                      className="h-4 w-4 mr-2 text-gray-400"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
-                        clip-rule="evenodd"
-                      />
-                    </svg>
-                    Filter
-                    <svg
-                      className="-mr-1 ml-1.5 w-5 h-5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      xmlns="http://www.w3.org/2000/svg"
-                      aria-hidden="true"
-                    >
-                      <path
-                        clip-rule="evenodd"
-                        fill-rule="evenodd"
-                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                      />
-                    </svg>
-                  </button>
-                  <div
-                    id="filterDropdown"
-                    className="z-10 hidden w-56 p-3 bg-white rounded-lg shadow dark:bg-gray-700"
-                  >
-                    <h6 className="mb-3 text-sm font-medium text-gray-900 dark:text-white">
-                      Category
-                    </h6>
-                    <ul
-                      className="space-y-2 text-sm"
-                      aria-labelledby="filterDropdownButton"
-                    >
-                      <li className="flex items-center">
-                        <input
-                          id="apple"
-                          type="checkbox"
-                          value=""
-                          className="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
-                        />
-                        <label
-                          htmlFor="apple"
-                          className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100"
-                        >
-                          Apple (56)
-                        </label>
-                      </li>
-                      <li className="flex items-center">
-                        <input
-                          id="fitbit"
-                          type="checkbox"
-                          value=""
-                          className="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
-                        />
-                        <label
-                          htmlFor="fitbit"
-                          className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100"
-                        >
-                          Fitbit (56)
-                        </label>
-                      </li>
-                      <li className="flex items-center">
-                        <input
-                          id="dell"
-                          type="checkbox"
-                          value=""
-                          className="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
-                        />
-                        <label
-                          htmlFor="dell"
-                          className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100"
-                        >
-                          Dell (56)
-                        </label>
-                      </li>
-                      <li className="flex items-center">
-                        <input
-                          id="asus"
-                          type="checkbox"
-                          value=""
-                          checked={false}
-                          className="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
-                        />
-                        <label
-                          htmlFor="asus"
-                          className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100"
-                        >
-                          Asus (97)
-                        </label>
-                      </li>
-                      <li className="flex items-center">
-                        <input
-                          id="logitech"
-                          type="checkbox"
-                          value=""
-                          checked={false}
-                          className="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
-                        />
-                        <label
-                          htmlFor="logitech"
-                          className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100"
-                        >
-                          Logitech (97)
-                        </label>
-                      </li>
-                      <li className="flex items-center">
-                        <input
-                          id="msi"
-                          type="checkbox"
-                          value=""
-                          checked={false}
-                          className="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
-                        />
-                        <label
-                          htmlFor="msi"
-                          className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100"
-                        >
-                          MSI (97)
-                        </label>
-                      </li>
-                      <li className="flex items-center">
-                        <input
-                          id="bosch"
-                          type="checkbox"
-                          value=""
-                          checked={false}
-                          className="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
-                        />
-                        <label
-                          htmlFor="bosch"
-                          className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100"
-                        >
-                          Bosch (176)
-                        </label>
-                      </li>
-                      <li className="flex items-center">
-                        <input
-                          id="sony"
-                          type="checkbox"
-                          value=""
-                          className="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
-                        />
-                        <label
-                          htmlFor="sony"
-                          className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100"
-                        >
-                          Sony (234)
-                        </label>
-                      </li>
-                      <li className="flex items-center">
-                        <input
-                          id="samsung"
-                          type="checkbox"
-                          value=""
-                          checked={false}
-                          className="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
-                        />
-                        <label
-                          htmlFor="samsung"
-                          className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100"
-                        >
-                          Samsung (76)
-                        </label>
-                      </li>
-                      <li className="flex items-center">
-                        <input
-                          id="canon"
-                          type="checkbox"
-                          value=""
-                          className="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
-                        />
-                        <label
-                          htmlFor="canon"
-                          className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100"
-                        >
-                          Canon (49)
-                        </label>
-                      </li>
-                      <li className="flex items-center">
-                        <input
-                          id="microsoft"
-                          type="checkbox"
-                          value=""
-                          className="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
-                        />
-                        <label
-                          htmlFor="microsoft"
-                          className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100"
-                        >
-                          Microsoft (45)
-                        </label>
-                      </li>
-                      <li className="flex items-center">
-                        <input
-                          id="razor"
-                          type="checkbox"
-                          value=""
-                          className="w-4 h-4 bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
-                        />
-                        <label
-                          htmlFor="razor"
-                          className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100"
-                        >
-                          Razor (49)
-                        </label>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
+                <button className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl">
+                  <Plus className="w-4 h-4" />
+                  Add Product
+                </button>
               </div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+
+            {/* Filter Panel */}
+            {showFilters && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <select
+                    className="text-gray-500 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={selectedBrand}
+                    onChange={(e) => setSelectedBrand(e.target.value)}
+                  >
+                    <option value="">All Brands</option>
+                    {uniqueBrands.map((brand) => (
+                      <option key={brand} value={brand}>
+                        {brand}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="text-gray-500 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={selectedStockLevel}
+                    onChange={(e) => setSelectedStockLevel(e.target.value)}
+                  >
+                    <option value="">All Stock Levels</option>
+                    <option value="In Stock">In Stock</option>
+                    <option value="Low Stock">Low Stock</option>
+                    <option value="Out of Stock">Out of Stock</option>
+                  </select>
+                  <select
+                    className="text-gray-500 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={selectedCategory || ""}
+                    onChange={(e) =>
+                      handleCategoryFilter(
+                        e.target.value ? parseInt(e.target.value) : null
+                      )
+                    }
+                  >
+                    <option value="">All Categories</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    placeholder="Min Price"
+                    value={minPrice}
+                    onChange={(e) => setMinPrice(e.target.value)}
+                    className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Max Price"
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(e.target.value)}
+                    className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">
+                    Product
+                  </th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">
+                    Price
+                  </th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">
+                    Original Price
+                  </th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">
+                    Stock
+                  </th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">
+                    Brand
+                  </th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">
+                    Category
+                  </th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">
+                    Rating
+                  </th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">
+                    Status
+                  </th>
+                  <th className="text-right py-4 px-6 font-semibold text-gray-900">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {isLoading ? (
                   <tr>
-                    <th scope="col" className="px-4 py-4">
-                      Name
-                    </th>
-                    <th scope="col" className="px-4 py-3">
-                      Price
-                    </th>
-                    <th scope="col" className="px-4 py-3">
-                      Stock
-                    </th>
-                    <th scope="col" className="px-4 py-3">
-                      Brand
-                    </th>
-                    <th scope="col" className="px-4 py-3">
-                      Description
-                    </th>
+                    <td colSpan="9" className="py-12 text-center">
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <span className="ml-3 text-gray-600">
+                          Loading products...
+                        </span>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {products.map((product) => (
-                    <tr
-                      key={product.id}
-                      className="border-b dark:border-gray-700"
-                    >
-                      <th
-                        scope="row"
-                        className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+                ) : filteredProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan="9" className="py-12 text-center text-gray-500">
+                      No products found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredProducts.map((product) => {
+                    const stockStatus = getStockStatus(product.stock_quantity);
+                    return (
+                      <tr
+                        key={product.id}
+                        className="hover:bg-gray-50 transition-colors duration-150"
                       >
-                        {product.name}
-                      </th>
-                      <td className="px-4 py-3">Ksh {product.price}</td>
-                      <td className="px-4 py-3">{product.stock_quantity}</td>
-                      <td className="px-4 py-3 max-w-[12rem] truncate">
-                        {product.brand}
-                      </td>
-                      <td className="px-4 py-3">{product.description}</td>
-                     
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-             <nav
-            className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0 p-4"
-            aria-label="Table navigation"
-          >
-            <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
-              Showing
-              <span className="font-semibold text-gray-900 dark:text-white">
-                {` ${startItem}-${endItem} `}
-              </span>
-              of
-              <span className="font-semibold text-gray-900 dark:text-white">
-                {` ${totalItems}`}
-              </span>
-            </span>
-            <ul className="inline-flex items-stretch -space-x-px">
-              <li>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-3">
+                            {product.img_url && (
+                              <img
+                                src={`http://localhost:8000${product.img_url}`}
+                                alt={product.name}
+                                className="w-12 h-12 rounded-lg object-cover bg-gray-100"
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                }}
+                              />
+                            )}
+                            <div>
+                              <h3 className="font-semibold text-gray-900">
+                                {product.name}
+                              </h3>
+                              <p className="text-sm text-gray-500 mt-1 max-w-xs truncate">
+                                {product.description || "No description"}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="font-semibold text-gray-900">
+                            Ksh {product.price?.toLocaleString() || 0}
+                          </span>
+                          {product.discount > 0 && (
+                            <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                              -{product.discount}%
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="text-gray-500 line-through">
+                            Ksh {product.original_price?.toLocaleString() || 0}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="font-medium text-gray-900">
+                            {product.stock_quantity}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                            {product.brand}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="text-sm text-gray-600">
+                            {product.category?.name || "No category"}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-1">
+                            <span className="text-yellow-400">★</span>
+                            <span className="text-sm font-medium">
+                              {product.rating}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              ({product.reviews})
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span
+                            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${stockStatus.color}`}
+                          >
+                            {stockStatus.text}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6 text-right">
+                          <div className="relative dropdown-container">
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                toggleDropdown(product.id);
+                              }}
+                              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
+
+                            {openDropdown === product.id && (
+                              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleEdit(product);
+                                  }}
+                                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                                >
+                                  <Edit className="w-4 h-4 text-blue-600" />
+                                  Edit Product
+                                </button>
+                                <hr className="my-1 border-gray-100" />
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDelete(product);
+                                  }}
+                                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Delete Product
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="text-sm text-gray-600">
+                Showing{" "}
+                <span className="font-semibold text-gray-900">
+                  {startItem}-{endItem}
+                </span>{" "}
+                of{" "}
+                <span className="font-semibold text-gray-900">
+                  {totalItems}
+                </span>{" "}
+                products
+              </div>
+
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className={`flex items-center justify-center h-full py-1.5 px-3 ml-0 text-gray-500 bg-white rounded-l-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white ${
-                    currentPage === 1 ? 'cursor-not-allowed opacity-50' : ''
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    currentPage === 1
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-gray-600 hover:bg-gray-200 bg-white border border-gray-300"
                   }`}
                 >
-                  <span className="sr-only">Previous</span>
-                  <svg
-                    className="w-5 h-5"
-                    aria-hidden="true"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  Previous
                 </button>
-              </li>
-              {getPaginationItems()}
-              <li>
+
+                <div className="flex items-center gap-1">
+                  {getPaginationItems()}
+                </div>
+
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className={`flex items-center justify-center h-full py-1.5 px-3 leading-tight text-gray-500 bg-white rounded-r-lg border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white ${
-                    currentPage === totalPages ? 'cursor-not-allowed opacity-50' : ''
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    currentPage === totalPages
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-gray-600 hover:bg-gray-200 bg-white border border-gray-300"
                   }`}
                 >
-                  <span className="sr-only">Next</span>
-                  <svg
-                    className="w-5 h-5"
-                    aria-hidden="true"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  Next
                 </button>
-              </li>
-            </ul>
-          </nav>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
-    </>
+      </div>
+      {showUpdateModal && (
+        <UpdateProductModal
+          isOpen={showUpdateModal}
+          onClose={handleModalClose}
+          productToEdit={selectedProductForEdit}
+        />
+      )}
+    </div>
   );
 };
 
