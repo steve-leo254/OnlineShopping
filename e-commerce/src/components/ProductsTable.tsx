@@ -453,7 +453,6 @@ const ProductsTable = () => {
                               <h3 className="font-semibold text-gray-900">
                                 {product.name}
                               </h3>
-                              
                             </div>
                           </div>
                         </td>
@@ -612,7 +611,7 @@ const ProductsTable = () => {
       )}
 
       {showAddModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="fixed inset-0 z-50 overflow-y-auto overflow-hidden">
           <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
             <div
               className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
