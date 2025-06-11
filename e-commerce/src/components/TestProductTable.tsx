@@ -1,487 +1,512 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from "react";
+import { useFetchProducts } from "../components/UseFetchProducts";
+import { useShoppingCart } from "../context/ShoppingCartContext";
+import { formatCurrency } from "../cart/formatCurrency";
+import {
+  ShoppingCart,
+  Star,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Sparkles,
+  Zap,
+  Shield,
+  CheckCircle,
+  X,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-interface Order {
-  id: string;
-  date: string;
-  price: string;
-  status: 'In transit' | 'Cancelled' | 'Completed';
-}
+const Home: React.FC = () => {
+  const navigate = useNavigate();
+  // Use the custom hook to fetch products for carousel
+  const { isLoading, products, error, fetchProducts } = useFetchProducts();
+  const { addToCart } = useShoppingCart();
+  const imgEndPoint = "http://127.0.0.1:8000";
 
-const orders: Order[] = [
-  { id: '#FWB12546798', date: '11.12.2023', price: '$499', status: 'In transit' },
-  { id: '#FWB12546777', date: '10.11.2024', price: '$3,287', status: 'Cancelled' },
-  { id: '#FWB12546846', date: '07.11.2024', price: '$111', status: 'Completed' },
-  { id: '#FWB12546212', date: '18.10.2024', price: '$756', status: 'Completed' },
-];
+  // Ref for carousel container
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const scrollSpeed = 0.7; // Pixels to scroll per frame
 
-const AccountProfile: React.FC = () => {
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  // Enhanced alert notification state
+  const [notification, setNotification] = useState({
+    show: false,
+    message: "",
+    type: "success" as "success" | "error" | "info",
+  });
 
-  const handleCancelOrderClick = (orderId: string) => {
-    setSelectedOrderId(orderId);
+  // Notification timeout ref
+  const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch products when component mounts
+  useEffect(() => {
+    fetchProducts(1, 100, ""); // Fetch many more products for carousel
+  }, [fetchProducts]);
+
+  // Effect for continuous scroll loop carousel (for products)
+  useEffect(() => {
+    const carousel = carouselRef.current;
+    if (!carousel || products.length === 0) return;
+
+    let animationFrameId: number;
+    let isHovered = false;
+
+    const scrollStep = () => {
+      if (!isHovered) {
+        // Increment scrollLeft
+        carousel.scrollLeft += scrollSpeed;
+
+        // When scrollLeft passes half the scrollWidth, reset to 0
+        if (carousel.scrollLeft >= carousel.scrollWidth / 2) {
+          carousel.scrollLeft = 0;
+        }
+      }
+      animationFrameId = requestAnimationFrame(scrollStep);
+    };
+
+    animationFrameId = requestAnimationFrame(scrollStep);
+
+    // Handlers to pause scroll on hover
+    const handleMouseEnter = () => {
+      isHovered = true;
+    };
+    const handleMouseLeave = () => {
+      isHovered = false;
+    };
+
+    carousel.addEventListener("mouseenter", handleMouseEnter);
+    carousel.addEventListener("mouseleave", handleMouseLeave);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      carousel.removeEventListener("mouseenter", handleMouseEnter);
+      carousel.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, [products]); // Restart effect when products change
+
+  // Enhanced notification function
+  const showNotification = (message: string, type: "success" | "error" | "info" = "success") => {
+    // Clear existing timeout
+    if (notificationTimeoutRef.current) {
+      clearTimeout(notificationTimeoutRef.current);
+    }
+
+    setNotification({ show: true, message, type });
+    
+    // Auto-hide after 4 seconds
+    notificationTimeoutRef.current = setTimeout(() => {
+      hideNotification();
+    }, 4000);
+  };
+
+  const hideNotification = () => {
+    setNotification(prev => ({ ...prev, show: false }));
+    if (notificationTimeoutRef.current) {
+      clearTimeout(notificationTimeoutRef.current);
+      notificationTimeoutRef.current = null;
+    }
+  };
+
+  // Helper function for adding to cart with enhanced alert notification
+  const addToCartWithAlert = (product: any) => {
+    try {
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        img_url: imgEndPoint + product.img_url,
+      });
+      showNotification(`${product.name} added to cart!`, "success");
+    } catch (error) {
+      showNotification("Failed to add item to cart. Please try again.", "error");
+    }
+  };
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (notificationTimeoutRef.current) {
+        clearTimeout(notificationTimeoutRef.current);
+      }
+    };
+  }, []);
+  
+  //  ============== HERO =============
+  //  =================================
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper function to clear interval safely
+  const clearHeroInterval = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
+  // Hero carousel images
+  const heroImages = [
+    {
+      src: "https://images.unsplash.com/photo-1675049626914-b2e051e92f23?w=400&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8Z2FtaW5nJTIwc2V0dXB8ZW58MHx8MHx8fDA%3D",
+      alt: "Premium Gaming Setup",
+      title: "Elevate Your Gaming",
+      subtitle:
+        "Discover premium gaming hardware that delivers unmatched performance",
+      cta: "Shop Gaming",
+    },
+    {
+      src: "https://images.pexels.com/photos/699459/pexels-photo-699459.jpeg",
+      alt: "Professional Workspace",
+      title: "Professional Workspace",
+      subtitle: "Transform your productivity with cutting-edge technology",
+      cta: "Explore Workspace",
+    },
+    {
+      src:"https://images.pexels.com/photos/17753940/pexels-photo-17753940/free-photo-of-an-iphone-lying-next-to-a-keyboard-on-a-desk.jpeg?auto=compress&cs=tinysrgb&w=400",
+      alt: "Latest Technology",
+      title: "Latest Technology",
+      subtitle: "Stay ahead with the newest innovations in tech",
+      cta: "View New Arrivals",
+    },
+  ];
+
+  // Auto-slide for hero carousel
+  useEffect(() => {
+    clearHeroInterval();
+
+    intervalRef.current = setInterval(() => {
+      setCurrentIndex((prev) =>
+        prev === heroImages.length - 1 ? 0 : prev + 1
+      );
+    }, 5000);
+
+    return () => {
+      clearHeroInterval();
+    };
+  }, [heroImages.length]); // Remove currentIndex dependency to prevent unnecessary restarts
+
+  const prevSlide = () => {
+    clearHeroInterval(); // Clear auto-slide when user manually navigates
+    setCurrentIndex((prev) => (prev === 0 ? heroImages.length - 1 : prev - 1));
+  };
+
+  const nextSlide = () => {
+    clearHeroInterval(); // Clear auto-slide when user manually navigates
+    setCurrentIndex((prev) => (prev === heroImages.length - 1 ? 0 : prev + 1));
+  };
+
+  const goToSlide = (index: number) => {
+    clearHeroInterval(); // Clear auto-slide when user manually navigates
+    setCurrentIndex(index);
   };
 
   return (
-    <section className="bg-white py-8 antialiased dark:bg-gray-900 md:py-8">
-      <div className="mx-auto max-w-screen-lg px-4 2xl:px-0">
-        <nav className="mb-4 flex" aria-label="Breadcrumb">
-          <ol className="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse">
-            <li className="inline-flex items-center">
-              <a href="#" className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-primary-600 dark:text-gray-400 dark:hover:text-white">
-                <svg className="me-2 h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m4 12 8-8 8 8M6 10.5V19a1 1 0 0 0 1 1h3v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3h3a1 1 0 0 0 1-1v-8.5" />
-                </svg>
-                Home
-              </a>
-            </li>
-            <li>
-              <div className="flex items-center">
-                <svg className="mx-1 h-4 w-4 text-gray-400 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m9 5 7 7-7 7" />
-                </svg>
-                <a href="#" className="ms-1 text-sm font-medium text-gray-700 hover:text-primary-600 dark:text-gray-400 dark:hover:text-white md:ms-2">My account</a>
+    <>
+      {/* Enhanced Notification Component with Animations */}
+      <div className={`fixed top-4 left-4 z-50 transition-all duration-500 ease-in-out transform ${
+        notification.show 
+          ? 'translate-x-0 opacity-100 scale-100' 
+          : 'translate-x-full opacity-0 scale-95 pointer-events-none'
+      }`}>
+        <div className={`
+          max-w-sm px-6 py-4 rounded-xl shadow-2xl backdrop-blur-lg border border-white/20
+          ${notification.type === 'success' 
+            ? 'bg-gradient-to-r from-green-500/90 to-emerald-500/90 text-white' 
+            : notification.type === 'error'
+            ? 'bg-gradient-to-r from-red-500/90 to-rose-500/90 text-white'
+            : 'bg-gradient-to-r from-blue-500/90 to-indigo-500/90 text-white'
+          }
+          animate-pulse
+        `}>
+          <div className="flex items-center justify-between space-x-3">
+            <div className="flex items-center space-x-3">
+              <div className={`
+                w-8 h-8 rounded-full flex items-center justify-center
+                ${notification.type === 'success' 
+                  ? 'bg-white/20' 
+                  : notification.type === 'error'
+                  ? 'bg-white/20'
+                  : 'bg-white/20'
+                }
+              `}>
+                {notification.type === 'success' && <CheckCircle className="w-5 h-5" />}
+                {notification.type === 'error' && <X className="w-5 h-5" />}
+                {notification.type === 'info' && <Sparkles className="w-5 h-5" />}
               </div>
-            </li>
-            <li aria-current="page">
-              <div className="flex items-center">
-                <svg className="mx-1 h-4 w-4 text-gray-400 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m9 5 7 7-7 7" />
-                </svg>
-                <span className="ms-1 text-sm font-medium text-gray-500 dark:text-gray-400 md:ms-2">Account</span>
-              </div>
-            </li>
-          </ol>
-        </nav>
-        <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white sm:text-2xl md:mb-6">General overview</h2>
-        <div className="grid grid-cols-2 gap-6 border-b border-t border-gray-200 py-4 dark:border-gray-700 md:py-8 lg:grid-cols-4 xl:gap-16">
-          <div>
-            <svg className="mb-2 h-8 w-8 text-gray-400 dark:text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 4h1.5L9 16m0 0h8m-8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm8 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm-8.5-3h9.25L19 7H7.312" />
-            </svg>
-            <h3 className="mb-2 text-gray-500 dark:text-gray-400">Orders made</h3>
-            <span className="flex items-center text-2xl font-bold text-gray-900 dark:text-white">
-              24
-              <span className="ms-2 inline-flex items-center rounded bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-300">
-                <svg className="-ms-1 me-1 h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v13m0-13 4 4m-4-4-4 4" />
-                </svg>
-                10.3%
-              </span>
-            </span>
-            <p className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400 sm:text-base">
-              <svg className="me-1.5 h-4 w-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 11h2v5m-2 0h4m-2.592-8.5h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-              </svg>
-              vs 20 last 3 months
-            </p>
-          </div>
-          <div>
-            <svg className="mb-2 h-8 w-8 text-gray-400 dark:text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" strokeWidth="2" d="M11.083 5.104c.35-.8 1.485-.8 1.834 0l1.752 4.022a1 1 0 0 0 .84.597l4.463.342c.9.069 1.255 1.2.556 1.771l-3.33 2.723a1 1 0 0 0-.337 1.016l1.03 4.119c.214.858-.71 1.552-1.474 1.106l-3.913-2.281a1 1 0 0 0-1.008 0L7.583 20.8c-.764.446-1.688-.248-1.474-1.106l1.03-4.119A1 1 0 0 0 6.8 14.56l-3.33-2.723c-.698-.571-.342-1.702.557-1.771l4.462-.342a1 1 0 0 0 .84-.597l1.753-4.022Z" />
-            </svg>
-            <h3 className="mb-2 text-gray-500 dark:text-gray-400">Reviews added</h3>
-            <span className="flex items-center text-2xl font-bold text-gray-900 dark:text-white">
-              16
-              <span className="ms-2 inline-flex items-center rounded bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-300">
-                <svg className="-ms-1 me-1 h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v13m0-13 4 4m-4-4-4 4" />
-                </svg>
-                8.6%
-              </span>
-            </span>
-            <p className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400 sm:text-base">
-              <svg className="me-1.5 h-4 w-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 11h2v5m-2 0h4m-2.592-8.5h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-              </svg>
-              vs 14 last 3 months
-            </p>
-          </div>
-          <div>
-            <svg className="mb-2 h-8 w-8 text-gray-400 dark:text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12.01 6.001C6.5 1 1 8 5.782 13.001L12.011 20l6.23-7C23 8 17.5 1 12.01 6.002Z" />
-            </svg>
-            <h3 className="mb-2 text-gray-500 dark:text-gray-400">Favorite products added</h3>
-            <span className="flex items-center text-2xl font-bold text-gray-900 dark:text-white">
-              8
-              <span className="ms-2 inline-flex items-center rounded bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900 dark:text-red-300">
-                <svg className="-ms-1 me-1 h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v13m0-13 4 4m-4-4-4 4" />
-                </svg>
-                12%
-              </span>
-            </span>
-            <p className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400 sm:text-base">
-              <svg className="me-1.5 h-4 w-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 11h2v5m-2 0h4m-2.592-8.5h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-              </svg>
-              vs 10 last 3 months
-            </p>
-          </div>
-          <div>
-            <svg className="mb-2 h-8 w-8 text-gray-400 dark:text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9h13a5 5 0 0 1 0 10H7M3 9l4-4M3 9l4 4" />
-            </svg>
-            <h3 className="mb-2 text-gray-500 dark:text-gray-400">Product returns</h3>
-            <span className="flex items-center text-2xl font-bold text-gray-900 dark:text-white">
-              2
-              <span className="ms-2 inline-flex items-center rounded bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-300">
-                <svg className="-ms-1 me-1 h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v13m0-13 4 4m-4-4-4 4" />
-                </svg>
-                50%
-              </span>
-            </span>
-            <p className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400 sm:text-base">
-              <svg className="me-1.5 h-4 w-4 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 11h2v5m-2 0h4m-2.592-8.5h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-              </svg>
-              vs 1 last 3 months
-            </p>
-          </div>
-        </div>
-        <div className="py-4 md:py-8">
-          <div className="mb-4 grid gap-4 sm:grid-cols-2 sm:gap-8 lg:gap-16">
-            <div className="space-y-4">
-              <div className="flex space-x-4">
-                <img className="h-16 w-16 rounded-lg" src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/avatars/helene-engels.png" alt="Helene avatar" />
-                <div>
-                  <span className="mb-2 inline-block rounded bg-primary-100 px-2.5 py-0.5 text-xs font-medium text-primary-800 dark:bg-primary-900 dark:text-primary-300">PRO Account</span>
-                  <h2 className="flex items-center text-xl font-bold leading-none text-gray-900 dark:text-white sm:text-2xl">Helene Engels</h2>
-                </div>
-              </div>
-              <dl>
-                <dt className="font-semibold text-gray-900 dark:text-white">Email Address</dt>
-                <dd className="text-gray-500 dark:text-gray-400">helene@example.com</dd>
-              </dl>
-              <dl>
-                <dt className="font-semibold text-gray-900 dark:text-white">Home Address</dt>
-                <dd className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                  <svg className="hidden h-5 w-5 shrink-0 text-gray-400 dark:text-gray-500 lg:inline" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m4 12 8-8 8 8M6 10.5V19a1 1 0 0 0 1 1h3v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3h3a1 1 0 0 0 1-1v-8.5" />
-                  </svg>
-                  2 Miles Drive, NJ 071, New York, United States of America
-                </dd>
-              </dl>
-              <dl>
-                <dt className="font-semibold text-gray-900 dark:text-white">Delivery Address</dt>
-                <dd className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                  <svg className="hidden h-5 w-5 shrink-0 text-gray-400 dark:text-gray-500 lg:inline" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h6l2 4m-8-4v8m0-8V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v9h2m8 0H9m4 0h2m4 0h2v-4m0 0h-5m3.5 5.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm-10 0a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-                  </svg>
-                  9th St. PATH Station, New York, United States of America
-                </dd>
-              </dl>
-            </div>
-            <div className="space-y-4">
-              <dl>
-                <dt className="font-semibold text-gray-900 dark:text-white">Phone Number</dt>
-                <dd className="text-gray-500 dark:text-gray-400">+1234 567 890 / +12 345 678</dd>
-              </dl>
-              <dl>
-                <dt className="font-semibold text-gray-900 dark:text-white">Favorite pick-up point</dt>
-                <dd className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                  <svg className="hidden h-5 w-5 shrink-0 text-gray-400 dark:text-gray-500 lg:inline" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 12c.263 0 .524-.06.767-.175a2 2 0 0 0 .65-.491c.186-.21.333-.46.433-.734.1-.274.15-.568.15-.864a2.4 2.4 0 0 0 .586 1.591c.375.422.884.659 1.414.659.53 0 1.04-.237 1.414-.659A2.4 2.4 0 0 0 12 9.736a2.4 2.4 0 0 0 .586 1.591c.375.422.884.659 1.414.659.53 0 1.04-.237 1.414-.659A2.4 2.4 0 0 0 16 9.736c0 .295.052.588.152.861s.248.521.434.73a2 2 0 0 0 .649.488 1.809 1.809 0 0 0 1.53 0 2.03 2.03 0 0 0 .65-.488c.185-.209.332-.457.433-.73.1-.273.152-.566.152-.861 0-.974-1.108-3.85-1.618-5.121A.983.983 0 0 0 17.466 4H6.456a.986.986 0 0 0-.93.645C5.045 5.962 4 8.905 4 9.736c.023.59.241 1.148.611 1.567.37.418.865.667 1.389.697Zm0 0c.328 0 .651-.091.94-.266A2.1 2.1 0 0 0 7.66 11h.681a2.1 2.1 0 0 0 .718.734c.29.175.613.266.942.266.328 0 .651-.091.94-.266.29-.174.537-.427.719-.734h.681a2.1 2.1 0 0 0 .719.734c.289.175.612.266.94.266.329 0 .652-.091.942-.266.29-.174.536-.427.718-.734h.681c.183.307.43.56.719.734.29.174.613.266.941.266a1.819 1.819 0 0 0 1.06-.351M6 12a1.766 1.766 0 0 1-1.163-.476M5 12v7a1 1 0 0 0 1 1h2v-5h3v5h7a1 1 0 0 0 1-1v-7m-5 3v2h2v-2h-2Z" />
-                  </svg>
-                  Herald Square, 2, New York, United States of America
-                </dd>
-              </dl>
-              <dl>
-                <dt className="font-semibold text-gray-900 dark:text-white">My Companies</dt>
-                <dd className="text-gray-500 dark:text-gray-400">FLOWBITE LLC, Fiscal code: 18673557</dd>
-              </dl>
-              <dl>
-                <dt className="mb-1 font-semibold text-gray-900 dark:text-white">Payment Methods</dt>
-                <dd className="flex items-center space-x-4 text-gray-500 dark:text-gray-400">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700">
-                    <img className="h-4 w-auto dark:hidden" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/visa.svg" alt="Visa logo" />
-                    <img className="hidden h-4 w-auto dark:flex" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/visa-dark.svg" alt="Visa logo" />
-                  </div>
-                  <div>
-                    <div className="text-sm">
-                      <p className="mb-0.5 font-medium text-gray-900 dark:text-white">Visa </p>
-                      
-                    </div>
-                  </div>
-                </dd>
-              </dl>
-            </div>
-          </div>
-          <button type="button" data-modal-target="accountInformationModal2" data-modal-toggle="accountInformationModal2" className="inline-flex w-full items-center justify-center rounded-lg bg-primary-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 sm:w-auto">
-            <svg className="-ms-0.5 me-1.5 h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-              <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m14.304 4.844 2.852 2.852M7 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4.5m2.409-9.91a2.017 2.017 0 0 1 0 2.853l-6.844 6.844L8 14l.713-3.565 6.844-6.844a2.015 2.015 0 0 1 2.852 0Z" />
-            </svg>
-            Edit your data
-          </button>
-        </div>
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800 md:p-8">
-          <h3 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">Latest orders</h3>
-          {orders.map((order, index) => (
-            <div key={order.id} className="flex flex-wrap items-center gap-y-4 border-b border-gray-200 py-4 dark:border-gray-700 md:py-5">
-              <dl className="w-1/2 sm:w-48">
-                <dt className="text-base font-medium text-gray-500 dark:text-gray-400">Order ID:</dt>
-                <dd className="mt-1.5 text-base font-semibold text-gray-900 dark:text-white">
-                  <a href="#" className="hover:underline">{order.id}</a>
-                </dd>
-              </dl>
-              <dl className="w-1/2 sm:w-1/4 md:flex-1 lg:w-auto">
-                <dt className="text-base font-medium text-gray-500 dark:text-gray-400">Date:</dt>
-                <dd className="mt-1.5 text-base font-semibold text-gray-900 dark:text-white">{order.date}</dd>
-              </dl>
-              <dl className="w-1/2 sm:w-1/5 md:flex-1 lg:w-auto">
-                <dt className="text-base font-medium text-gray-500 dark:text-gray-400">Price:</dt>
-                <dd className="mt-1.5 text-base font-semibold text-gray-900 dark:text-white">{order.price}</dd>
-              </dl>
-              <dl className="w-1/2 sm:w-1/4 sm:flex-1 lg:w-auto">
-                <dt className="text-base font-medium text-gray-500 dark:text-gray-400">Status:</dt>
-                <dd className={`mt-1.5 inline-flex items-center rounded px-2.5 py-0.5 text-xs font-medium ${order.status === 'In transit' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' : order.status === 'Cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'}`}>
-                  {order.status === 'In transit' && (
-                    <svg className="me-1 h-3 w-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                      <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h6l2 4m-8-4v8m0-8V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v9h2m8 0H9m4 0h2m4 0h2v-4m0 0h-5m3.5 5.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Zm-10 0a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z" />
-                    </svg>
-                  )}
-                  {order.status === 'Cancelled' && (
-                    <svg className="me-1 h-3 w-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                      <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18 17.94 6M18 18 6.06 6" />
-                    </svg>
-                  )}
-                  {order.status === 'Completed' && (
-                    <svg className="me-1 h-3 w-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                      <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 11.917 9.724 16.5 19 7.5" />
-                    </svg>
-                  )}
-                  {order.status}
-                </dd>
-              </dl>
-              <div className="w-full sm:flex sm:w-32 sm:items-center sm:justify-end sm:gap-4">
-                <button
-                  id={`actionsMenuDropdownModal${index}`}
-                  data-dropdown-toggle={`dropdownOrderModal${index}`}
-                  type="button"
-                  className="flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700 md:w-auto"
-                >
-                  Actions
-                  <svg className="-me-0.5 ms-1.5 h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 9-7 7-7-7" />
-                  </svg>
-                </button>
-                <div id={`dropdownOrderModal${index}`} className="z-10 hidden w-40 divide-y divide-gray-100 rounded-lg bg-white shadow dark:bg-gray-700">
-                  <ul className="p-2 text-left text-sm font-medium text-gray-500 dark:text-gray-400" aria-labelledby={`actionsMenuDropdownModal${index}`}>
-                    <li>
-                      <a href="#" className="group inline-flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white">
-                        <svg className="me-1.5 h-4 w-4 text-gray-400 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.651 7.65a7.131 7.131 0 0 0-12.68 3.15M18.001 4v4h-4m-7.652 8.35a7.13 7.13 0 0 0 12.68-3.15M6 20v-4h4" />
-                        </svg>
-                        Order again
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" className="group inline-flex w-full items-center rounded-md px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white">
-                        <svg className="me-1.5 h-4 w-4 text-gray-400 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                          <path stroke="currentColor" strokeWidth="2" d="M21 12c0 1.2-4.03 6-9 6s-9-4.8-9-6c0-1.2 4.03-6 9-6s9 4.8 9 6Z" />
-                          <path stroke="currentColor" strokeWidth="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                        </svg>
-                        Order details
-                      </a>
-                    </li>
-                    {order.status !== 'Cancelled' && (
-                      <li>
-                        <a
-                          href="#"
-                          data-modal-target="deleteOrderModal"
-                          data-modal-toggle="deleteOrderModal"
-                          onClick={() => handleCancelOrderClick(order.id)}
-                          className="group inline-flex w-full items-center rounded-md px-3 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                        >
-                          <svg className="me-1.5 h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z" />
-                          </svg>
-                          Cancel order
-                        </a>
-                      </li>
-                    )}
-                  </ul>
+              <div>
+                <p className="font-semibold text-sm leading-tight">
+                  {notification.message}
+                </p>
+                <div className="text-xs opacity-75 mt-1">
+                  {notification.type === 'success' && 'Success!'}
+                  {notification.type === 'error' && 'Error occurred'}
+                  {notification.type === 'info' && 'Information'}
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
-      <div id="accountInformationModal2" tabIndex={-1} aria-hidden="true" className="fixed left-0 right-0 top-0 z-50 hidden h-[calc(100%-1rem)] max-h-full w-full items-center justify-center overflow-y-auto overflow-x-hidden antialiased md:inset-0">
-        <div className="relative max-h-full w-full max-w-lg p-4">
-          <div className="relative rounded-lg bg-white shadow dark:bg-gray-800">
-            <div className="flex items-center justify-between rounded-t border-b border-gray-200 p-4 dark:border-gray-700 md:p-5">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Account Information</h3>
-              <button type="button" className="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white" data-modal-toggle="accountInformationModal2">
-                <svg className="h-3 w-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
-                </svg>
-                <span className="sr-only">Close modal</span>
-              </button>
-            </div>
-            <form className="p-4 md:p-5">
-              <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="col-span-2">
-                  <label htmlFor="pick-up-point-input" className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Pick-up point*</label>
-                  <input type="text" id="pick-up-point-input" className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500" placeholder="Enter the pick-up point name" required />
-                </div>
-                <div className="col-span-2 sm:col-span-1">
-                  <label htmlFor="full_name_info_modal" className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Your Full Name*</label>
-                  <input type="text" id="full_name_info_modal" className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500" placeholder="Enter your first name" required />
-                </div>
-                <div className="col-span-2 sm:col-span-1">
-                  <label htmlFor="email_info_modal" className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Your Email*</label>
-                  <input type="text" id="email_info_modal" className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500" placeholder="Enter your email here" required />
-                </div>
-                <div className="col-span-2">
-                  <label htmlFor="phone-input_billing_modal" className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Phone Number*</label>
-                  <div className="flex items-center">
-                    <button id="dropdown_phone_input__button_billing_modal" data-dropdown-toggle="dropdown_phone_input_billing_modal" className="z-10 inline-flex shrink-0 items-center rounded-s-lg border border-gray-300 bg-gray-100 px-4 py-2.5 text-center text-sm font-medium text-gray-900 hover:bg-gray-200 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-700" type="button">
-                      <svg fill="none" aria-hidden="true" className="me-2 h-4 w-4" viewBox="0 0 20 15">
-                        <rect width="19.6" height="14" y=".5" fill="#fff" rx="2" />
-                        <mask id="a" style={{ maskType: 'luminance' }} width="20" height="15" x="0" y="0" maskUnits="userSpaceOnUse">
-                          <rect width="19.6" height="14" y=".5" fill="#fff" rx="2" />
-                        </mask>
-                        <g mask="url(#a)">
-                          <path fill="#D02F44" fillRule="evenodd" d="M19.6.5H0v.933h19.6V.5zm0 1.867H0V3.3h19.6v-.933zM0 4.233h19.6v.934H0v-.934zM19.6 6.1H0v.933h19.6V6.1zM0 7.967h19.6V8.9H0v-.933zm19.6 1.866H0v.934h19.6v-.934zM0 11.7h19.6v.933H0V11.7zm19.6 1.867H0v.933h19.6v-.933z" clipRule="evenodd" />
-                          <path fill="#46467F" d="M0 .5h8.4v6.533H0z" />
-                          <g filter="url(#filter0_d_343_121520)">
-                            <path fill="url(#paint0_linear_343_121520)" fillRule="evenodd" d="M1.867 1.9a.467.467 0 11-.934 0 .467.467 0 01.934 0zm1.866 0a.467.467 0 11-.933 0 .467.467 0 01.933 0zm1.4.467a.467.467 0 100-.934.467.467 0 000 .934zM7.467 1.9a.467.467 0 11-.934 0 .467.467 0 01.934 0zM2.333 3.3a.467.467 0 100-.933.467.467 0 000 .933zm2.334-.467a.467.467 0 11-.934 0 .467.467 0 01.934 0zm1.4.467a.467.467 0 100-.933.467.467 0 000 .933zm1.4.467a.467.467 0 11-.934 0 .467.467 0 01.934 0zm-2.334.466a.467.467 0 100-.933.467.467 0 000 .933zm-1.4-.466a.467.467 0 11-.933 0 .467.467 0 01.933 0zM1.4 4.233a.467.467 0 100-.933.467.467 0 000 .933zm1.4.467a.467.467 0 11-.933 0 .467.467 0 01.933 0zm1.4.467a.467.467 0 100-.934.467.467 0 000 .934zM6.533 4.7a.467.467 0 11-.933 0 .467.467 0 01.933 0zM7 6.1a.467.467 0 100-.933.467.467 0 000 .933zm-1.4-.467a.467.467 0 11-.933 0 .467.467 0 01.933 0zM3.267 6.1a.467.467 0 100-.933.467.467 0 000 .933zm-1.4-.467a.467.467 0 11-.934 0 .467.467 0 01.934 0z" clipRule="evenodd" />
-                          </g>
-                        </g>
-                        <defs>
-                          <linearGradient id="paint0_linear_343_121520" x1=".933" x2=".933" y1="1.433" y2="6.1" gradientUnits="userSpaceOnUse">
-                            <stop stopColor="#fff" />
-                            <stop offset="1" stopColor="#F0F0F0" />
-                          </linearGradient>
-                          <filter id="filter0_d_343_121520" width="6.533" height="5.667" x=".933" y="1.433" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse">
-                            <feFlood floodOpacity="0" result="BackgroundImageFix" />
-                            <feColorMatrix in="SourceAlpha" result="hardAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" />
-                            <feOffset dy="1" />
-                            <feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0" />
-                            <feBlend in2="BackgroundImageFix" result="effect1_dropShadow_343_121520" />
-                            <feBlend in="SourceGraphic" in2="effect1_dropShadow_343_121520" result="shape" />
-                          </filter>
-                        </defs>
-                      </svg>
-                      +1
-                      <svg className="-me-0.5 ms-2 h-4 w-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 9-7 7-7-7" />
-                      </svg>
-                    </button>
-                    <div id="dropdown_phone_input_billing_modal" className="z-10 hidden w-56 divide-y divide-gray-100 rounded-lg bg-white shadow dark:bg-gray-700">
-                      <ul className="p-2 text-sm font-medium text-gray-700 dark:text-gray-200" aria-labelledby="dropdown_phone_input__button_billing_modal">
-                        <li>
-                          <button type="button" className="inline-flex w-full rounded-md px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem">
-                            <span className="inline-flex items-center">
-                              <svg fill="none" aria-hidden="true" className="me-2 h-4 w-4" viewBox="0 0 20 15">
-                                <rect width="19.6" height="14" y=".5" fill="#fff" rx="2" />
-                                <mask id="a" style={{ maskType: 'luminance' }} width="20" height="15" x="0" y="0" maskUnits="userSpaceOnUse">
-                                  <rect width="19.6" height="14" y=".5" fill="#fff" rx="2" />
-                                </mask>
-                                <g mask="url(#a)">
-                                  <path fill="#D02F44" fillRule="evenodd" d="M19.6.5H0v.933h19.6V.5zm0 1.867H0V3.3h19.6v-.933zM0 4.233h19.6v.934H0v-.934zM19.6 6.1H0v.933h19.6V6.1zM0 7.967h19.6V8.9H0v-.933zm19.6 1.866H0v.934h19.6v-.934zM0 11.7h19.6v.933H0V11.7zm19.6 1.867H0v.933h19.6v-.933z" clipRule="evenodd" />
-                                  <path fill="#46467F" d="M0 .5h8.4v6.533H0z" />
-                                  <g filter="url(#filter0_d_343_121520)">
-                                    <path fill="url(#paint0_linear_343_121520)" fillRule="evenodd" d="M1.867 1.9a.467.467 0 11-.934 0 .467.467 0 01.934 0zm1.866 0a.467.467 0 11-.933 0 .467.467 0 01.933 0zm1.4.467a.467.467 0 100-.934.467.467 0 000 .934zM7.467 1.9a.467.467 0 11-.934 0 .467.467 0 01.934 0zM2.333 3.3a.467.467 0 100-.933.467.467 0 000 .933zm2.334-.467a.467.467 0 11-.934 0 .467.467 0 01.934 0zm1.4.467a.467.467 0 100-.933.467.467 0 000 .933zm1.4.467a.467.467 0 11-.934 0 .467.467 0 01.934 0zm-2.334.466a.467.467 0 100-.933.467.467 0 000 .933zm-1.4-.466a.467.467 0 11-.933 0 .467.467 0 01.933 0zM1.4 4.233a.467.467 0 100-.933.467.467 0 000 .933zm1.4.467a.467.467 0 11-.933 0 .467.467 0 01.933 0zm1.4.467a.467.467 0 100-.934.467.467 0 000 .934zM6.533 4.7a.467.467 0 11-.933 0 .467.467 0 01.933 0zM7 6.1a.467.467 0 100-.933.467.467 0 000 .933zm-1.4-.467a.467.467 0 11-.933 0 .467.467 0 01.933 0zM3.267 6.1a.467.467 0 100-.933.467.467 0 000 .933zm-1.4-.467a.467.467 0 11-.934 0 .467.467 0 01.934 0z" clipRule="evenodd" />
-                                  </g>
-                                </g>
-                                <defs>
-                                  <linearGradient id="paint0_linear_343_121520" x1=".933" x2=".933" y1="1.433" y2="6.1" gradientUnits="userSpaceOnUse">
-                                    <stop stopColor="#fff" />
-                                    <stop offset="1" stopColor="#F0F0F0" />
-                                  </linearGradient>
-                                  <filter id="filter0_d_343_121520" width="6.533" height="5.667" x=".933" y="1.433" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse">
-                                    <feFlood floodOpacity="0" result="BackgroundImageFix" />
-                                    <feColorMatrix in="SourceAlpha" result="hardAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" />
-                                    <feOffset dy="1" />
-                                    <feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0" />
-                                    <feBlend in2="BackgroundImageFix" result="effect1_dropShadow_343_121520" />
-                                    <feBlend in="SourceGraphic" in2="effect1_dropShadow_343_121520" result="shape" />
-                                  </filter>
-                                </defs>
-                              </svg>
-                              United States (+1)
-                            </span>
-                          </button>
-                        </li>
-                        {/* Additional country options can be added here */}
-                      </ul>
-                    </div>
-                    <div className="relative w-full">
-                      <input type="text" id="phone-input" className="z-20 blockurban w-full rounded-e-lg border border-s-0 border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:border-s-gray-700 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="123-456-7890" required />
-                    </div>
-                  </div>
-                </div>
-                <div className="col-span-2 sm:col-span-1">
-                  <label htmlFor="select_country_input_billing_modal" className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Country*</label>
-                  <select id="select_country_input_billing_modal" className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500">
-                    <option selected>United States</option>
-                    <option value="AS">Australia</option>
-                    <option value="FR">France</option>
-                    <option value="ES">Spain</option>
-                    <option value="UK">United Kingdom</option>
-                  </select>
-                </div>
-                <div className="col-span-2 sm:col-span-1">
-                  <label htmlFor="select_city_input_billing_modal" className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">City*</label>
-                  <select id="select_city_input_billing_modal" className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500">
-                    <option selected>San Francisco</option>
-                    <option value="NY">New York</option>
-                    <option value="LA">Los Angeles</option>
-                    <option value="CH">Chicago</option>
-                    <option value="HU">Houston</option>
-                  </select>
-                </div>
-                <div className="col-span-2">
-                  <label htmlFor="address_billing_modal" className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Delivery Address*</label>
-                  <textarea id="address_billing_modal" rows={4} className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500" placeholder="Enter here your address" />
-                </div>
-                <div className="col-span-2 sm:col-span-1">
-                  <label htmlFor="company_name" className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">Company name</label>
-                  <input type="text" id="company_name" className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500" placeholder="Flowbite LLC" />
-                </div>
-                <div className="col-span-2 sm:col-span-1">
-                  <label htmlFor="vat_number" className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">VAT number</label>
-                  <input type="text" id="vat_number" className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder:text-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500" placeholder="DE42313253" />
-                </div>
-              </div>
-              <div className="border-t border-gray-200 pt-4 dark:border-gray-700 md:pt-5">
-                <button type="submit" className="me-2 inline-flex items-center rounded-lg bg-primary-700 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">Save information</button>
-                <button type="button" data-modal-toggle="accountInformationModal2" className="me-2 rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-      <div id="deleteOrderModal" tabIndex={-1} aria-hidden="true" className="fixed left-0 right-0 top-0 z-50 hidden h-modal w-full items-center justify-center overflow-y-auto overflow-x-hidden md:inset-0 md:h-full">
-        <div className="relative h-full w-full max-w-md p-4 md:h-auto">
-          <div className="relative rounded-lg bg-white p-4 text-center shadow dark:bg-gray-800 sm:p-5">
-            <button type="button" className="absolute right-2.5 top-2.5 ml-auto inline-flex items-center rounded-lg bg-transparent p-1.5 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white" data-modal-toggle="deleteOrderModal">
-              <svg aria-hidden="true" className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-              <span className="sr-only">Close modal</span>
+            <button
+              onClick={hideNotification}
+              className="ml-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full p-1 transition-all duration-200 flex-shrink-0"
+              aria-label="Close notification"
+            >
+              <X className="w-4 h-4" />
             </button>
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100 p-2 dark:bg-gray-700">
-              <svg className="h-8 w-8 text-gray-500 dark:text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 7h14m-9 3v8m4-8v8M10 3h4a1 1 0 0 1 1 1v3H9V4a1 1 0 0 1 1-1ZM6 7h12v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7Z" />
-              </svg>
-              <span className="sr-only">Danger icon</span>
-            </div>
-            <p className="mb-3.5 text-gray-900 dark:text-white">
-              <a href="#" className="font-medium text-primary-700 hover:underline dark:text-primary-500">@heleneeng</a>, are you sure you want to delete order {selectedOrderId} from your account?
-            </p>
-            <p className="mb-4 text-gray-500 dark:text-gray-300">This action cannot be undone.</p>
-            <div className="flex items-center justify-center space-x-4">
-              <button data-modal-toggle="deleteOrderModal" type="button" className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 focus:z-10 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:border-gray-500 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-white dark:focus:ring-gray-600">No, cancel</button>
-              <button type="submit" className="rounded-lg bg-red-700 px-3 py-2 text-center text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900">Yes, delete</button>
-            </div>
+          </div>
+          
+          {/* Progress bar */}
+          <div className="mt-3 w-full bg-white/20 rounded-full h-1 overflow-hidden">
+            <div 
+              className="h-full bg-white/60 rounded-full animate-pulse"
+              style={{
+                animation: 'shrink 4s linear forwards'
+              }}
+            />
           </div>
         </div>
       </div>
-    </section>
+
+      {/* Add CSS animation for progress bar */}
+      <style jsx>{`
+        @keyframes shrink {
+          from { width: 100%; }
+          to { width: 0%; }
+        }
+      `}</style>
+
+      {/* First Section: Sliding Carousel Showing One Image at a Time with Auto Slide */}
+      {/* Hero Section with Enhanced Carousel */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
+        <div className="absolute inset-0 bg-black/20"></div>
+
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 py-16 lg:py-24">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Content */}
+            <div className="space-y-4">
+              <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 text-white/90">
+                <Sparkles className="w-4 h-4" />
+                <span className="text-sm font-medium">New Arrivals</span>
+              </div>
+
+              <div className="space-y-3">
+                <h1 className="text-5xl lg:text-7xl font-bold text-white leading-tight">
+                  {heroImages[currentIndex].title}
+                  <span className="bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent block">
+                    Experience
+                  </span>
+                </h1>
+                <p className="text-xl text-white/80 max-w-md leading-relaxed">
+                  {heroImages[currentIndex].subtitle}
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <button className="group bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl flex items-center space-x-2">
+                    <span>{heroImages[currentIndex].cta}</span>
+                    <Zap className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                  </button>
+                  <button className="border-2 border-white/30 text-white hover:bg-white/10 px-8 py-4 rounded-2xl font-semibold transition-all duration-300 backdrop-blur-sm">
+                    Learn More
+                  </button>
+                </div>
+              </div>
+
+              {/* Features */}
+              <div className="flex flex-wrap gap-6 pt-8">
+                {[
+                  { icon: Shield, text: "Secure Payment" },
+                  { icon: Zap, text: "Fast Delivery" },
+                  { icon: Star, text: "Premium Quality" },
+                ].map(({ icon: Icon, text }) => (
+                  <div
+                    key={text}
+                    className="flex items-center space-x-2 text-white/80"
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="text-sm font-medium">{text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Hero Image Carousel */}
+            <div className="relative">
+              <div className="relative w-full max-w-2xl mx-auto rounded-3xl overflow-hidden shadow-2xl">
+                <div
+                  className="flex transition-transform duration-700 ease-in-out"
+                  style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+                >
+                  {heroImages.map((image, index) => (
+                    <div
+                      key={index}
+                      className="flex-shrink-0 w-full h-96 lg:h-[500px]"
+                    >
+                      <img
+                        src={image.src}
+                        alt={image.alt}
+                        className="w-full h-full object-cover"
+                        loading={index === 0 ? "eager" : "lazy"}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Navigation */}
+                <button
+                  onClick={prevSlide}
+                  className="absolute top-1/2 left-4 -translate-y-1/2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-full p-3 transition-all duration-300 group"
+                  aria-label="Previous slide"
+                >
+                  <ChevronLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
+                </button>
+                <button
+                  onClick={nextSlide}
+                  className="absolute top-1/2 right-4 -translate-y-1/2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-full p-3 transition-all duration-300 group"
+                  aria-label="Next slide"
+                >
+                  <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                </button>
+
+                {/* Dots indicator */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
+                  {heroImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => goToSlide(index)}
+                      className={`transition-all duration-300 rounded-full ${
+                        currentIndex === index
+                          ? "w-8 h-2 bg-white"
+                          : "w-2 h-2 bg-white/50 hover:bg-white/75"
+                      }`}
+                      aria-label={`Go to slide ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Product Carousel Section */}
+      <section className="bg-gray-50 py-12">
+        <div className="mx-auto max-w-screen-xl px-4">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full px-6 py-2 mb-6">
+              <Star className="w-4 h-4 text-blue-600" />
+              <span className="text-blue-800 font-medium">
+                Featured Products
+              </span>
+            </div>
+            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+              Discover Amazing
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                {" "}
+                Products
+              </span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Handpicked selection of premium products that deliver exceptional
+              quality and performance
+            </p>
+          </div>
+
+          {isLoading ? (
+            <div className="text-center text-gray-900 py-8">
+              <div className="inline-flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <span>Loading products...</span>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="text-center text-red-600 py-8">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
+                <p className="font-medium">Error loading products</p>
+                <p className="text-sm mt-1">{error}</p>
+                <button 
+                  onClick={() => fetchProducts(1, 100, "")}
+                  className="mt-3 text-red-600 hover:text-red-800 underline text-sm"
+                >
+                  Try again
+                </button>
+              </div>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="text-center text-gray-600 py-8">
+              No products available at the moment.
+            </div>
+          ) : (
+            <div
+              ref={carouselRef}
+              className="relative overflow-hidden whitespace-nowrap scrollbar-hide"
+              style={{ scrollBehavior: "auto" }}
+            >
+              {/* Render two sets of products for seamless scrolling */}
+              {[...products, ...products].map((product, index) => (
+                <div
+                  key={`${index}-${product.id}`}
+                  className="inline-block w-80 mx-4 align-top bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-shadow duration-300"
+                >
+                  <div className="h-48 overflow-hidden">
+                    <img
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      src={imgEndPoint + product.img_url}
+                      alt={product.name}
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 hover:text-blue-600 transition-colors line-clamp-2">
+                      {product.name}
+                    </h3>
+                    <div className="flex items-center mb-2">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className="h-4 w-4 text-yellow-400 fill-current"
+                        />
+                      ))}
+                      <span className="ml-2 text-sm text-gray-600">
+                        (4.5)
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        {formatCurrency(product.price)}
+                      </span>
+                      
+                      <button
+                        onClick={() => addToCartWithAlert(product)}
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 hover:shadow-lg transform hover:scale-105"
+                        aria-label={`Add ${product.name} to cart`}
+                      >
+                        <ShoppingCart className="w-4 h-4" />
+                        <span>Add to cart</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="text-center mt-12">
+            <button 
+              onClick={() => navigate("/store")}
+              className="group bg-gradient-to-r from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 mx-auto shadow-lg hover:shadow-xl"
+            >
+              <span>View All Products</span>
+              <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
+        </div>
+      </section>
+    </>
   );
 };
 
-export default AccountProfile;
+export default Home;

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { useFetchProducts } from "../components/UseFetchProducts";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
-import { toast } from "react-toastify";
 import {
   ShoppingCart,
   Star,
@@ -12,6 +11,8 @@ import {
   Sparkles,
   Zap,
   Shield,
+  CheckCircle,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -26,6 +27,16 @@ const Home: React.FC = () => {
   const carouselRef = useRef<HTMLDivElement>(null);
   const scrollSpeed = 0.7; // Pixels to scroll per frame
 
+  // Enhanced alert notification state
+  const [notification, setNotification] = useState({
+    show: false,
+    message: "",
+    type: "success" as "success" | "error" | "info",
+  });
+
+  // Notification timeout ref
+  const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Fetch products when component mounts
   useEffect(() => {
     fetchProducts(1, 100, ""); // Fetch many more products for carousel
@@ -34,7 +45,7 @@ const Home: React.FC = () => {
   // Effect for continuous scroll loop carousel (for products)
   useEffect(() => {
     const carousel = carouselRef.current;
-    if (!carousel) return;
+    if (!carousel || products.length === 0) return;
 
     let animationFrameId: number;
     let isHovered = false;
@@ -72,23 +83,66 @@ const Home: React.FC = () => {
     };
   }, [products]); // Restart effect when products change
 
-  // Helper function for adding to cart with toast notification
-  const addToCartWithToast = (product: any) => {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      img_url: imgEndPoint + product.img_url,
-    });
-    toast.success(`${product.name} added to cart!`);
+  // Enhanced notification function
+  const showNotification = (message: string, type: "success" | "error" | "info" = "success") => {
+    // Clear existing timeout
+    if (notificationTimeoutRef.current) {
+      clearTimeout(notificationTimeoutRef.current);
+    }
+
+    setNotification({ show: true, message, type });
+    
+    // Auto-hide after 4 seconds
+    notificationTimeoutRef.current = setTimeout(() => {
+      hideNotification();
+    }, 4000);
   };
+
+  const hideNotification = () => {
+    setNotification(prev => ({ ...prev, show: false }));
+    if (notificationTimeoutRef.current) {
+      clearTimeout(notificationTimeoutRef.current);
+      notificationTimeoutRef.current = null;
+    }
+  };
+
+  // Helper function for adding to cart with enhanced alert notification
+  const addToCartWithAlert = (product: any) => {
+    try {
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        img_url: imgEndPoint + product.img_url,
+      });
+      showNotification(`${product.name} added to cart!`, "success");
+    } catch (error) {
+      showNotification("Failed to add item to cart. Please try again.", "error");
+    }
+  };
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (notificationTimeoutRef.current) {
+        clearTimeout(notificationTimeoutRef.current);
+      }
+    };
+  }, []);
+  
   //  ============== HERO =============
   //  =================================
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  // const carouselRef = useRef(null);
-  const intervalRef = useRef(null);
-  // const scrollSpeed = 0.5;
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Helper function to clear interval safely
+  const clearHeroInterval = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
 
   // Hero carousel images
   const heroImages = [
@@ -118,7 +172,7 @@ const Home: React.FC = () => {
 
   // Auto-slide for hero carousel
   useEffect(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
+    clearHeroInterval();
 
     intervalRef.current = setInterval(() => {
       setCurrentIndex((prev) =>
@@ -127,20 +181,98 @@ const Home: React.FC = () => {
     }, 5000);
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      clearHeroInterval();
     };
-  }, [currentIndex, heroImages.length]);
+  }, [heroImages.length]); // Remove currentIndex dependency to prevent unnecessary restarts
 
   const prevSlide = () => {
+    clearHeroInterval(); // Clear auto-slide when user manually navigates
     setCurrentIndex((prev) => (prev === 0 ? heroImages.length - 1 : prev - 1));
   };
 
   const nextSlide = () => {
+    clearHeroInterval(); // Clear auto-slide when user manually navigates
     setCurrentIndex((prev) => (prev === heroImages.length - 1 ? 0 : prev + 1));
+  };
+
+  const goToSlide = (index: number) => {
+    clearHeroInterval(); // Clear auto-slide when user manually navigates
+    setCurrentIndex(index);
   };
 
   return (
     <>
+      {/* Enhanced Notification Component with Animations */}
+      <div className={`fixed top-4 left-4 z-50 transition-all duration-500 ease-in-out transform ${
+        notification.show 
+          ? 'translate-x-0 opacity-100 scale-100' 
+          : 'translate-x-full opacity-0 scale-95 pointer-events-none'
+      }`}>
+        <div className={`
+          max-w-sm px-6 py-4 rounded-xl shadow-2xl backdrop-blur-lg border border-white/20
+          ${notification.type === 'success' 
+            ? 'bg-gradient-to-r from-green-500/90 to-emerald-500/90 text-white' 
+            : notification.type === 'error'
+            ? 'bg-gradient-to-r from-red-500/90 to-rose-500/90 text-white'
+            : 'bg-gradient-to-r from-blue-500/90 to-indigo-500/90 text-white'
+          }
+          animate-pulse
+        `}>
+          <div className="flex items-center justify-between space-x-3">
+            <div className="flex items-center space-x-3">
+              <div className={`
+                w-8 h-8 rounded-full flex items-center justify-center
+                ${notification.type === 'success' 
+                  ? 'bg-white/20' 
+                  : notification.type === 'error'
+                  ? 'bg-white/20'
+                  : 'bg-white/20'
+                }
+              `}>
+                {notification.type === 'success' && <CheckCircle className="w-5 h-5" />}
+                {notification.type === 'error' && <X className="w-5 h-5" />}
+                {notification.type === 'info' && <Sparkles className="w-5 h-5" />}
+              </div>
+              <div>
+                <p className="font-semibold text-sm leading-tight">
+                  {notification.message}
+                </p>
+                <div className="text-xs opacity-75 mt-1">
+                  {notification.type === 'success' && 'Success!'}
+                  {notification.type === 'error' && 'Error occurred'}
+                  {notification.type === 'info' && 'Information'}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={hideNotification}
+              className="ml-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full p-1 transition-all duration-200 flex-shrink-0"
+              aria-label="Close notification"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          
+          {/* Progress bar */}
+          <div className="mt-3 w-full bg-white/20 rounded-full h-1 overflow-hidden">
+            <div 
+              className="h-full bg-white/60 rounded-full animate-pulse"
+              style={{
+                animation: 'shrink 4s linear forwards'
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Add CSS animation for progress bar */}
+      <style jsx>{`
+        @keyframes shrink {
+          from { width: 100%; }
+          to { width: 0%; }
+        }
+      `}</style>
+
       {/* First Section: Sliding Carousel Showing One Image at a Time with Auto Slide */}
       {/* Hero Section with Enhanced Carousel */}
       <section className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
@@ -217,6 +349,7 @@ const Home: React.FC = () => {
                         src={image.src}
                         alt={image.alt}
                         className="w-full h-full object-cover"
+                        loading={index === 0 ? "eager" : "lazy"}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                     </div>
@@ -227,12 +360,14 @@ const Home: React.FC = () => {
                 <button
                   onClick={prevSlide}
                   className="absolute top-1/2 left-4 -translate-y-1/2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-full p-3 transition-all duration-300 group"
+                  aria-label="Previous slide"
                 >
                   <ChevronLeft className="w-6 h-6 group-hover:-translate-x-1 transition-transform" />
                 </button>
                 <button
                   onClick={nextSlide}
                   className="absolute top-1/2 right-4 -translate-y-1/2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-full p-3 transition-all duration-300 group"
+                  aria-label="Next slide"
                 >
                   <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
                 </button>
@@ -242,12 +377,13 @@ const Home: React.FC = () => {
                   {heroImages.map((_, index) => (
                     <button
                       key={index}
-                      onClick={() => setCurrentIndex(index)}
+                      onClick={() => goToSlide(index)}
                       className={`transition-all duration-300 rounded-full ${
                         currentIndex === index
                           ? "w-8 h-2 bg-white"
                           : "w-2 h-2 bg-white/50 hover:bg-white/75"
                       }`}
+                      aria-label={`Go to slide ${index + 1}`}
                     />
                   ))}
                 </div>
@@ -281,12 +417,28 @@ const Home: React.FC = () => {
           </div>
 
           {isLoading ? (
-            <div className="text-center text-gray-900">
-              Loading products...
+            <div className="text-center text-gray-900 py-8">
+              <div className="inline-flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                <span>Loading products...</span>
+              </div>
             </div>
           ) : error ? (
-            <div className="text-center text-red-600">
-              Error loading products: {error}
+            <div className="text-center text-red-600 py-8">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
+                <p className="font-medium">Error loading products</p>
+                <p className="text-sm mt-1">{error}</p>
+                <button 
+                  onClick={() => fetchProducts(1, 100, "")}
+                  className="mt-3 text-red-600 hover:text-red-800 underline text-sm"
+                >
+                  Try again
+                </button>
+              </div>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="text-center text-gray-600 py-8">
+              No products available at the moment.
             </div>
           ) : (
             <div
@@ -298,57 +450,42 @@ const Home: React.FC = () => {
               {[...products, ...products].map((product, index) => (
                 <div
                   key={`${index}-${product.id}`}
-                  className="inline-block w-80 mx-4 align-top bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700"
+                  className="inline-block w-80 mx-4 align-top bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-shadow duration-300"
                 >
                   <div className="h-48 overflow-hidden">
                     <img
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       src={imgEndPoint + product.img_url}
                       alt={product.name}
+                      loading="lazy"
                     />
                   </div>
                   <div className="p-4">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 hover:text-blue-600 transition-colors line-clamp-2">
                       {product.name}
                     </h3>
                     <div className="flex items-center mb-2">
                       {[...Array(5)].map((_, i) => (
-                        <svg
+                        <Star
                           key={i}
-                          className="h-4 w-4 text-yellow-400"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path d="M13.8 4.2a2 2 0 0 0-3.6 0L8.4 8.4l-4.6.3a2 2 0 0 0-1.1 3.5l3.5 3-1 4.4c-.5 1.7 1.4 3 2.9 2.1l3.9-2.3 3.9 2.3c1.5 1 3.4-.4 3-2.1l-1-4.4 3.4-3a2 2 0 0 0-1.1-3.5l-4.6-.3-1.8-4.2Z" />
-                        </svg>
+                          className="h-4 w-4 text-yellow-400 fill-current"
+                        />
                       ))}
-                      <span className="ml-2 text-sm text-gray-600 ">
+                      <span className="ml-2 text-sm text-gray-600">
                         (4.5)
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xl font-bold  bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                      <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                         {formatCurrency(product.price)}
                       </span>
                       
                       <button
-                        onClick={() => addToCartWithToast(product)}
-                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 flex items-center space-x-2"
+                        onClick={() => addToCartWithAlert(product)}
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 hover:shadow-lg transform hover:scale-105"
+                        aria-label={`Add ${product.name} to cart`}
                       >
-                        
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 3h2l.4 2M7 13h10l4-8H5.4m-2.4 0L2 1M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17M17 13v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m8 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01"
-                          />
-                        </svg>
+                        <ShoppingCart className="w-4 h-4" />
                         <span>Add to cart</span>
                       </button>
                     </div>
@@ -358,8 +495,10 @@ const Home: React.FC = () => {
             </div>
           )}
           <div className="text-center mt-12">
-            <button onClick={() => navigate("/store")}
-             className="group bg-gradient-to-r from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 mx-auto shadow-lg hover:shadow-xl">
+            <button 
+              onClick={() => navigate("/store")}
+              className="group bg-gradient-to-r from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 mx-auto shadow-lg hover:shadow-xl"
+            >
               <span>View All Products</span>
               <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
