@@ -16,6 +16,7 @@ type Product = {
   name: string;
   cost: number;
   price: number;
+  original_price: number;
   img_url: string | null;
   stock_quantity: number;
   description: string | null;
@@ -23,21 +24,33 @@ type Product = {
   category_id: number | null;
   brand: string | null;
   category: Category | null;
+  rating: number;
+  reviews: number;
+  discount: number;
+  is_new: boolean;
+  is_favorite: boolean;
 };
 
 type ProductForm = {
   name: string;
   cost: number;
   price: number;
+  original_price: number;
   img_url: string;
   stock_quantity: number;
   barcode: number;
   category_id: number | null;
   brand: string;
   description: string;
+  rating: number;
+  reviews: number;
+  discount: number;
+  is_new: boolean;
+  is_favorite: boolean;
 };
 
 const UpdateProductModal: React.FC = () => {
+  const imgEndpoint = "http://localhost:8000";
   const { token, role } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -48,17 +61,25 @@ const UpdateProductModal: React.FC = () => {
     name: "",
     cost: 0,
     price: 0,
+    original_price: 0,
     img_url: "",
     stock_quantity: 0,
     barcode: 0,
     category_id: null,
     brand: "",
     description: "",
+    rating: 0,
+    reviews: 0,
+    discount: 0,
+    is_new: false,
+    is_favorite: false,
   });
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Fetch products and categories on mount
   useEffect(() => {
@@ -98,26 +119,40 @@ const UpdateProductModal: React.FC = () => {
         name: product.name,
         cost: product.cost,
         price: product.price,
+        original_price: product.original_price,
         img_url: product.img_url || "",
         stock_quantity: product.stock_quantity,
         barcode: product.barcode,
         category_id: product.category_id,
         brand: product.brand || "",
         description: product.description || "",
+        rating: product.rating,
+        reviews: product.reviews,
+        discount: product.discount,
+        is_new: product.is_new,
+        is_favorite: product.is_favorite,
       });
+      setImagePreview(product.img_url);
       setError(null);
     } else {
       setFormData({
         name: "",
         cost: 0,
         price: 0,
+        original_price: 0,
         img_url: "",
         stock_quantity: 0,
         barcode: 0,
         category_id: null,
         brand: "",
         description: "",
+        rating: 0,
+        reviews: 0,
+        discount: 0,
+        is_new: false,
+        is_favorite: false,
       });
+      setImagePreview(null);
     }
   };
 
@@ -127,14 +162,20 @@ const UpdateProductModal: React.FC = () => {
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === "cost" ||
-        name === "price" ||
-        name === "stock_quantity" ||
-        name === "barcode"
+        type === "checkbox"
+          ? (e.target as HTMLInputElement).checked
+          : name === "cost" ||
+            name === "price" ||
+            name === "original_price" ||
+            name === "stock_quantity" ||
+            name === "barcode" ||
+            name === "rating" ||
+            name === "reviews" ||
+            name === "discount"
           ? Number(value) || 0
           : name === "category_id"
           ? value
@@ -142,6 +183,31 @@ const UpdateProductModal: React.FC = () => {
             : null
           : value,
     }));
+  };
+
+  // Handle image file selection
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please select an image file (jpg, png, gif)");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size must be less than 5MB");
+        return;
+      }
+      setImageFile(file);
+      // Generate preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImageFile(null);
+      setImagePreview(null);
+    }
   };
 
   // Handle form submission
@@ -171,6 +237,10 @@ const UpdateProductModal: React.FC = () => {
       toast.error("Price must be greater than 0");
       return;
     }
+    if (formData.original_price <= 0) {
+      toast.error("Original price must be greater than 0");
+      return;
+    }
     if (formData.stock_quantity < 0) {
       toast.error("Stock quantity cannot be negative");
       return;
@@ -179,14 +249,46 @@ const UpdateProductModal: React.FC = () => {
       toast.error("Barcode must be a positive number");
       return;
     }
+    if (formData.rating < 0 || formData.rating > 5) {
+      toast.error("Rating must be between 0 and 5");
+      return;
+    }
+    if (formData.reviews < 0) {
+      toast.error("Reviews cannot be negative");
+      return;
+    }
+    if (formData.discount < 0 || formData.discount > 100) {
+      toast.error("Discount must be between 0 and 100");
+      return;
+    }
 
     setIsUpdating(true);
     setError(null);
 
     try {
+      let img_url = formData.img_url;
+      if (imageFile) {
+        // Upload image
+        const formDataImage = new FormData();
+        formDataImage.append("file", imageFile);
+        const imageResponse = await axios.post(
+          "http://localhost:8000/upload-image",
+          formDataImage,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+        img_url = imageResponse.data.img_url;
+      }
+
+      // Update product
+      const productData = { ...formData, img_url };
       await axios.put(
         `http://localhost:8000/update-product/${selectedProductId}`,
-        formData,
+        productData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -200,7 +302,7 @@ const UpdateProductModal: React.FC = () => {
           p.id === selectedProductId
             ? {
                 ...p,
-                ...formData,
+                ...productData,
                 category:
                   categories.find((c) => c.id === formData.category_id) || null,
               }
@@ -257,13 +359,21 @@ const UpdateProductModal: React.FC = () => {
         name: "",
         cost: 0,
         price: 0,
+        original_price: 0,
         img_url: "",
         stock_quantity: 0,
         barcode: 0,
         category_id: null,
         brand: "",
         description: "",
+        rating: 0,
+        reviews: 0,
+        discount: 0,
+        is_new: false,
+        is_favorite: false,
       });
+      setImageFile(null);
+      setImagePreview(null);
       // Show success modal
       setShowSuccessModal(true);
       // Close main modal
@@ -293,7 +403,7 @@ const UpdateProductModal: React.FC = () => {
         aria-hidden="true"
         className="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full"
       >
-        <div className="relative p-4 w-full max-w-2xl max-h-full">
+        <div className="relative p-4 w-full max-w-4xl max-h-full">
           {/* Modal content */}
           <div className="relative p-4 bg-white rounded-lg shadow dark:bg-gray-800 sm:p-5">
             {/* Modal header */}
@@ -324,8 +434,8 @@ const UpdateProductModal: React.FC = () => {
             </div>
             {/* Modal body */}
             <form onSubmit={handleSubmit}>
-              <div className="grid gap-4 mb-4 sm:grid-cols-2">
-                <div>
+              <div className="grid gap-4 mb-4 sm:grid-cols-3">
+                <div className="sm:col-span-3">
                   <label
                     htmlFor="product_select"
                     className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
@@ -347,6 +457,7 @@ const UpdateProductModal: React.FC = () => {
                     ))}
                   </select>
                 </div>
+
                 <div>
                   <label
                     htmlFor="name"
@@ -361,86 +472,25 @@ const UpdateProductModal: React.FC = () => {
                     value={formData.name}
                     onChange={handleChange}
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                    placeholder="Product name"
+                    placeholder="Type product name"
                     required
                   />
                 </div>
                 <div>
                   <label
-                    htmlFor="price"
+                    htmlFor="brand"
                     className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                   >
-                    Price
+                    Brand
                   </label>
                   <input
-                    type="number"
-                    name="price"
-                    id="price"
-                    value={formData.price}
+                    type="text"
+                    name="brand"
+                    id="brand"
+                    value={formData.brand}
                     onChange={handleChange}
-                    step="0.01"
-                    min="0"
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                    placeholder="Product price"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="cost"
-                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >
-                    Cost
-                  </label>
-                  <input
-                    type="number"
-                    name="cost"
-                    id="cost"
-                    value={formData.cost}
-                    onChange={handleChange}
-                    step="0.01"
-                    min="0"
-                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                    placeholder="Product cost"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="stock_quantity"
-                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >
-                    Stock Quantity
-                  </label>
-                  <input
-                    type="number"
-                    name="stock_quantity"
-                    id="stock_quantity"
-                    value={formData.stock_quantity}
-                    onChange={handleChange}
-                    min="0"
-                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                    placeholder="Stock quantity"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="barcode"
-                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >
-                    Barcode
-                  </label>
-                  <input
-                    type="number"
-                    name="barcode"
-                    id="barcode"
-                    value={formData.barcode}
-                    onChange={handleChange}
-                    min="0"
-                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                    placeholder="Barcode"
-                    required
+                    placeholder="Product brand"
                   />
                 </div>
                 <div>
@@ -467,39 +517,221 @@ const UpdateProductModal: React.FC = () => {
                 </div>
                 <div>
                   <label
-                    htmlFor="brand"
+                    htmlFor="cost"
                     className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                   >
-                    Brand
+                    Cost
                   </label>
                   <input
-                    type="text"
-                    name="brand"
-                    id="brand"
-                    value={formData.brand}
+                    type="number"
+                    name="cost"
+                    id="cost"
+                    value={formData.cost}
                     onChange={handleChange}
+                    min="0"
+                    step="0.01"
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                    placeholder="Product brand"
+                    placeholder="$1999"
+                    required
                   />
                 </div>
-                <div className="sm:col-span-2">
+                <div>
                   <label
-                    htmlFor="img_url"
+                    htmlFor="original_price"
                     className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                   >
-                    Image URL
+                    Original Price
                   </label>
                   <input
-                    type="text"
-                    name="img_url"
-                    id="img_url"
-                    value={formData.img_url}
+                    type="number"
+                    name="original_price"
+                    id="original_price"
+                    value={formData.original_price}
                     onChange={handleChange}
+                    min="0"
+                    step="0.01"
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                    placeholder="https://example.com/image.jpg"
+                    placeholder="$2999"
+                    required
                   />
                 </div>
-                <div className="sm:col-span-2">
+                <div>
+                  <label
+                    htmlFor="price"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Current Price
+                  </label>
+                  <input
+                    type="number"
+                    name="price"
+                    id="price"
+                    value={formData.price}
+                    onChange={handleChange}
+                    min="0"
+                    step="0.01"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    placeholder="$2499"
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="discount"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Discount (%)
+                  </label>
+                  <input
+                    type="number"
+                    name="discount"
+                    id="discount"
+                    value={formData.discount}
+                    onChange={handleChange}
+                    min="0"
+                    max="100"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    placeholder="10"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="stock_quantity"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Stock
+                  </label>
+                  <input
+                    type="number"
+                    name="stock_quantity"
+                    id="stock_quantity"
+                    value={formData.stock_quantity}
+                    onChange={handleChange}
+                    min="0"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    placeholder="200"
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="barcode"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Barcode
+                  </label>
+                  <input
+                    type="number"
+                    name="barcode"
+                    id="barcode"
+                    value={formData.barcode}
+                    onChange={handleChange}
+                    min="0"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    placeholder="Enter barcode"
+                    required
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="rating"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Rating (0-5)
+                  </label>
+                  <input
+                    type="number"
+                    name="rating"
+                    id="rating"
+                    value={formData.rating}
+                    onChange={handleChange}
+                    min="0"
+                    max="5"
+                    step="0.1"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    placeholder="4.5"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="reviews"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Number of Reviews
+                  </label>
+                  <input
+                    type="number"
+                    name="reviews"
+                    id="reviews"
+                    value={formData.reviews}
+                    onChange={handleChange}
+                    min="0"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    placeholder="150"
+                  />
+                </div>
+                <div className="sm:col-span-3">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        name="is_new"
+                        id="is_new"
+                        checked={formData.is_new}
+                        onChange={handleChange}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      />
+                      <label
+                        htmlFor="is_new"
+                        className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                      >
+                        New Product
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        name="is_favorite"
+                        id="is_favorite"
+                        checked={formData.is_favorite}
+                        onChange={handleChange}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      />
+                      <label
+                        htmlFor="is_favorite"
+                        className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300"
+                      >
+                        Featured Product
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div className="sm:col-span-3">
+                  <label
+                    htmlFor="image"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Product Image
+                  </label>
+                  <input
+                    type="file"
+                    name="image"
+                    id="image"
+                    accept="image/jpeg,image/png,image/gif"
+                    onChange={handleImageChange}
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  />
+                  {imagePreview && (
+                    <div className="mt-4">
+                      <img
+                        src={imgEndpoint + imagePreview}
+                        alt="Product preview"
+                        className="w-32 h-32 object-cover rounded-lg"
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="sm:col-span-3">
                   <label
                     htmlFor="description"
                     className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
@@ -517,7 +749,6 @@ const UpdateProductModal: React.FC = () => {
                   />
                 </div>
               </div>
-
               <div className="flex items-center space-x-4">
                 <button
                   type="submit"
