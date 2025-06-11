@@ -584,26 +584,49 @@ async def delete_address(address_id: int, user: user_dependency, db: db_dependen
 
 
 
+from typing import Optional
+from sqlalchemy import or_
+from sqlalchemy.orm import joinedload
+from fastapi import Query, HTTPException, status
+from math import ceil
+
 @app.get("/admin/orders", response_model=PaginatedOrderWithUserResponse, status_code=status.HTTP_200_OK)
 async def fetch_all_orders(
     user: user_dependency,
     db: db_dependency,
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
-    status: Optional[OrderStatus] = None
+    status: Optional[OrderStatus] = None,
+    search: Optional[str] = None  # Added search parameter
 ):
     """
     Fetch all orders with associated user and address details (admin only).
-    Supports pagination and optional status filtering.
+    Supports pagination, optional status filtering, and search by customer name.
     Excludes order_details.
     """
     require_admin(user)
     try:
-        query = db.query(models.Orders).join(models.Users, models.Orders.user_id == models.Users.id)
+        # Join with Users and Address to enable filtering on related fields
+        query = db.query(models.Orders).join(models.Orders.user).join(models.Orders.address)
+
+        # Filter by status if provided
         if status:
             query = query.filter(models.Orders.status == status)
-        
+
+        # Filter by search term if provided
+        if search:
+            query = query.filter(
+                or_(
+                    models.Users.username.ilike(f"%{search}%"),
+                    models.Address.first_name.ilike(f"%{search}%"),
+                    models.Address.last_name.ilike(f"%{search}%")
+                )
+            )
+
+        # Count total matching orders
         total = query.count()
+
+        # Fetch paginated orders with related data
         orders = (
             query
             .options(
@@ -628,8 +651,7 @@ async def fetch_all_orders(
         }
     except SQLAlchemyError as e:
         logger.error(f"Error fetching all orders: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error fetching orders")
-        
+        raise HTTPException(status_code=500, detail="Error fetching orders")        
                 
 if __name__ == "__main__":
     import uvicorn

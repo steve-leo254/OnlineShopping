@@ -246,7 +246,7 @@ async def initiate_payment(
         # Verify the order exists and belongs to the user
         order = db.query(models.Orders).filter(
             models.Orders.order_id == transaction_data.order_id,
-            models.Orders.user_id == user.get("id")
+            # models.Orders.user_id == user.get("id")
         ).first()
         
         if not order:
