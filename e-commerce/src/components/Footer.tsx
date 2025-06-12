@@ -3,7 +3,7 @@ import React from "react";
 const Footer: React.FC = () => {
   return (
     <>
-      <footer className="p-4 bg-white sm:p-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600">
+      <footer className="p-4 bg-white sm:p-6 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800">
         <div className="mx-auto max-w-screen-xl">
           <div className="md:flex md:justify-between">
             {/* <!-- Benefits Section --> */}
