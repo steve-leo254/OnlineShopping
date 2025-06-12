@@ -73,6 +73,14 @@ interface ApiResponse<T> {
   limit?: number;
   pages?: number;
   detail?: string;
+  access_token: string;
+}
+
+// NOTE: This interface describes the expected response from your /verify-token endpoint
+interface TokenVerificationResponse {
+  username: string;
+  role: "superadmin" | "admin" | "customer";
+  tokenverification: "success";
 }
 
 const SuperAdminDashboard: React.FC = () => {
@@ -122,12 +130,31 @@ const SuperAdminDashboard: React.FC = () => {
 
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
-  // Check for existing token on component mount
+  // **MODIFIED**: Use sessionStorage for persistent token storage
+  const getStoredToken = (): string | null => {
+    return sessionStorage.getItem("adminAuthToken");
+  };
+
+  const storeToken = (token: string): void => {
+    sessionStorage.setItem("adminAuthToken", token);
+    setAuthToken(token);
+  };
+
+  const removeToken = (): void => {
+    sessionStorage.removeItem("adminAuthToken");
+    setAuthToken("");
+    setCurrentUser(null);
+    setShowLoginForm(true);
+  };
+
+  // **MODIFIED**: Check for existing token on component mount
   useEffect(() => {
     const token = getStoredToken();
     if (token) {
       setAuthToken(token);
       verifyToken(token);
+    } else {
+      setShowLoginForm(true);
     }
   }, []);
 
@@ -138,49 +165,62 @@ const SuperAdminDashboard: React.FC = () => {
     }
   }, [pagination.page, searchTerm, roleFilter, authToken, currentUser]);
 
-  // Token management functions
-  const [storedToken, setStoredToken] = useState<string>("");
-
-  const getStoredToken = (): string => {
-    return storedToken;
-  };
-
-  const storeToken = (token: string): void => {
-    setStoredToken(token);
-    setAuthToken(token);
-  };
-
-  const removeToken = (): void => {
-    setStoredToken("");
-    setAuthToken("");
-    setCurrentUser(null);
-    setShowLoginForm(true);
-  };
-
-  const verifyToken = async (token: string): Promise<void> => {
+  const makeApiCall = async (
+    url: string,
+    options: RequestInit = {}
+  ): Promise<any> => {
     try {
-      const response = await fetch("http://localhost:8000/auth/verify-token", {
-        method: "POST",
+      const response = await fetch(url, {
         headers: {
           "Content-Type": "application/json",
+          ...options.headers,
         },
-        body: JSON.stringify({ token }),
+        ...options,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentUser(data);
-        setShowLoginForm(false);
-      } else {
-        removeToken();
-        showNotification("error", "Session expired. Please login again.");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.detail || `HTTP error! status: ${response.status}`
+        );
       }
+
+      return await response.json();
     } catch (error) {
-      console.error("Token verification failed:", error);
-      removeToken();
-      showNotification("error", "Authentication failed. Please login again.");
+      console.error(`API call failed for ${url}:`, error);
+      throw error;
     }
   };
+
+  // **MODIFIED**: Added role check to token verification
+  const verifyToken = async (token: string): Promise<void> => {
+    setLoading(true);
+    try {
+      const data: TokenVerificationResponse = await makeApiCall(
+        "http://localhost:8000/auth/verify-token",
+        {
+          method: "POST",
+          body: JSON.stringify({ token }),
+        }
+      );
+      
+      // Crucial check: Ensure the user has the correct role
+      if (data.role !== "superadmin") {
+        removeToken();
+        showNotification("error", "Access denied. Superadmin privileges required.");
+        return;
+      }
+
+      setCurrentUser(data);
+      setShowLoginForm(false);
+    } catch (error) {
+      removeToken();
+      showNotification("error", "Session expired. Please login again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const handleLogin = async (
     e: React.FormEvent<HTMLFormElement>
@@ -189,51 +229,38 @@ const SuperAdminDashboard: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/auth/login", {
+      const data = await makeApiCall("http://localhost:8000/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           email: loginData.email,
           password: loginData.password,
         }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        storeToken(data.access_token);
+      storeToken(data.access_token);
 
-        // Get user info
-        const userResponse = await fetch("http://localhost:8000/auth/me", {
-          headers: {
-            Authorization: `Bearer ${data.access_token}`,
-            "Content-Type": "application/json",
-          },
-        });
+      // Get user info
+      const userData = await makeApiCall("http://localhost:8000/auth/me", {
+        headers: {
+          Authorization: `Bearer ${data.access_token}`,
+        },
+      });
 
-        if (userResponse.ok) {
-          const userData = await userResponse.json();
-          if (userData.role !== "superadmin") {
-            removeToken();
-            showNotification(
-              "error",
-              "Access denied. Superadmin privileges required."
-            );
-            return;
-          }
-          setCurrentUser(userData);
-          setShowLoginForm(false);
-          setLoginData({ email: "", password: "" });
-          showNotification("success", "Login successful!");
-        }
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        showNotification("error", errorData.detail || "Login failed");
+      if (userData.role !== "superadmin") {
+        removeToken();
+        showNotification(
+          "error",
+          "Access denied. Superadmin privileges required."
+        );
+        return;
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      showNotification("error", "Network error. Please try again.");
+
+      setCurrentUser(userData);
+      setShowLoginForm(false);
+      setLoginData({ email: "", password: "" });
+      showNotification("success", "Login successful!");
+    } catch (error: any) {
+      showNotification("error", error.message || "Login failed");
     } finally {
       setLoading(false);
     }
@@ -261,37 +288,31 @@ const SuperAdminDashboard: React.FC = () => {
       const searchParam = searchTerm
         ? `&search=${encodeURIComponent(searchTerm)}`
         : "";
-      const roleParam = roleFilter !== "all" ? `&role_filter=${roleFilter}` : "";
-      const response = await fetch(
+      const roleParam =
+        roleFilter !== "all" ? `&role_filter=${roleFilter}` : "";
+
+      const data: ApiResponse<User> = await makeApiCall(
         `http://localhost:8000/auth/admin/users?page=${pagination.page}&limit=${pagination.limit}${searchParam}${roleParam}`,
         {
           headers: {
             Authorization: `Bearer ${authToken}`,
-            "Content-Type": "application/json",
           },
         }
       );
 
-      if (response.ok) {
-        const data: ApiResponse<User> = await response.json();
-        setUsers(data.items || []);
-        setPagination((prev) => ({
-          ...prev,
-          total: data.total || 0,
-          pages: data.pages || 0,
-        }));
-      } else if (response.status === 401) {
+      setUsers(data.items || []);
+      setPagination((prev) => ({
+        ...prev,
+        total: data.total || 0,
+        pages: data.pages || 0,
+      }));
+    } catch (error: any) {
+      if (error.message.includes("401")) {
         removeToken();
         showNotification("error", "Session expired. Please login again.");
       } else {
-        const errorData: ApiResponse<never> = await response
-          .json()
-          .catch(() => ({}));
-        showNotification("error", errorData.detail || "Failed to fetch users");
+        showNotification("error", error.message || "Failed to fetch users");
       }
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      showNotification("error", "Network error. Please check your connection.");
     } finally {
       setLoading(false);
     }
@@ -301,22 +322,21 @@ const SuperAdminDashboard: React.FC = () => {
     if (!authToken) return;
 
     try {
-      const response = await fetch("http://localhost:8000/auth/admin/stats", {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const data: Stats = await makeApiCall(
+        "http://localhost:8000/auth/admin/stats",
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
 
-      if (response.ok) {
-        const data: Stats = await response.json();
-        setStats(data);
-      } else if (response.status === 401) {
+      setStats(data);
+    } catch (error: any) {
+      if (error.message.includes("401")) {
         removeToken();
         showNotification("error", "Session expired. Please login again.");
       }
-    } catch (error) {
-      console.error("Error fetching stats:", error);
     }
   };
 
@@ -365,46 +385,36 @@ const SuperAdminDashboard: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(
-        "http://localhost:8000/auth/admin/create-admin",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify({
-            username: formData.username,
-            email: formData.email,
-            password: formData.password,
-          }),
-        }
-      );
+      await makeApiCall("http://localhost:8000/auth/superadmin/create-admin", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
 
-      if (response.ok) {
-        setFormData({
-          username: "",
-          email: "",
-          password: "",
-          confirmPassword: "",
-        });
-        setFormErrors({});
-        setShowAddForm(false);
-        showNotification("success", "Admin added successfully!");
-        await fetchUsers();
-        await fetchStats();
-      } else if (response.status === 401) {
+      setFormData({
+        username: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
+      setFormErrors({});
+      setShowAddForm(false);
+      showNotification("success", "Admin added successfully!");
+      await fetchUsers();
+      await fetchStats();
+    } catch (error: any) {
+      if (error.message.includes("401")) {
         removeToken();
         showNotification("error", "Session expired. Please login again.");
       } else {
-        const errorData: ApiResponse<never> = await response
-          .json()
-          .catch(() => ({}));
-        showNotification("error", errorData.detail || "Failed to add admin");
+        showNotification("error", error.message || "Failed to add admin");
       }
-    } catch (error) {
-      console.error("Error adding admin:", error);
-      showNotification("error", "Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -414,41 +424,25 @@ const SuperAdminDashboard: React.FC = () => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/auth/admin/users/${userId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      await makeApiCall(`http://localhost:8000/auth/superadmin/users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
 
-      if (response.ok) {
-        showNotification("success", "User deleted successfully");
-        await fetchUsers();
-        await fetchStats();
-      } else if (response.status === 401) {
+      showNotification("success", "User deleted successfully");
+      await fetchUsers();
+      await fetchStats();
+    } catch (error: any) {
+      if (error.message.includes("401")) {
         removeToken();
         showNotification("error", "Session expired. Please login again.");
-      } else if (response.status === 400) {
-        const errorData: ApiResponse<never> = await response
-          .json()
-          .catch(() => ({}));
-        showNotification(
-          "error",
-          errorData.detail || "Cannot delete this user"
-        );
+      } else if (error.message.includes("400")) {
+        showNotification("error", error.message || "Cannot delete this user");
       } else {
-        const errorData: ApiResponse<never> = await response
-          .json()
-          .catch(() => ({}));
-        showNotification("error", errorData.detail || "Failed to delete user");
+        showNotification("error", error.message || "Failed to delete user");
       }
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      showNotification("error", "Network error. Please try again.");
     }
   };
 
@@ -498,11 +492,21 @@ const SuperAdminDashboard: React.FC = () => {
     setFormErrors({});
     setShowAddForm(false);
   };
-
+  
   // Login Form Component
+  // ... (No changes needed in the JSX for the Login Form)
   if (showLoginForm) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+        {/* Loading overlay for token verification */}
+        {loading && !loginData.email && (
+           <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center z-20">
+              <div className="flex items-center justify-center gap-2 text-white text-lg">
+                <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                  Verifying session...
+              </div>
+           </div>
+        )}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
           <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
@@ -604,6 +608,8 @@ const SuperAdminDashboard: React.FC = () => {
     );
   }
 
+  // Dashboard Component
+  // ... (No changes needed in the JSX for the main Dashboard view)
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Background Elements */}
@@ -968,7 +974,7 @@ const SuperAdminDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
-                {loading ? (
+                {loading && users.length === 0 ? (
                   <tr>
                     <td
                       colSpan={5}

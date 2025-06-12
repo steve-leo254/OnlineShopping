@@ -14,6 +14,7 @@ import {
   RefreshCw,
   LogOut,
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 // Type definitions
 interface User {
@@ -63,7 +64,7 @@ interface Pagination {
   page: number;
   limit: number;
   total: number;
-  pages: number;
+  pages: number; // Fixed typo from "pages Humidity"
 }
 
 interface ApiResponse<T> {
@@ -73,10 +74,13 @@ interface ApiResponse<T> {
   limit?: number;
   pages?: number;
   detail?: string;
-  access_token: string;
+  access_token?: string; // Made optional to reflect varying API responses
 }
 
 const SuperAdminDashboard: React.FC = () => {
+  const { token, role, isAuthenticated, login, logout } = useAuth();
+
+  // Component-specific state
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<Stats>({
     total_superadmins: 0,
@@ -87,7 +91,6 @@ const SuperAdminDashboard: React.FC = () => {
     total_users: 0,
   });
   const [showAddForm, setShowAddForm] = useState<boolean>(false);
-  const [showLoginForm, setShowLoginForm] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [loading, setLoading] = useState<boolean>(false);
@@ -104,80 +107,49 @@ const SuperAdminDashboard: React.FC = () => {
     total: 0,
     pages: 0,
   });
-
-  // Authentication state
-  const [authToken, setAuthToken] = useState<string>("");
-  const [currentUser, setCurrentUser] = useState<any>(null);
-
+  const [loginData, setLoginData] = useState<LoginData>({
+    email: "",
+    password: "",
+  });
+  const [currentUser, setCurrentUser] = useState<{ username: string } | null>(
+    null
+  );
   const [formData, setFormData] = useState<FormData>({
     username: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
-
-  const [loginData, setLoginData] = useState<LoginData>({
-    email: "",
-    password: "",
-  });
-
   const [formErrors, setFormErrors] = useState<FormErrors>({});
 
-  // In-memory token storage (simulating localStorage)
-  const [storedToken, setStoredToken] = useState<string>("");
+  const isSuperAdmin = isAuthenticated && role === "SUPERADMIN";
 
-  const getStoredToken = (): string => {
-    return storedToken;
+  // Utility function to format date
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
-  const storeToken = (token: string): void => {
-    setStoredToken(token);
-    setAuthToken(token);
-  };
-
-  const removeToken = (): void => {
-    setStoredToken("");
-    setAuthToken("");
-    setCurrentUser(null);
-    setShowLoginForm(true);
-  };
-
-  // Check for existing token on component mount
-  useEffect(() => {
-    const token = getStoredToken();
-    if (token) {
-      setAuthToken(token);
-      verifyToken(token);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (authToken && currentUser) {
-      fetchUsers();
-      fetchStats();
-    }
-  }, [pagination.page, searchTerm, roleFilter, authToken, currentUser]);
-
-  const makeApiCall = async (
+  // Generic API call function
+  const makeApiCall = async <T,>(
     url: string,
     options: RequestInit = {}
-  ): Promise<any> => {
+  ): Promise<T> => {
     try {
       const response = await fetch(url, {
-        headers: {
-          "Content-Type": "application/json",
-          ...options.headers,
-        },
+        headers: { "Content-Type": "application/json", ...options.headers },
         ...options,
       });
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
           errorData.detail || `HTTP error! status: ${response.status}`
         );
       }
-
       return await response.json();
     } catch (error) {
       console.error(`API call failed for ${url}:`, error);
@@ -185,85 +157,65 @@ const SuperAdminDashboard: React.FC = () => {
     }
   };
 
-  const verifyToken = async (token: string): Promise<void> => {
-    try {
-      const data = await makeApiCall(
-        "http://localhost:8000/auth/verify-token",
-        {
-          method: "POST",
-          body: JSON.stringify({ token }),
+  useEffect(() => {
+    if (isSuperAdmin && token) {
+      const fetchInitialData = async () => {
+        setLoading(true);
+        try {
+          const userData = await makeApiCall<{ username: string }>(
+            "http://localhost:8000/auth/me",
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          setCurrentUser(userData);
+          await Promise.all([fetchUsers(token), fetchStats(token)]);
+        } catch (error) {
+          console.error("Failed to fetch initial data", error);
+          showNotification(
+            "error",
+            "Failed to load dashboard data. Your session may have expired."
+          );
+          logout();
         }
-      );
-
-      setCurrentUser(data);
-      setShowLoginForm(false);
-    } catch (error) {
-      removeToken();
-      showNotification("error", "Session expired. Please login again.");
+        setLoading(false);
+      };
+      fetchInitialData();
     }
-  };
+  }, [isSuperAdmin, token, pagination.page, searchTerm, roleFilter]);
 
   const handleLogin = async (
     e: React.FormEvent<HTMLFormElement>
   ): Promise<void> => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      const data = await makeApiCall("http://localhost:8000/auth/login", {
-        method: "POST",
-        body: JSON.stringify({
-          email: loginData.email,
-          password: loginData.password,
-        }),
-      });
-
-      storeToken(data.access_token);
-
-      // Get user info
-      const userData = await makeApiCall("http://localhost:8000/auth/me", {
-        headers: {
-          Authorization: `Bearer ${data.access_token}`,
-        },
-      });
-
-      if (userData.role !== "superadmin") {
-        removeToken();
-        showNotification(
-          "error",
-          "Access denied. Superadmin privileges required."
-        );
-        return;
-      }
-
-      setCurrentUser(userData);
-      setShowLoginForm(false);
-      setLoginData({ email: "", password: "" });
+      const data = await makeApiCall<{ access_token: string }>(
+        "http://localhost:8000/auth/login",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            email: loginData.email,
+            password: loginData.password,
+          }),
+        }
+      );
+      login(data.access_token);
       showNotification("success", "Login successful!");
     } catch (error: any) {
-      showNotification("error", error.message || "Login failed");
+      showNotification(
+        "error",
+        error.message || "Login failed. Please check your credentials."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleLogout = (): void => {
-    removeToken();
-    setUsers([]);
-    setStats({
-      total_superadmins: 0,
-      total_admins: 0,
-      total_customers: 0,
-      admins_this_month: 0,
-      customers_this_month: 0,
-      total_users: 0,
-    });
+    logout();
     showNotification("success", "Logged out successfully");
   };
 
-  const fetchUsers = async (): Promise<void> => {
-    if (!authToken) return;
-
+  const fetchUsers = async (authToken: string): Promise<void> => {
     setLoading(true);
     try {
       const searchParam = searchTerm
@@ -271,16 +223,16 @@ const SuperAdminDashboard: React.FC = () => {
         : "";
       const roleParam =
         roleFilter !== "all" ? `&role_filter=${roleFilter}` : "";
-
-      const data: ApiResponse<User> = await makeApiCall(
-        `http://localhost:8000/auth/admin/users?page=${pagination.page}&limit=${pagination.limit}${searchParam}${roleParam}`,
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
+      const data = await makeApiCall<{
+        items: User[];
+        total: number;
+        page: number;
+        limit: number;
+        pages: number;
+      }>(
+        `http://localhost:8000/auth/superadmin/users?page=${pagination.page}&limit=${pagination.limit}${searchParam}${roleParam}`,
+        { headers: { Authorization: `Bearer ${authToken}` } }
       );
-
       setUsers(data.items || []);
       setPagination((prev) => ({
         ...prev,
@@ -288,143 +240,116 @@ const SuperAdminDashboard: React.FC = () => {
         pages: data.pages || 0,
       }));
     } catch (error: any) {
-      if (error.message.includes("401")) {
-        removeToken();
-        showNotification("error", "Session expired. Please login again.");
-      } else {
-        showNotification("error", error.message || "Failed to fetch users");
-      }
+      handleApiError(error);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchStats = async (): Promise<void> => {
-    if (!authToken) return;
-
+  const fetchStats = async (authToken: string): Promise<void> => {
     try {
-      const data: Stats = await makeApiCall(
-        "http://localhost:8000/auth/admin/stats",
+      const data = await makeApiCall<Stats>(
+        "http://localhost:8000/auth/superadmin/stats",
         {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
+          headers: { Authorization: `Bearer ${authToken}` },
         }
       );
-
       setStats(data);
     } catch (error: any) {
-      if (error.message.includes("401")) {
-        removeToken();
-        showNotification("error", "Session expired. Please login again.");
-      }
+      handleApiError(error);
     }
   };
 
-  const handleRefresh = async (): Promise<void> => {
-    setRefreshing(true);
-    await Promise.all([fetchUsers(), fetchStats()]);
-    setRefreshing(false);
-    showNotification("success", "Data refreshed successfully");
+  const handleApiError = (error: any) => {
+    if (error.message.includes("401") || error.message.includes("403")) {
+      showNotification(
+        "error",
+        "Session expired or invalid. Please login again."
+      );
+      logout();
+    } else {
+      showNotification(
+        "error",
+        error.message || "An unexpected error occurred."
+      );
+    }
+  };
+
+  const handleAddAdmin = async (e) => {
+    e.preventDefault();
+    if (!validateForm() || !token) return;
+    setLoading(true);
+
+    const requestBody = {
+      username: formData.username,
+      email: formData.email,
+      password: formData.password,
+    };
+
+    console.log("Request Body:", JSON.stringify(requestBody)); // Debug log
+
+    try {
+      const response = await fetch(
+        "http://localhost:8000/auth/superadmin/create-admin",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to add admin");
+      }
+
+      resetForm();
+      setShowAddForm(false);
+      showNotification("success", "Admin added successfully!");
+      await Promise.all([fetchUsers(token), fetchStats(token)]);
+    } catch (error) {
+      handleApiError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!window.confirm("Are you sure you want to delete this user?") || !token)
+      return;
+    try {
+      await makeApiCall(
+        `http://localhost:8000/auth/superadmin/users/${userId}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      showNotification("success", "User deleted successfully");
+      await Promise.all([fetchUsers(token), fetchStats(token)]);
+    } catch (error: any) {
+      handleApiError(error);
+    }
   };
 
   const validateForm = (): boolean => {
     const errors: FormErrors = {};
-
-    if (!formData.username.trim()) {
-      errors.username = "Username is required";
-    } else if (formData.username.length < 3) {
+    if (!formData.username.trim()) errors.username = "Username is required";
+    else if (formData.username.length < 3)
       errors.username = "Username must be at least 3 characters";
-    }
-
-    if (!formData.email.trim()) {
-      errors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    if (!formData.email.trim()) errors.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(formData.email))
       errors.email = "Please enter a valid email";
-    }
-
-    if (!formData.password) {
-      errors.password = "Password is required";
-    } else if (formData.password.length < 8) {
+    if (!formData.password) errors.password = "Password is required";
+    else if (formData.password.length < 8)
       errors.password = "Password must be at least 8 characters";
-    }
-
-    if (formData.password !== formData.confirmPassword) {
+    if (formData.password !== formData.confirmPassword)
       errors.confirmPassword = "Passwords do not match";
-    }
-
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
-  };
-
-  const handleAddAdmin = async (
-    e: React.FormEvent<HTMLFormElement>
-  ): Promise<void> => {
-    e.preventDefault();
-
-    if (!validateForm()) return;
-
-    setLoading(true);
-    try {
-      await makeApiCall("http://localhost:8000/auth/admin/create-admin", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-        }),
-      });
-
-      setFormData({
-        username: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-      });
-      setFormErrors({});
-      setShowAddForm(false);
-      showNotification("success", "Admin added successfully!");
-      await fetchUsers();
-      await fetchStats();
-    } catch (error: any) {
-      if (error.message.includes("401")) {
-        removeToken();
-        showNotification("error", "Session expired. Please login again.");
-      } else {
-        showNotification("error", error.message || "Failed to add admin");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteUser = async (userId: string): Promise<void> => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
-
-    try {
-      await makeApiCall(`http://localhost:8000/auth/admin/users/${userId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-
-      showNotification("success", "User deleted successfully");
-      await fetchUsers();
-      await fetchStats();
-    } catch (error: any) {
-      if (error.message.includes("401")) {
-        removeToken();
-        showNotification("error", "Session expired. Please login again.");
-      } else if (error.message.includes("400")) {
-        showNotification("error", error.message || "Cannot delete this user");
-      } else {
-        showNotification("error", error.message || "Failed to delete user");
-      }
-    }
   };
 
   const showNotification = (
@@ -432,40 +357,10 @@ const SuperAdminDashboard: React.FC = () => {
     message: string
   ): void => {
     setNotification({ type, message, show: true });
-    setTimeout(() => {
-      setNotification({ type: "", message: "", show: false });
-    }, 4000);
-  };
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    setSearchTerm(e.target.value);
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  };
-
-  const handleRoleFilterChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ): void => {
-    setRoleFilter(e.target.value);
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  };
-
-  const handlePageChange = (newPage: number): void => {
-    setPagination((prev) => ({ ...prev, page: newPage }));
-  };
-
-  const formatDate = (dateString?: string): string => {
-    if (!dateString) return "Never";
-    try {
-      return new Date(dateString).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return "Invalid Date";
-    }
+    setTimeout(
+      () => setNotification({ type: "", message: "", show: false }),
+      4000
+    );
   };
 
   const resetForm = (): void => {
@@ -474,10 +369,45 @@ const SuperAdminDashboard: React.FC = () => {
     setShowAddForm(false);
   };
 
-  // Login Form Component
-  if (showLoginForm) {
+  // Handler functions
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handleRoleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setRoleFilter(e.target.value);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.pages) {
+      setPagination((prev) => ({ ...prev, page: newPage }));
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([fetchUsers(token!), fetchStats(token!)]);
+    } catch (error) {
+      handleApiError(error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  if (!isSuperAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+        {loading && !loginData.email && (
+          <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center z-20">
+            <div className="flex items-center justify-center gap-2 text-white text-lg">
+              <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+              Verifying session...
+            </div>
+          </div>
+        )}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
           <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
@@ -581,14 +511,12 @@ const SuperAdminDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
       </div>
 
       <div className="relative z-10 container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -600,7 +528,8 @@ const SuperAdminDashboard: React.FC = () => {
                   Super Admin Dashboard
                 </h1>
                 <p className="text-gray-300 text-sm sm:text-base">
-                  Welcome, {currentUser?.username} | Manage system users
+                  Welcome, {currentUser?.username || "User"} | Manage system
+                  users
                 </p>
               </div>
             </div>
@@ -626,7 +555,6 @@ const SuperAdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Notification */}
         {notification.show && (
           <div
             className={`mb-6 p-4 rounded-lg border-l-4 ${
@@ -654,7 +582,6 @@ const SuperAdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 mb-8">
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20">
             <div className="flex items-center gap-3 sm:gap-4">
@@ -731,7 +658,6 @@ const SuperAdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Controls */}
         <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20 mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex gap-4 w-full sm:w-auto">
@@ -767,7 +693,6 @@ const SuperAdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Add Admin Modal */}
         {showAddForm && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-slate-800 rounded-xl p-6 w-full max-w-md border border-slate-700 max-h-[90vh] overflow-y-auto">
@@ -919,7 +844,6 @@ const SuperAdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Users Table */}
         <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -943,7 +867,7 @@ const SuperAdminDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
-                {loading ? (
+                {loading && users.length === 0 ? (
                   <tr>
                     <td
                       colSpan={5}
@@ -995,9 +919,7 @@ const SuperAdminDashboard: React.FC = () => {
                               <p className="text-gray-400 text-xs">
                                 Created: {formatDate(user.created_at)}
                               </p>
-                              <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 bg-green-900/50 text-green-400 border border-green-700`}
-                              >
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 bg-green-900/50 text-green-400 border border-green-700">
                                 {user.status}
                               </span>
                             </div>
@@ -1011,9 +933,7 @@ const SuperAdminDashboard: React.FC = () => {
                         {formatDate(user.created_at)}
                       </td>
                       <td className="px-4 sm:px-6 py-4 hidden lg:table-cell">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900/50 text-green-400 border border-green-700`}
-                        >
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900/50 text-green-400 border border-green-700">
                           {user.status}
                         </span>
                       </td>
@@ -1037,15 +957,16 @@ const SuperAdminDashboard: React.FC = () => {
             </table>
           </div>
 
-          {/* Pagination */}
           {pagination.pages > 1 && (
             <div className="px-4 sm:px-6 py-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-sm text-gray-400">
                 Showing{" "}
-                {Math.min(
-                  (pagination.page - 1) * pagination.limit + 1,
-                  pagination.total
-                )}{" "}
+                {pagination.total > 0
+                  ? Math.min(
+                      (pagination.page - 1) * pagination.limit + 1,
+                      pagination.total
+                    )
+                  : 0}{" "}
                 to{" "}
                 {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
                 of {pagination.total} results

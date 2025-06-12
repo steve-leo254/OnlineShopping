@@ -28,7 +28,11 @@ const Bar: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-8">
               <div className="shrink-5">
-                <Link to="https://www.instagram.com/flowtechs_ltd" title="" className="">
+                <Link
+                  to="https://www.instagram.com/flowtechs_ltd"
+                  title=""
+                  className=""
+                >
                   {/* <img
                     className="block w-auto h-8 dark:hidden"
                     src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/logo-full.svg"
@@ -175,55 +179,27 @@ const Bar: React.FC = () => {
                   <li>
                     <Link
                       to="/MyProfile"
-                      title=""
                       className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                     >
-                      {" "}
-                      My Account{" "}
+                      My Account
                     </Link>
                   </li>
                   <li>
                     <Link
                       to="/orders-overview"
-                      title=""
                       className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                     >
-                      {" "}
-                      My Orders{" "}
+                      My Orders
                     </Link>
                   </li>
-
-                  <li>
-                    <Link
-                      to="#"
-                      title=""
-                      className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
-                    >
-                      {" "}
-                      Address-book{" "}
-                    </Link>
-                  </li>
-                  {(role === "admin" || role === "superadmin")&& (
-                    <li>
-                      <Link
-                        to="/products"
-                        title=""
-                        className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
-                      >
-                        {" "}
-                        Products{" "}
-                      </Link>
-                    </li>
-                  )}
+                  {/* Admin and Superadmin Links */}
                   {(role === "admin" || role === "superadmin") && (
                     <li>
                       <Link
-                        to="/AdminPage"
-                        title=""
+                        to="/products"
                         className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                       >
-                        {" "}
-                        AdminPage{" "}
+                        Products
                       </Link>
                     </li>
                   )}
@@ -231,11 +207,20 @@ const Bar: React.FC = () => {
                     <li>
                       <Link
                         to="/Orders-management"
-                        title=""
                         className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
                       >
-                        {" "}
-                        ALL Orders{" "}
+                        All Orders
+                      </Link>
+                    </li>
+                  )}
+                  {/* Superadmin-only Link */}
+                  {role === "superadmin" && (
+                    <li>
+                      <Link
+                        to="/AdminPage"
+                        className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
+                      >
+                        Admin Dashboard
                       </Link>
                     </li>
                   )}
