@@ -183,7 +183,7 @@ const Bar: React.FC = () => {
                           My Orders
                         </Link>
                       </li>
-                      {(role === "admin" || role === "SUPERADMIN") && (
+                      {(role === "admin" || role === "SUPERADMIN" ) && (
                         <li>
                           <Link
                             to="/products"

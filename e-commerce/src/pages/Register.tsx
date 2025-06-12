@@ -66,7 +66,7 @@ const Register: React.FC = () => {
       );
 
       console.log("Registration successful:", response.data);
-      navigate("/login");
+      navigate("/");
     } catch (error) {
       console.error("Registration error:", error);
       setError(
