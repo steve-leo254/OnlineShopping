@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
-import { X, Upload, Save, Loader2, Tag, DollarSign, Package, Star, Image as ImageIcon } from 'lucide-react';
+import { X, Upload, Save, Loader2, Tag, DollarSign, Package, Star, Image as ImageIcon, PlusCircle } from 'lucide-react';
+import CategoryForm from './AddCategory'; // Import the CategoryForm component
 
 // Define types based on your Pydantic models
 type Category = {
@@ -56,18 +57,20 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [showCategoryModal, setShowCategoryModal] = useState<boolean>(false); // State for category modal
 
-  // Fetch categories on mount
+  // Fetch categories on mount and when a new category is added
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get<Category[]>('http://localhost:8000/public/categories');
+      setCategories(response.data);
+    } catch (err) {
+      toast.error('Failed to fetch categories');
+      console.error('Error fetching categories:', err);
+    }
+  };
+
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await axios.get<Category[]>('http://localhost:8000/public/categories');
-        setCategories(response.data);
-      } catch (err) {
-        toast.error('Failed to fetch categories');
-        console.error('Error fetching categories:', err);
-      }
-    };
     fetchCategories();
   }, []);
 
@@ -210,6 +213,11 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
     }
   };
 
+  const handleCategoryAdded = () => {
+    fetchCategories(); // Re-fetch categories to update the dropdown
+    setShowCategoryModal(false); // Close the modal
+  };
+
   return (
     <div className="relative bg-white rounded-2xl max-h-[90vh] overflow-hidden">
       {/* Header */}
@@ -274,19 +282,29 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category
                 </label>
-                <select
-                  name="category_id"
-                  value={formData.category_id ?? ''}
-                  onChange={handleChange}
-                  className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                >
-                  <option value="">Select category</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-2"> {/* Added for button next to select */}
+                  <select
+                    name="category_id"
+                    value={formData.category_id ?? ''}
+                    onChange={handleChange}
+                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  >
+                    <option value="">Select category</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowCategoryModal(true)}
+                    className="p-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors duration-200 flex items-center justify-center"
+                    title="Add new category"
+                  >
+                    <PlusCircle className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -550,6 +568,18 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
           </div>
         </form>
       </div>
+
+      {/* Category Modal */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <CategoryForm
+              onClose={() => setShowCategoryModal(false)}
+              onCategoryAdded={handleCategoryAdded}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

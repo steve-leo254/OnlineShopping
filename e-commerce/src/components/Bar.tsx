@@ -23,12 +23,16 @@ const Bar: React.FC = () => {
   };
   return (
     <>
-      <nav className="bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 antialiased sticky top-0 z-20">
+      <nav className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 antialiased sticky top-0 z-20">
         <div className="max-w-screen-xl px-4 mx-auto 2xl:px-0 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-8">
               <div className="shrink-5">
-                <Link to="https://www.instagram.com/flowtechs_ltd" title="" className="">
+                <Link
+                  to="https://www.instagram.com/flowtechs_ltd"
+                  title=""
+                  className=""
+                >
                   {/* <img
                     className="block w-auto h-8 dark:hidden"
                     src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/logo-full.svg"
@@ -314,69 +318,139 @@ const Bar: React.FC = () => {
         id="logoutModal"
         tabIndex={-1}
         aria-hidden="true"
-        className="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-modal md:h-full"
+        className="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-modal md:h-full backdrop-blur-sm bg-black/30 animate-fadeIn"
       >
-        <div className="relative p-4 w-full max-w-md h-full md:h-auto">
-          {/* <!-- Modal content --> */}
-          <div className="relative p-4 text-center bg-white rounded-lg shadow dark:bg-gray-800 sm:p-5">
+        <div className="relative p-4 w-full max-w-md h-full md:h-auto animate-slideUp">
+          {/* Modal content */}
+          <div className="relative p-8 text-center bg-white rounded-2xl shadow-2xl border border-gray-100 backdrop-blur-xl">
+            {/* Close button */}
             <button
               type="button"
-              className="text-gray-400 absolute top-2.5 right-2.5 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-all duration-200 hover:scale-110"
               data-modal-toggle="logoutModal"
             >
               <svg
-                aria-hidden="true"
                 className="w-5 h-5"
-                fill="currentColor"
-                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <path
-                  fill-rule="evenodd"
-                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clip-rule="evenodd"
-                ></path>
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
               <span className="sr-only">Close modal</span>
             </button>
-            <svg
-              className="text-gray-400 dark:text-gray-500 w-11 h-11 mb-3.5 mx-auto"
-              aria-hidden="true"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                clip-rule="evenodd"
-              ></path>
-            </svg>
-            <p className="mb-4 text-gray-500 dark:text-gray-300">
-              Are you sure you want to Logout?
-            </p>
-            {isAuthenticated && (
-              <div className="flex justify-center items-center space-x-4">
-                <Link
-                  to="/"
-                  data-modal-toggle="logoutModal"
-                  type="button"
-                  className="py-2 px-3 text-sm font-medium text-gray-500 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-primary-300 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600"
+
+            {/* Icon with gradient background */}
+            <div className="relative mb-6">
+              <div className="w-20 h-20 mx-auto bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg">
+                <svg
+                  className="w-10 h-10 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
                 >
-                  No, back to home page
-                </Link>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
+                </svg>
+              </div>
+              {/* Animated rings */}
+              <div className="absolute inset-0 w-20 h-20 mx-auto rounded-full border-2 border-red-200 animate-ping opacity-30"></div>
+              <div className="absolute inset-0 w-20 h-20 mx-auto rounded-full border border-red-300 animate-pulse"></div>
+            </div>
+
+            {/* Title */}
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">
+              Ready to Leave?
+            </h3>
+
+            {/* Description */}
+            <p className="text-gray-600 mb-8 text-lg">
+              Your session will end and you'll need to sign in again to access
+              your account.
+            </p>
+
+            {isAuthenticated && (
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                {/* Cancel button */}
+                <button
+                  type="button"
+                  data-modal-toggle="logoutModal"
+                  className="group relative px-6 py-3 text-gray-700 bg-gray-50 border border-gray-200 rounded-xl font-medium transition-all duration-200 hover:bg-gray-100 hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-gray-200"
+                >
+                  <span className="relative z-10">Stay Logged In</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-gray-50 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                </button>
+
+                {/* Logout button */}
                 <button
                   onClick={handleLogout}
-                  type="submit"
-                  className="py-2 px-3 text-sm font-medium text-center text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-900"
+                  className="group relative px-6 py-3 text-white bg-gradient-to-r from-red-500 to-pink-600 rounded-xl font-medium transition-all duration-200 hover:from-red-600 hover:to-pink-700 hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-red-200 transform active:scale-95"
                 >
-                  Yes, Logout
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 16l4-4m0 0l-4-4m4 4H7"
+                      />
+                    </svg>
+                    Yes, Logout
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-pink-700 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                 </button>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Add these animations to your CSS */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+
+        .animate-slideUp {
+          animation: slideUp 0.3s ease-out;
+        }
+      `}</style>
     </>
   );
 };

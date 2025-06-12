@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
+import { X, Tag, BookOpen } from 'lucide-react'; // Added BookOpen for description
 
 // Define the category type to match your API
 type CategoryForm = {
@@ -9,7 +10,12 @@ type CategoryForm = {
   description: string;
 };
 
-const CategoryForm: React.FC = () => {
+interface CategoryFormProps {
+  onClose: () => void;
+  onCategoryAdded: () => void;
+}
+
+const CategoryForm: React.FC<CategoryFormProps> = ({ onClose, onCategoryAdded }) => {
   const { token, role } = useAuth();
   const [formData, setFormData] = useState<CategoryForm>({
     name: '',
@@ -82,9 +88,9 @@ const CategoryForm: React.FC = () => {
       setFormData({ name: '', description: '' });
       setErrors({});
       
-      // Optionally reload the page or refresh categories list
-      // window.location.reload(); // Uncomment if you want to reload
-      
+      onCategoryAdded(); // Call callback to notify parent about new category
+      onClose(); // Close the modal/popup
+
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || 'Failed to create category. Please try again.';
       toast.error(errorMessage);
@@ -100,35 +106,35 @@ const CategoryForm: React.FC = () => {
   };
 
   return (
-    <section className="bg-gray-50 dark:bg-gray-900 p-3 sm:p-5 antialiased">
-      <div className="mx-auto max-w-2xl px-4">
-        <div className="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+    <section className="bg-gradient-to-br from-blue-50 to-purple-50 p-6 sm:p-8 rounded-lg shadow-2xl antialiased relative overflow-hidden">
+      {/* Background circles for visual flair */}
+      <div className="absolute -top-10 -left-10 w-48 h-48 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
+      <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
+
+      <div className="relative z-10"> {/* Ensure content is above background */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Add New Category
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Create a new product category with name and description
-              </p>
+          <div className="flex items-center justify-between p-5 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-xl">
+                <Tag className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">
+                  Add New Category
+                </h3>
+                <p className="text-sm text-blue-100">
+                  Define a new category for your products
+                </p>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <svg
-                className="w-6 h-6 text-blue-600 dark:text-blue-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                />
-              </svg>
-            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-full transition-colors duration-200"
+              title="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Form */}
@@ -138,35 +144,38 @@ const CategoryForm: React.FC = () => {
               <div>
                 <label 
                   htmlFor="name" 
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  className="block mb-2 text-sm font-medium text-gray-800"
                 >
                   Category Name <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className={`bg-gray-50 border text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 ${
-                    errors.name 
-                      ? 'border-red-500 dark:border-red-500' 
-                      : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                  placeholder="Enter category name (e.g., Electronics, Clothing)"
-                  maxLength={50}
-                  required
-                />
+                <div className="relative">
+                  <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className={`pl-10 pr-4 py-2.5 bg-gray-50 border text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full transition-all duration-200 ${
+                      errors.name 
+                        ? 'border-red-500 ring-red-200' 
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="e.g., Electronics, Fashion, Home Goods"
+                    maxLength={50}
+                    required
+                  />
+                </div>
                 {errors.name && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
-                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <svg className="w-4 h-4 mr-1 inline" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
                     {errors.name}
                   </p>
                 )}
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {formData.name.length}/50 characters
+                <p className="mt-1 text-xs text-gray-500 text-right">
+                  {formData.name.length}/50
                 </p>
               </div>
 
@@ -174,53 +183,56 @@ const CategoryForm: React.FC = () => {
               <div>
                 <label 
                   htmlFor="description" 
-                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  className="block mb-2 text-sm font-medium text-gray-800"
                 >
                   Description <span className="text-red-500">*</span>
                 </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  rows={4}
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  className={`bg-gray-50 border text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 resize-none ${
-                    errors.description 
-                      ? 'border-red-500 dark:border-red-500' 
-                      : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                  placeholder="Describe the category and what types of products it includes..."
-                  maxLength={500}
-                  required
-                />
+                <div className="relative">
+                  <BookOpen className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                  <textarea
+                    id="description"
+                    name="description"
+                    rows={4}
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    className={`pl-10 pr-4 py-2.5 bg-gray-50 border text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full transition-all duration-200 resize-none ${
+                      errors.description 
+                        ? 'border-red-500 ring-red-200' 
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="Briefly describe the category, e.g., 'A collection of high-quality electronic gadgets and accessories.'"
+                    maxLength={500}
+                    required
+                  />
+                </div>
                 {errors.description && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
-                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <svg className="w-4 h-4 mr-1 inline" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                     </svg>
                     {errors.description}
                   </p>
                 )}
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  {formData.description.length}/500 characters
+                <p className="mt-1 text-xs text-gray-500 text-right">
+                  {formData.description.length}/500
                 </p>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={handleReset}
                   disabled={isSubmitting}
-                  className="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Reset
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 flex items-center ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  className={`text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center flex items-center justify-center transition-all duration-200 ${
+                    isSubmitting ? 'opacity-50 cursor-not-allowed' : 'shadow-md hover:shadow-lg'
                   }`}
                 >
                   {isSubmitting ? (
@@ -254,6 +266,30 @@ const CategoryForm: React.FC = () => {
           </form>
         </div>
       </div>
+
+      {/* CSS Animations for Blob */}
+      <style jsx>{`
+        @keyframes blob {
+          0% {
+            transform: translate(0px, 0px) scale(1);
+          }
+          33% {
+            transform: translate(30px, -50px) scale(1.1);
+          }
+          66% {
+            transform: translate(-20px, 20px) scale(0.9);
+          }
+          100% {
+            transform: translate(0px, 0px) scale(1);
+          }
+        }
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+      `}</style>
     </section>
   );
 };
