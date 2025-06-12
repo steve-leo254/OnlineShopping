@@ -6,13 +6,17 @@ import {
   Gift,
   Lock,
   CreditCard,
+  Truck, // Added for delivery icon
+  Package, // Added for stock/item icon
+  Star, // For ratings if applicable, though not directly used in cart for rating
 } from "lucide-react";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-const CartItem = ({ id, name, price, img_url, quantity }) => {
+// Modify CartItem to accept stockQuantity
+const CartItem = ({ id, name, price, img_url, quantity, stockQuantity }) => {
   const { increaseCartQuantity, decreaseCartQuantity } = useShoppingCart();
   const [notification, setNotification] = useState({
     show: false,
@@ -34,8 +38,15 @@ const CartItem = ({ id, name, price, img_url, quantity }) => {
     }, 3000);
   };
 
-  // Function to handle quantity increase with alert
+  // Function to handle quantity increase with stock check
   const handleIncreaseQuantity = () => {
+    if (quantity >= stockQuantity) {
+      showNotification(
+        `Cannot add more than available stock (${stockQuantity}) for ${name}`,
+        "warning"
+      );
+      return; // Prevent increasing quantity
+    }
     increaseCartQuantity(id);
     showNotification(`${name} quantity increased to ${quantity + 1}!`, "success");
   };
@@ -52,7 +63,7 @@ const CartItem = ({ id, name, price, img_url, quantity }) => {
   };
 
   return (
-    <div className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1 relative">
+    <div className="group bg-white rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1 relative animate-fade-in-up">
       {/* Notification Alert - Top Left */}
       {notification.show && (
         <div className="fixed top-4 left-4 z-50 max-w-xs">
@@ -73,61 +84,69 @@ const CartItem = ({ id, name, price, img_url, quantity }) => {
         </div>
       )}
 
-      <div className="p-6">
-        <div className="flex flex-col sm:flex-row gap-6">
+      <div className="p-6 md:p-8"> {/* Increased padding */}
+        <div className="flex flex-col sm:flex-row gap-6 md:gap-8 items-center"> {/* Aligned items better */}
           {/* Product Image */}
           <div className="relative flex-shrink-0">
-            <div className="w-full sm:w-32 h-32 rounded-xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+            <div className="w-full sm:w-40 h-40 rounded-2xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 shadow-inner"> {/* Larger, rounded image */}
               <img
                 src={img_url}
                 alt={name}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
               />
             </div>
-            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+            <div className="absolute -top-3 -right-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-base font-bold px-3 py-1.5 rounded-full shadow-md animate-bounce-subtle"> {/* Larger quantity badge with animation */}
               {quantity}x
             </div>
           </div>
 
           {/* Product Details */}
-          <div className="flex-1 space-y-4">
+          <div className="flex-1 space-y-4 text-center sm:text-left"> {/* Centered text for small screens */}
             <div>
-              <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+              <h3 className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
                 {name}
               </h3>
-              <p className="text-gray-600 mt-1">Premium Quality • In Stock</p>
+              <p className="text-gray-600 mt-2 flex items-center justify-center sm:justify-start gap-2"> {/* Added icons */}
+                <Package className="w-4 h-4 text-green-500" />
+                <span>In Stock: {stockQuantity} available</span>
+              </p>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
+            <div className="flex flex-col sm:flex-row items-center justify-between mt-4"> {/* Better alignment */}
+              <div className="space-y-1 mb-4 sm:mb-0">
                 <p className="text-sm text-gray-500">Unit Price</p>
-                <p className="text-lg font-semibold text-gray-900">
+                <p className="text-xl font-semibold text-gray-900">
                   {formatCurrency(price)}
                 </p>
               </div>
 
               {/* Quantity Controls */}
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3 bg-gray-100 rounded-full p-1.5 shadow-inner"> {/* Styled quantity controls */}
                 <button
                   onClick={handleDecreaseQuantity}
-                  className="w-8 h-8 rounded-full bg-red-100 hover:bg-red-200 text-red-600 flex items-center justify-center transition-colors hover:scale-110 transform"
+                  className="w-10 h-10 rounded-full bg-red-50 hover:bg-red-100 text-red-600 flex items-center justify-center transition-all duration-300 hover:scale-110 transform active:scale-95"
                 >
-                  <span className="font-bold">−</span>
+                  <span className="font-bold text-xl">−</span>
                 </button>
-                <span className="w-8 text-center font-semibold text-gray-900">
+                <span className="w-10 text-center font-bold text-gray-900 text-lg">
                   {quantity}
                 </span>
                 <button
                   onClick={handleIncreaseQuantity}
-                  className="w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 text-blue-600 flex items-center justify-center transition-colors hover:scale-110 transform"
+                  disabled={quantity >= stockQuantity} // Disable button if quantity is at or above stock
+                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 transform active:scale-95 ${
+                    quantity >= stockQuantity
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-blue-50 hover:bg-blue-100 text-blue-600"
+                  }`}
                 >
-                  <span className="font-bold">+</span>
+                  <span className="font-bold text-xl">+</span>
                 </button>
               </div>
 
-              <div className="text-right space-y-1">
-                <p className="text-sm text-gray-500">Total</p>
-                <p className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <div className="text-center sm:text-right space-y-1 mt-4 sm:mt-0">
+                <p className="text-sm text-gray-500">Subtotal</p>
+                <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   {formatCurrency(price * quantity)}
                 </p>
               </div>
@@ -143,7 +162,7 @@ const ShoppingCart: React.FC = () => {
   const { cartItems, cartQuantity, subtotal } = useShoppingCart();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  
+
   // Global notification state for cart-level alerts
   const [globalNotification, setGlobalNotification] = useState({
     show: false,
@@ -154,22 +173,23 @@ const ShoppingCart: React.FC = () => {
   // Handle empty cart
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center">
-        <div className="text-center space-y-6 max-w-md mx-auto px-4">
-          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center">
-            <ShoppingBag className="w-12 h-12 text-gray-400" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center px-4 py-16">
+        <div className="text-center space-y-8 max-w-lg mx-auto p-8 bg-white rounded-3xl shadow-xl border border-gray-100 animate-fade-in">
+          <div className="w-32 h-32 mx-auto bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center shadow-lg">
+            <ShoppingBag className="w-16 h-16 text-blue-600" strokeWidth={1.5} />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            Your cart is empty
+          <h2 className="text-3xl font-extrabold text-gray-900">
+            Your cart is feeling a bit lonely...
           </h2>
-          <p className="text-gray-600">
-            Looks like you haven't added any items to your cart yet.
+          <p className="text-lg text-gray-600 leading-relaxed">
+            Looks like you haven't added any items to your cart yet. Let's fill it with some awesome products!
           </p>
           <button
             onClick={() => navigate("/store")}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105"
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-10 py-4 rounded-full font-semibold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center justify-center mx-auto space-x-2"
           >
-            Start Shopping
+            <ArrowRight className="w-5 h-5" />
+            <span>Start Exploring Products</span>
           </button>
         </div>
       </div>
@@ -232,29 +252,25 @@ const ShoppingCart: React.FC = () => {
         </div>
       )}
 
-      <section className="py-12 lg:py-16">
+      <section className="py-12 lg:py-20"> {/* Increased vertical padding */}
         <div className="mx-auto max-w-7xl px-4">
           {/* Header */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full px-6 py-2 mb-6">
-              <ShoppingBag className="w-4 h-4 text-blue-600" />
-              <span className="text-blue-800 font-medium">Shopping Cart</span>
+          <div className="text-center mb-12 lg:mb-16"> {/* Increased bottom margin */}
+            <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full px-6 py-2 mb-6 shadow-md"> {/* Added shadow to badge */}
+              <ShoppingBag className="w-5 h-5 text-blue-600" /> {/* Larger icon */}
+              <span className="text-blue-800 font-semibold text-lg">Your Shopping Cart</span> {/* Bolder text */}
             </div>
-            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              Your Selected
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                {" "}
-                Items
-              </span>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-4 leading-tight"> {/* Larger, bolder, tighter leading */}
+              Ready to <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Checkout?</span>
             </h1>
-            <p className="text-xl text-gray-600">
-              Review your items and proceed to secure checkout
+            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto"> {/* Wider, more relaxed text */}
+              Review your items and proceed to our secure checkout process. Fast, simple, and secure!
             </p>
           </div>
 
-          <div className="lg:grid lg:grid-cols-3 lg:gap-8">
+          <div className="lg:grid lg:grid-cols-3 lg:gap-10"> {/* Increased gap */}
             {/* Cart Items */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-6 lg:space-y-8"> {/* Increased vertical spacing */}
               {cartItems.map((item) => (
                 <CartItem
                   key={item.id}
@@ -263,38 +279,39 @@ const ShoppingCart: React.FC = () => {
                   price={item.price}
                   img_url={item.img_url}
                   quantity={item.quantity}
+                  stockQuantity={item.stockQuantity} // Pass stockQuantity
                 />
               ))}
             </div>
 
             {/* Order Summary Sidebar */}
-            <div className="mt-8 lg:mt-0 space-y-6">
+            <div className="mt-10 lg:mt-0 space-y-8 animate-fade-in-right"> {/* Increased vertical spacing, added animation */}
               {/* Order Summary */}
               <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-                <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6">
-                  <h2 className="text-2xl font-bold text-white flex items-center space-x-2">
-                    <CreditCard className="w-6 h-6" />
-                    <span>Order Summary</span>
+                <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 flex items-center space-x-3"> {/* Added space for icon */}
+                  <CreditCard className="w-7 h-7 text-white" /> {/* Larger icon */}
+                  <h2 className="text-2xl font-bold text-white">
+                    Order Summary
                   </h2>
                 </div>
 
-                <div className="p-6 space-y-6">
+                <div className="p-6 md:p-8 space-y-6"> {/* Increased padding */}
                   {/* Items Summary */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                      <span className="text-gray-600">
+                      <span className="text-gray-600 text-lg">
                         Items ({cartQuantity})
                       </span>
-                      <span className="font-semibold text-gray-900">
+                      <span className="font-semibold text-gray-900 text-xl">
                         {formatCurrency(subtotal)}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between py-4">
-                      <span className="text-xl font-bold text-gray-900">
+                      <span className="text-2xl font-bold text-gray-900">
                         Total
                       </span>
-                      <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                      <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                         {formatCurrency(subtotal)}
                       </span>
                     </div>
@@ -303,44 +320,48 @@ const ShoppingCart: React.FC = () => {
                   {/* Checkout Button */}
                   <button
                     onClick={handleCheckout}
-                    className="cursor-pointer group w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center justify-center space-x-2"
+                    className="cursor-pointer group w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-2xl font-semibold text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl flex items-center justify-center space-x-3 shadow-lg"
                   >
-                    <Lock className="w-5 h-5" />
+                    <Lock className="w-6 h-6" /> {/* Larger icon */}
                     <span>
                       {isAuthenticated
-                        ? "Secure Checkout"
+                        ? "Proceed to Secure Checkout"
                         : "Login to Checkout"}
                     </span>
-                    <span className="bg-white/20 px-2 py-1 rounded-lg text-sm">
+                    <span className="bg-white/20 px-3 py-1.5 rounded-xl text-base"> {/* Larger badge */}
                       {formatCurrency(subtotal)}
                     </span>
                   </button>
 
                   {/* Continue Shopping */}
-                  <div className="text-center">
-                    <span className="text-gray-400 text-sm">or</span>
+                  <div className="text-center pt-4"> {/* Added padding top */}
+                    <p className="text-gray-400 text-sm mb-3">or</p>
                     <a
                       href="/store"
-                      className="group flex items-center justify-center space-x-2 text-blue-600 hover:text-blue-700 font-medium mt-2 transition-colors"
+                      className="group flex items-center justify-center space-x-2 text-blue-600 hover:text-blue-700 font-medium text-lg transition-colors"
                     >
                       <span>Continue Shopping</span>
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" /> {/* Larger icon */}
                     </a>
                   </div>
 
                   {/* Trust Indicators */}
-                  <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
-                    <div className="flex items-center space-x-3 text-sm text-gray-600">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="bg-gray-50 rounded-2xl p-5 space-y-3 mt-6"> {/* Increased padding, margin-top */}
+                    <div className="flex items-center space-x-3 text-base text-gray-700"> {/* Larger text, darker color */}
+                      <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div> {/* Larger dot */}
                       <span>Secure SSL Encryption</span>
                     </div>
-                    <div className="flex items-center space-x-3 text-sm text-gray-600">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div className="flex items-center space-x-3 text-base text-gray-700">
+                      <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
                       <span>30-Day Money Back Guarantee</span>
                     </div>
-                    <div className="flex items-center space-x-3 text-sm text-gray-600">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div className="flex items-center space-x-3 text-base text-gray-700">
+                      <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
                       <span>Free Returns & Exchanges</span>
+                    </div>
+                    <div className="flex items-center space-x-3 text-base text-gray-700"> {/* New trust indicator */}
+                      <Truck className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                      <span>Fast & Reliable Shipping</span>
                     </div>
                   </div>
                 </div>
@@ -348,30 +369,30 @@ const ShoppingCart: React.FC = () => {
 
               {/* Promo Code */}
               <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
-                <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-4">
-                  <h3 className="font-bold text-white flex items-center space-x-2">
-                    <Gift className="w-5 h-5" />
-                    <span>Promo Code</span>
+                <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-5 flex items-center space-x-3"> {/* Increased padding, added space for icon */}
+                  <Gift className="w-6 h-6 text-white" /> {/* Larger icon */}
+                  <h3 className="font-bold text-white text-xl">
+                    Have a Promo Code?
                   </h3>
                 </div>
 
-                <div className="p-6">
+                <div className="p-6 md:p-8"> {/* Increased padding */}
                   <div className="space-y-4">
                     <div>
                       <label
                         htmlFor="voucher"
-                        className="block text-sm font-medium text-gray-700 mb-2"
+                        className="block text-base font-medium text-gray-700 mb-2"
                       >
-                        Have a voucher or gift card?
+                        Unlock exclusive savings!
                       </label>
                       <div className="relative">
                         <input
                           type="text"
                           id="voucher"
-                          placeholder="Enter code here"
-                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 pr-12"
+                          placeholder="Enter your code here"
+                          className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200 pr-12 text-gray-700 text-lg" // Larger text, thicker border
                         />
-                        <Tag className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <Tag className="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400" /> {/* Larger icon */}
                       </div>
                     </div>
                     <button
@@ -380,7 +401,7 @@ const ShoppingCart: React.FC = () => {
                         console.log("Apply promo code");
                         showGlobalNotification("Promo code functionality coming soon!", "info");
                       }}
-                      className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
+                      className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white px-6 py-3 rounded-xl font-semibold text-lg transition-all duration-300 transform hover:scale-105 shadow-md"
                     >
                       Apply Code
                     </button>
@@ -405,6 +426,56 @@ const ShoppingCart: React.FC = () => {
         }
         .animate-slide-in-left {
           animation: slide-in-left 0.3s ease-out;
+        }
+
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.6s ease-out forwards;
+        }
+
+        @keyframes fade-in-up {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in-up {
+          animation: fade-in-up 0.5s ease-out forwards;
+        }
+
+        @keyframes fade-in-right {
+          from {
+            opacity: 0;
+            transform: translateX(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        .animate-fade-in-right {
+          animation: fade-in-right 0.6s ease-out forwards;
+        }
+
+        @keyframes bounce-subtle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+        .animate-bounce-subtle {
+            animation: bounce-subtle 1.5s infinite ease-in-out;
         }
       `}</style>
     </div>
