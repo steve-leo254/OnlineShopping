@@ -203,7 +203,7 @@ const Bar: React.FC = () => {
                       Address-book{" "}
                     </Link>
                   </li>
-                  {role === "admin" && (
+                  {(role === "admin" || role === "superadmin")&& (
                     <li>
                       <Link
                         to="/products"
@@ -215,7 +215,7 @@ const Bar: React.FC = () => {
                       </Link>
                     </li>
                   )}
-                  {role === "admin" && (
+                  {(role === "admin" || role === "superadmin") && (
                     <li>
                       <Link
                         to="/AdminPage"
@@ -227,7 +227,7 @@ const Bar: React.FC = () => {
                       </Link>
                     </li>
                   )}
-                  {role === "admin" && (
+                  {(role === "admin" || role === "superadmin") && (
                     <li>
                       <Link
                         to="/Orders-management"

@@ -1,606 +1,1105 @@
 import React, { useState, useEffect } from "react";
 import {
-  Search,
   Plus,
-  Filter,
-  MoreVertical,
-  Edit,
-  Trash2,
-  Package,
-  TrendingUp,
+  Users,
+  Search,
   Eye,
+  EyeOff,
+  Trash2,
+  Shield,
+  UserCheck,
+  AlertCircle,
+  CheckCircle,
+  X,
+  RefreshCw,
+  LogOut,
 } from "lucide-react";
-import { useFetchProducts } from "./UseFetchProducts";
-import UpdateProductModal from "./UpdateProductModal";
 
+// Type definitions
+interface User {
+  id: string;
+  username: string;
+  email: string;
+  role: "superadmin" | "admin" | "customer";
+  created_at: string;
+  status: "active";
+}
 
-const ProductsTable = () => {
-  const { isLoading, products, totalPages, totalItems, error, fetchProducts } =
-    useFetchProducts();
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedProducts, setSelectedProducts] = useState([]);
-  const [openDropdown, setOpenDropdown] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedBrand, setSelectedBrand] = useState("");
-  const [selectedStockLevel, setSelectedStockLevel] = useState("");
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [categories, setCategories] = useState([]);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [selectedProductForEdit, setSelectedProductForEdit] = useState(null);
+interface Stats {
+  total_superadmins: number;
+  total_admins: number;
+  total_customers: number;
+  admins_this_month: number;
+  customers_this_month: number;
+  total_users: number;
+}
 
-  const limit = 10;
+interface Notification {
+  type: "success" | "error" | "";
+  message: string;
+  show: boolean;
+}
 
-  useEffect(() => {
-    fetchProducts(currentPage, limit, searchQuery, selectedCategory);
-  }, [currentPage, searchQuery, selectedCategory, fetchProducts]);
+interface FormData {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
 
-  const handleSearch = (e) => {
-    setSearchQuery(e.target.value);
-    setCurrentPage(1);
-  };
+interface LoginData {
+  email: string;
+  password: string;
+}
 
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch("http://localhost:8000/public/categories"); // Replace with your actual endpoint
-      const data = await response.json();
-      setCategories(data);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
+interface FormErrors {
+  username?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+}
 
-  const handleCategoryFilter = (categoryId) => {
-    setSelectedCategory(categoryId);
-    setCurrentPage(1);
-  };
+interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+}
 
-  const startItem = (currentPage - 1) * limit + 1;
-  const endItem = Math.min(currentPage * limit, totalItems);
+interface ApiResponse<T> {
+  items?: T[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  pages?: number;
+  detail?: string;
+}
 
-  const getPaginationItems = () => {
-    const items = [];
-    const maxPagesToShow = 5;
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
-
-    if (endPage - startPage + 1 < maxPagesToShow) {
-      startPage = Math.max(1, endPage - maxPagesToShow + 1);
-    }
-
-    if (startPage > 1) {
-      items.push(
-        <button
-          key="1"
-          onClick={() => handlePageChange(1)}
-          className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors"
-        >
-          1
-        </button>
-      );
-      if (startPage > 2) {
-        items.push(
-          <span key="start-ellipsis" className="px-3 py-2 text-gray-500">
-            ...
-          </span>
-        );
-      }
-    }
-
-    for (let page = startPage; page <= endPage; page++) {
-      items.push(
-        <button
-          key={page}
-          onClick={() => handlePageChange(page)}
-          className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-            page === currentPage
-              ? "bg-blue-600 text-white shadow-sm"
-              : "text-gray-500 bg-white border border-gray-300 hover:bg-gray-50 hover:text-gray-700"
-          }`}
-        >
-          {page}
-        </button>
-      );
-    }
-
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) {
-        items.push(
-          <span key="end-ellipsis" className="px-3 py-2 text-gray-500">
-            ...
-          </span>
-        );
-      }
-      items.push(
-        <button
-          key={totalPages}
-          onClick={() => handlePageChange(totalPages)}
-          className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors"
-        >
-          {totalPages}
-        </button>
-      );
-    }
-
-    return items;
-  };
-
-  const getStockStatus = (stock) => {
-    if (stock > 20)
-      return { text: "In Stock", color: "bg-emerald-100 text-emerald-800" };
-    if (stock > 5)
-      return { text: "Low Stock", color: "bg-amber-100 text-amber-800" };
-    return { text: "Out of Stock", color: "bg-red-100 text-red-800" };
-  };
-
-  const toggleDropdown = (productId) => {
-    setOpenDropdown(openDropdown === productId ? null : productId);
-  };
-
-  const handleEdit = (product) => {
-    setSelectedProductForEdit(product);
-    setShowUpdateModal(true);
-    setOpenDropdown(null);
-  };
-
-  const handleModalClose = () => {
-    setShowUpdateModal(false);
-    setSelectedProductForEdit(null);
-    // Refresh the products data
-    fetchProducts(currentPage, limit, searchQuery, selectedCategory);
-  };
-
-  const handleDelete = (product) => {
-    console.log("Delete product:", product);
-    setOpenDropdown(null);
-  };
-
-  // Get unique brands from current products
-  const uniqueBrands = [...new Set(products.map((product) => product.brand))];
-
-  // Filter products based on local filters (brand, stock level, price range)
-  const filteredProducts = products.filter((product) => {
-    if (selectedBrand && product.brand !== selectedBrand) return false;
-    if (selectedStockLevel) {
-      const stock = product.stock_quantity;
-      if (selectedStockLevel === "In Stock" && stock <= 20) return false;
-      if (selectedStockLevel === "Low Stock" && (stock <= 5 || stock > 20))
-        return false;
-      if (selectedStockLevel === "Out of Stock" && stock > 0) return false;
-    }
-    if (minPrice && product.price < parseFloat(minPrice)) return false;
-    if (maxPrice && product.price > parseFloat(maxPrice)) return false;
-    return true;
+const SuperAdminDashboard: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [stats, setStats] = useState<Stats>({
+    total_superadmins: 0,
+    total_admins: 0,
+    total_customers: 0,
+    admins_this_month: 0,
+    customers_this_month: 0,
+    total_users: 0,
+  });
+  const [showAddForm, setShowAddForm] = useState<boolean>(false);
+  const [showLoginForm, setShowLoginForm] = useState<boolean>(true);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [notification, setNotification] = useState<Notification>({
+    type: "",
+    message: "",
+    show: false,
+  });
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    pages: 0,
   });
 
-  // Close dropdown when clicking outside
+  // Authentication state
+  const [authToken, setAuthToken] = useState<string>("");
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  const [formData, setFormData] = useState<FormData>({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const [loginData, setLoginData] = useState<LoginData>({
+    email: "",
+    password: "",
+  });
+
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+
+  // Check for existing token on component mount
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest(".dropdown-container")) {
-        setOpenDropdown(null);
+    const token = getStoredToken();
+    if (token) {
+      setAuthToken(token);
+      verifyToken(token);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (authToken && currentUser) {
+      fetchUsers();
+      fetchStats();
+    }
+  }, [pagination.page, searchTerm, roleFilter, authToken, currentUser]);
+
+  // Token management functions
+  const [storedToken, setStoredToken] = useState<string>("");
+
+  const getStoredToken = (): string => {
+    return storedToken;
+  };
+
+  const storeToken = (token: string): void => {
+    setStoredToken(token);
+    setAuthToken(token);
+  };
+
+  const removeToken = (): void => {
+    setStoredToken("");
+    setAuthToken("");
+    setCurrentUser(null);
+    setShowLoginForm(true);
+  };
+
+  const verifyToken = async (token: string): Promise<void> => {
+    try {
+      const response = await fetch("http://localhost:8000/auth/verify-token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentUser(data);
+        setShowLoginForm(false);
+      } else {
+        removeToken();
+        showNotification("error", "Session expired. Please login again.");
       }
-    };
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
+    } catch (error) {
+      console.error("Token verification failed:", error);
+      removeToken();
+      showNotification("error", "Authentication failed. Please login again.");
+    }
+  };
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  const handleLogin = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
+    e.preventDefault();
+    setLoading(true);
 
-  // Calculate stats based on all products
-  const inStockCount = products.filter((p) => p.stock_quantity > 0).length;
-  const lowStockCount = products.filter((p) => p.stock_quantity <= 5).length;
+    try {
+      const response = await fetch("http://localhost:8000/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: loginData.email,
+          password: loginData.password,
+        }),
+      });
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 sm:p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-600 rounded-xl">
-              <Package className="w-6 h-6 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900">Products</h1>
-          </div>
-          <p className="text-gray-600">
-            Manage your product inventory and track performance
-          </p>
+      if (response.ok) {
+        const data = await response.json();
+        storeToken(data.access_token);
+
+        // Get user info
+        const userResponse = await fetch("http://localhost:8000/auth/me", {
+          headers: {
+            Authorization: `Bearer ${data.access_token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          if (userData.role !== "superadmin") {
+            removeToken();
+            showNotification(
+              "error",
+              "Access denied. Superadmin privileges required."
+            );
+            return;
+          }
+          setCurrentUser(userData);
+          setShowLoginForm(false);
+          setLoginData({ email: "", password: "" });
+          showNotification("success", "Login successful!");
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        showNotification("error", errorData.detail || "Login failed");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      showNotification("error", "Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = (): void => {
+    removeToken();
+    setUsers([]);
+    setStats({
+      total_superadmins: 0,
+      total_admins: 0,
+      total_customers: 0,
+      admins_this_month: 0,
+      customers_this_month: 0,
+      total_users: 0,
+    });
+    showNotification("success", "Logged out successfully");
+  };
+
+  const fetchUsers = async (): Promise<void> => {
+    if (!authToken) return;
+
+    setLoading(true);
+    try {
+      const searchParam = searchTerm
+        ? `&search=${encodeURIComponent(searchTerm)}`
+        : "";
+      const roleParam = roleFilter !== "all" ? `&role_filter=${roleFilter}` : "";
+      const response = await fetch(
+        `http://localhost:8000/auth/admin/users?page=${pagination.page}&limit=${pagination.limit}${searchParam}${roleParam}`,
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data: ApiResponse<User> = await response.json();
+        setUsers(data.items || []);
+        setPagination((prev) => ({
+          ...prev,
+          total: data.total || 0,
+          pages: data.pages || 0,
+        }));
+      } else if (response.status === 401) {
+        removeToken();
+        showNotification("error", "Session expired. Please login again.");
+      } else {
+        const errorData: ApiResponse<never> = await response
+          .json()
+          .catch(() => ({}));
+        showNotification("error", errorData.detail || "Failed to fetch users");
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      showNotification("error", "Network error. Please check your connection.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStats = async (): Promise<void> => {
+    if (!authToken) return;
+
+    try {
+      const response = await fetch("http://localhost:8000/auth/admin/stats", {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const data: Stats = await response.json();
+        setStats(data);
+      } else if (response.status === 401) {
+        removeToken();
+        showNotification("error", "Session expired. Please login again.");
+      }
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  };
+
+  const handleRefresh = async (): Promise<void> => {
+    setRefreshing(true);
+    await Promise.all([fetchUsers(), fetchStats()]);
+    setRefreshing(false);
+    showNotification("success", "Data refreshed successfully");
+  };
+
+  const validateForm = (): boolean => {
+    const errors: FormErrors = {};
+
+    if (!formData.username.trim()) {
+      errors.username = "Username is required";
+    } else if (formData.username.length < 3) {
+      errors.username = "Username must be at least 3 characters";
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = "Please enter a valid email";
+    }
+
+    if (!formData.password) {
+      errors.password = "Password is required";
+    } else if (formData.password.length < 8) {
+      errors.password = "Password must be at least 8 characters";
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = "Passwords do not match";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleAddAdmin = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(
+        "http://localhost:8000/auth/admin/create-admin",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            username: formData.username,
+            email: formData.email,
+            password: formData.password,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        setFormData({
+          username: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+        });
+        setFormErrors({});
+        setShowAddForm(false);
+        showNotification("success", "Admin added successfully!");
+        await fetchUsers();
+        await fetchStats();
+      } else if (response.status === 401) {
+        removeToken();
+        showNotification("error", "Session expired. Please login again.");
+      } else {
+        const errorData: ApiResponse<never> = await response
+          .json()
+          .catch(() => ({}));
+        showNotification("error", errorData.detail || "Failed to add admin");
+      }
+    } catch (error) {
+      console.error("Error adding admin:", error);
+      showNotification("error", "Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string): Promise<void> => {
+    if (!window.confirm("Are you sure you want to delete this user?")) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:8000/auth/admin/users/${userId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        showNotification("success", "User deleted successfully");
+        await fetchUsers();
+        await fetchStats();
+      } else if (response.status === 401) {
+        removeToken();
+        showNotification("error", "Session expired. Please login again.");
+      } else if (response.status === 400) {
+        const errorData: ApiResponse<never> = await response
+          .json()
+          .catch(() => ({}));
+        showNotification(
+          "error",
+          errorData.detail || "Cannot delete this user"
+        );
+      } else {
+        const errorData: ApiResponse<never> = await response
+          .json()
+          .catch(() => ({}));
+        showNotification("error", errorData.detail || "Failed to delete user");
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      showNotification("error", "Network error. Please try again.");
+    }
+  };
+
+  const showNotification = (
+    type: "success" | "error",
+    message: string
+  ): void => {
+    setNotification({ type, message, show: true });
+    setTimeout(() => {
+      setNotification({ type: "", message: "", show: false });
+    }, 4000);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    setSearchTerm(e.target.value);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handleRoleFilterChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ): void => {
+    setRoleFilter(e.target.value);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handlePageChange = (newPage: number): void => {
+    setPagination((prev) => ({ ...prev, page: newPage }));
+  };
+
+  const formatDate = (dateString?: string): string => {
+    if (!dateString) return "Never";
+    try {
+      return new Date(dateString).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "Invalid Date";
+    }
+  };
+
+  const resetForm = (): void => {
+    setFormData({ username: "", email: "", password: "", confirmPassword: "" });
+    setFormErrors({});
+    setShowAddForm(false);
+  };
+
+  // Login Form Component
+  if (showLoginForm) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
         </div>
 
-        {/* Error Display */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600">{error}</p>
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 w-full max-w-md border border-white/20 relative z-10">
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-purple-600 rounded-lg">
+                <Shield className="w-8 h-8 text-white" />
+              </div>
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-2">
+              Super Admin Login
+            </h1>
+            <p className="text-gray-300">
+              Sign in to access the superadmin dashboard
+            </p>
+          </div>
+
+          {notification.show && (
+            <div
+              className={`mb-6 p-4 rounded-lg border-l-4 ${
+                notification.type === "success"
+                  ? "bg-green-900/50 border-green-500 text-green-100"
+                  : "bg-red-900/50 border-red-500 text-red-100"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {notification.type === "success" ? (
+                  <CheckCircle className="w-5 h-5" />
+                ) : (
+                  <AlertCircle className="w-5 h-5" />
+                )}
+                <span>{notification.message}</span>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                value={loginData.email}
+                onChange={(e) =>
+                  setLoginData({ ...loginData, email: e.target.value })
+                }
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Enter your email"
+                required
+                disabled={loading}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={loginData.password}
+                  onChange={(e) =>
+                    setLoginData({ ...loginData, password: e.target.value })
+                  }
+                  className="w-full px-3 py-2 pr-10 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Enter your password"
+                  required
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                  disabled={loading}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
+            >
+              {loading ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      {/* Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+      </div>
+
+      <div className="relative z-10 container mx-auto px-4 py-8 max-w-7xl">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-600 rounded-lg">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white">
+                  Super Admin Dashboard
+                </h1>
+                <p className="text-gray-300 text-sm sm:text-base">
+                  Welcome, {currentUser?.username} | Manage system users
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 backdrop-blur-sm border border-white/20"
+              >
+                <RefreshCw
+                  className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+                />
+                Refresh
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Notification */}
+        {notification.show && (
+          <div
+            className={`mb-6 p-4 rounded-lg border-l-4 ${
+              notification.type === "success"
+                ? "bg-green-900/50 border-green-500 text-green-100"
+                : "bg-red-900/50 border-red-500 text-red-100"
+            } backdrop-blur-sm`}
+          >
+            <div className="flex items-center gap-2">
+              {notification.type === "success" ? (
+                <CheckCircle className="w-5 h-5 flex-shrink-0" />
+              ) : (
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              )}
+              <span className="flex-1">{notification.message}</span>
+              <button
+                onClick={() =>
+                  setNotification({ ...notification, show: false })
+                }
+                className="text-gray-400 hover:text-white flex-shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Total Products
-                </p>
-                <p className="text-2xl font-bold text-gray-900">{totalItems}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 mb-8">
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-purple-600 rounded-lg">
+                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <div className="p-3 bg-blue-100 rounded-xl">
-                <Package className="w-6 h-6 text-blue-600" />
+              <div>
+                <p className="text-gray-300 text-xs sm:text-sm">
+                  Total Superadmins
+                </p>
+                <p className="text-xl sm:text-2xl font-bold text-white">
+                  {stats.total_superadmins}
+                </p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">In Stock</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {inStockCount}
-                </p>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-blue-600 rounded-lg">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <div className="p-3 bg-emerald-100 rounded-xl">
-                <TrendingUp className="w-6 h-6 text-emerald-600" />
+              <div>
+                <p className="text-gray-300 text-xs sm:text-sm">Total Admins</p>
+                <p className="text-xl sm:text-2xl font-bold text-white">
+                  {stats.total_admins}
+                </p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-orange-600 rounded-lg">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Low Stock</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {lowStockCount}
+                <p className="text-gray-300 text-xs sm:text-sm">
+                  Total Customers
+                </p>
+                <p className="text-xl sm:text-2xl font-bold text-white">
+                  {stats.total_customers}
                 </p>
               </div>
-              <div className="p-3 bg-amber-100 rounded-xl">
-                <Eye className="w-6 h-6 text-amber-600" />
+            </div>
+          </div>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-green-600 rounded-lg">
+                <UserCheck className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-gray-300 text-xs sm:text-sm">
+                  New Admins (Month)
+                </p>
+                <p className="text-xl sm:text-2xl font-bold text-white">
+                  {stats.admins_this_month}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="p-2 sm:p-3 bg-indigo-600 rounded-lg">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-gray-300 text-xs sm:text-sm">
+                  New Customers (Month)
+                </p>
+                <p className="text-xl sm:text-2xl font-bold text-white">
+                  {stats.customers_this_month}
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Main Table Container */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          {/* Table Header */}
-          <div className="p-6 border-b border-gray-100">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              {/* Search */}
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+        {/* Controls */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20 mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="flex gap-4 w-full sm:w-auto">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={handleSearch}
-                  className="text-gray-500 w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                  placeholder="Search users..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
               </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
-                    showFilters
-                      ? "bg-blue-600 text-white shadow-lg"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  <Filter className="w-4 h-4" />
-                  Filter
-                </button>
-
-                <button className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl">
-                  <Plus className="w-4 h-4" />
-                  Add Product
-                </button>
-              </div>
+              <select
+                value={roleFilter}
+                onChange={handleRoleFilterChange}
+                className="bg-white/10 border border-white/20 rounded-lg text-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                <option value="all">All Roles</option>
+                <option value="superadmin">Superadmin</option>
+                <option value="admin">Admin</option>
+                <option value="customer">Customer</option>
+              </select>
             </div>
 
-            {/* Filter Panel */}
-            {showFilters && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <select
-                    className="text-gray-500 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    value={selectedBrand}
-                    onChange={(e) => setSelectedBrand(e.target.value)}
-                  >
-                    <option value="">All Brands</option>
-                    {uniqueBrands.map((brand) => (
-                      <option key={brand} value={brand}>
-                        {brand}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="text-gray-500 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    value={selectedStockLevel}
-                    onChange={(e) => setSelectedStockLevel(e.target.value)}
-                  >
-                    <option value="">All Stock Levels</option>
-                    <option value="In Stock">In Stock</option>
-                    <option value="Low Stock">Low Stock</option>
-                    <option value="Out of Stock">Out of Stock</option>
-                  </select>
-                  <select
-                    className="text-gray-500 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    value={selectedCategory || ""}
-                    onChange={(e) =>
-                      handleCategoryFilter(
-                        e.target.value ? parseInt(e.target.value) : null
-                      )
-                    }
-                  >
-                    <option value="">All Categories</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    placeholder="Min Price"
-                    value={minPrice}
-                    onChange={(e) => setMinPrice(e.target.value)}
-                    className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Max Price"
-                    value={maxPrice}
-                    onChange={(e) => setMaxPrice(e.target.value)}
-                    className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-            )}
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
+            >
+              <Plus className="w-4 h-4" />
+              Add New Admin
+            </button>
           </div>
+        </div>
 
-          {/* Table */}
+        {/* Add Admin Modal */}
+        {showAddForm && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-800 rounded-xl p-6 w-full max-w-md border border-slate-700 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-white">Add New Admin</h2>
+                <button
+                  onClick={resetForm}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddAdmin} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.username}
+                    onChange={(e) =>
+                      setFormData({ ...formData, username: e.target.value })
+                    }
+                    className={`w-full px-3 py-2 bg-slate-700 border ${
+                      formErrors.username
+                        ? "border-red-500"
+                        : "border-slate-600"
+                    } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                    placeholder="Enter username"
+                    disabled={loading}
+                  />
+                  {formErrors.username && (
+                    <p className="text-red-400 text-sm mt-1">
+                      {formErrors.username}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    className={`w-full px-3 py-2 bg-slate-700 border ${
+                      formErrors.email ? "border-red-500" : "border-slate-600"
+                    } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                    placeholder="Enter email"
+                    disabled={loading}
+                  />
+                  {formErrors.email && (
+                    <p className="text-red-400 text-sm mt-1">
+                      {formErrors.email}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      className={`w-full px-3 py-2 pr-10 bg-slate-700 border ${
+                        formErrors.password
+                          ? "border-red-500"
+                          : "border-slate-600"
+                      } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                      placeholder="Enter password"
+                      disabled={loading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                      disabled={loading}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                  {formErrors.password && (
+                    <p className="text-red-400 text-sm mt-1">
+                      {formErrors.password}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Confirm Password
+                  </label>
+                  <input
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
+                    className={`w-full px-3 py-2 bg-slate-700 border ${
+                      formErrors.confirmPassword
+                        ? "border-red-500"
+                        : "border-slate-600"
+                    } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                    placeholder="Confirm password"
+                    disabled={loading}
+                  />
+                  {formErrors.confirmPassword && (
+                    <p className="text-red-400 text-sm mt-1">
+                      {formErrors.confirmPassword}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-medium transition-colors"
+                    disabled={loading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium transition-all duration-200 disabled:opacity-50"
+                  >
+                    {loading ? "Adding..." : "Add Admin"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Users Table */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-100">
+              <thead className="bg-white/5">
                 <tr>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">
-                    Product
+                  <th className="px-4 sm:px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                    User Details
                   </th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">
-                    Price
+                  <th className="px-4 sm:px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider hidden sm:table-cell">
+                    Role
                   </th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">
-                    Original Price
+                  <th className="px-4 sm:px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider hidden sm:table-cell">
+                    Created
                   </th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">
-                    Stock
-                  </th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">
-                    Brand
-                  </th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">
-                    Category
-                  </th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">
-                    Rating
-                  </th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">
+                  <th className="px-4 sm:px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                     Status
                   </th>
-                  <th className="text-right py-4 px-6 font-semibold text-gray-900">
+                  <th className="px-4 sm:px-6 py-4 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {isLoading ? (
+              <tbody className="divide-y divide-white/10">
+                {loading ? (
                   <tr>
-                    <td colSpan="9" className="py-12 text-center">
-                      <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                        <span className="ml-3 text-gray-600">
-                          Loading products...
-                        </span>
+                    <td
+                      colSpan={5}
+                      className="px-4 sm:px-6 py-8 text-center text-gray-400"
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                        Loading users...
                       </div>
                     </td>
                   </tr>
-                ) : filteredProducts.length === 0 ? (
+                ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan="9" className="py-12 text-center text-gray-500">
-                      No products found
+                    <td
+                      colSpan={5}
+                      className="px-4 sm:px-6 py-8 text-center text-gray-400"
+                    >
+                      {searchTerm
+                        ? "No users found matching your search"
+                        : "No users found"}
                     </td>
                   </tr>
                 ) : (
-                  filteredProducts.map((product) => {
-                    const stockStatus = getStockStatus(product.stock_quantity);
-                    return (
-                      <tr
-                        key={product.id}
-                        className="hover:bg-gray-50 transition-colors duration-150"
-                      >
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-3">
-                            {product.img_url && (
-                              <img
-                                src={`http://localhost:8000${product.img_url}`}
-                                alt={product.name}
-                                className="w-12 h-12 rounded-lg object-cover bg-gray-100"
-                                onError={(e) => {
-                                  e.target.style.display = "none";
-                                }}
-                              />
-                            )}
-                            <div>
-                              <h3 className="font-semibold text-gray-900">
-                                {product.name}
-                              </h3>
-                              <p className="text-sm text-gray-500 mt-1 max-w-xs truncate">
-                                {product.description || "No description"}
+                  users.map((user) => (
+                    <tr
+                      key={user.id}
+                      className="hover:bg-white/5 transition-colors"
+                    >
+                      <td className="px-4 sm:px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-white font-medium text-sm sm:text-base">
+                              {user.username
+                                ? user.username.charAt(0).toUpperCase()
+                                : "U"}
+                            </span>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-white font-medium truncate">
+                              {user.username || "Unknown"}
+                            </p>
+                            <p className="text-gray-400 text-sm truncate">
+                              {user.email || "No email"}
+                            </p>
+                            <div className="sm:hidden mt-1">
+                              <p className="text-gray-400 text-xs">
+                                Role: {user.role}
                               </p>
+                              <p className="text-gray-400 text-xs">
+                                Created: {formatDate(user.created_at)}
+                              </p>
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 bg-green-900/50 text-green-400 border border-green-700`}
+                              >
+                                {user.status}
+                              </span>
                             </div>
                           </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className="font-semibold text-gray-900">
-                            Ksh {product.price?.toLocaleString() || 0}
-                          </span>
-                          {product.discount > 0 && (
-                            <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                              -{product.discount}%
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className="text-gray-500 line-through">
-                            Ksh {product.original_price?.toLocaleString() || 0}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className="font-medium text-gray-900">
-                            {product.stock_quantity}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-                            {product.brand}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className="text-sm text-gray-600">
-                            {product.category?.name || "No category"}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-1">
-                            <span className="text-yellow-400">★</span>
-                            <span className="text-sm font-medium">
-                              {product.rating}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              ({product.reviews})
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${stockStatus.color}`}
-                          >
-                            {stockStatus.text}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6 text-right">
-                          <div className="relative dropdown-container">
+                        </div>
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 text-gray-300 text-sm hidden sm:table-cell">
+                        {user.role}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 text-gray-300 text-sm hidden sm:table-cell">
+                        {formatDate(user.created_at)}
+                      </td>
+                      <td className="px-4 sm:px-6 py-4 hidden lg:table-cell">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900/50 text-green-400 border border-green-700`}
+                        >
+                          {user.status}
+                        </span>
+                      </td>
+                      <td className="px-4 sm:px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          {user.role !== "superadmin" && (
                             <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                toggleDropdown(product.id);
-                              }}
-                              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="p-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors"
+                              title="Delete User"
                             >
-                              <MoreVertical className="w-4 h-4" />
+                              <Trash2 className="w-4 h-4" />
                             </button>
-
-                            {openDropdown === product.id && (
-                              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
-                                <button
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleEdit(product);
-                                  }}
-                                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors text-left"
-                                >
-                                  <Edit className="w-4 h-4 text-blue-600" />
-                                  Edit Product
-                                </button>
-                                <hr className="my-1 border-gray-100" />
-                                <button
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleDelete(product);
-                                  }}
-                                  className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  Delete Product
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
           </div>
 
           {/* Pagination */}
-          <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <div className="text-sm text-gray-600">
+          {pagination.pages > 1 && (
+            <div className="px-4 sm:px-6 py-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-sm text-gray-400">
                 Showing{" "}
-                <span className="font-semibold text-gray-900">
-                  {startItem}-{endItem}
-                </span>{" "}
-                of{" "}
-                <span className="font-semibold text-gray-900">
-                  {totalItems}
-                </span>{" "}
-                products
+                {Math.min(
+                  (pagination.page - 1) * pagination.limit + 1,
+                  pagination.total
+                )}{" "}
+                to{" "}
+                {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
+                of {pagination.total} results
               </div>
-
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    currentPage === 1
-                      ? "text-gray-400 cursor-not-allowed"
-                      : "text-gray-600 hover:bg-gray-200 bg-white border border-gray-300"
-                  }`}
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                  disabled={pagination.page <= 1}
+                  className="px-3 py-1 bg-white/10 text-white rounded-md hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   Previous
                 </button>
-
-                <div className="flex items-center gap-1">
-                  {getPaginationItems()}
-                </div>
-
+                <span className="px-3 py-1 bg-purple-600 text-white rounded-md text-sm">
+                  {pagination.page}
+                </span>
                 <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    currentPage === totalPages
-                      ? "text-gray-400 cursor-not-allowed"
-                      : "text-gray-600 hover:bg-gray-200 bg-white border border-gray-300"
-                  }`}
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                  disabled={pagination.page >= pagination.pages}
+                  className="px-3 py-1 bg-white/10 text-white rounded-md hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   Next
                 </button>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
-      {showUpdateModal && (
-        <UpdateProductModal
-          isOpen={showUpdateModal}
-          onClose={handleModalClose}
-          productToEdit={selectedProductForEdit}
-        />
-      )}
     </div>
   );
 };
 
-export default ProductsTable;
+export default SuperAdminDashboard;

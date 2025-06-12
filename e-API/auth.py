@@ -107,6 +107,24 @@ def require_admin_or_above(current_user: dict = Depends(get_active_user)):
         )
     return current_user
 
+def require_admin_only(current_user: dict = Depends(get_active_user)):
+    """Dependency to ensure only admins can access these endpoints"""
+    if current_user["role"] != Role.ADMIN.value:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can access this resource"
+        )
+    return current_user
+
+def require_customer_only(current_user: dict = Depends(get_active_user)):
+    """Dependency to ensure only customers can access these endpoints"""
+    if current_user["role"] != Role.CUSTOMER.value:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only customers can access this resource"
+        )
+    return current_user
+
 def require_any_authenticated(current_user: dict = Depends(get_active_user)):
     """Dependency to ensure user is authenticated (any role)"""
     return current_user
@@ -114,7 +132,7 @@ def require_any_authenticated(current_user: dict = Depends(get_active_user)):
 # Registration endpoints
 @router.post("/register/customer", status_code=status.HTTP_201_CREATED)
 async def register_customer(db: db_dependency, create_user_request: CreateUserRequest):
-    """Register a new customer"""
+    """Register a new customer - Public endpoint"""
     logger.info(f"Customer registration attempt for: {create_user_request.username}")
     
     existing_user = db.query(Users).filter(
@@ -128,13 +146,13 @@ async def register_customer(db: db_dependency, create_user_request: CreateUserRe
             username=create_user_request.username,
             email=create_user_request.email,
             hashed_password=bcrypt_context.hash(create_user_request.password),
-            role=Role.CUSTOMER.value  # Consistent use of .value
+            role=Role.CUSTOMER.value
         )
         db.add(create_user_model)
         db.commit()
         db.refresh(create_user_model)
         logger.info(f"Customer {create_user_request.username} registered successfully")
-        return {"message": "Customer created successfully"}
+        return {"message": "Customer created successfully", "user_id": create_user_model.id}
     except Exception as e:
         db.rollback()
         logger.error(f"Error creating customer: {str(e)}")
@@ -142,13 +160,13 @@ async def register_customer(db: db_dependency, create_user_request: CreateUserRe
 
 @router.post("/register/superadmin", status_code=status.HTTP_201_CREATED)
 async def register_superadmin(db: db_dependency, create_user_request: CreateUserRequest):
-    """Register a superadmin - typically only used for initial setup"""
+    """Register the first superadmin - Only use for initial setup"""
     logger.info(f"Superadmin registration attempt for: {create_user_request.username}")
     
     # Check if superadmin already exists
     existing_superadmin = db.query(Users).filter(Users.role == Role.SUPERADMIN.value).first()
     if existing_superadmin:
-        raise HTTPException(status_code=400, detail="Superadmin already exists")
+        raise HTTPException(status_code=400, detail="Superadmin already exists. Only one superadmin is allowed.")
     
     existing_user = db.query(Users).filter(
         (Users.email == create_user_request.email) | (Users.username == create_user_request.username)
@@ -167,13 +185,13 @@ async def register_superadmin(db: db_dependency, create_user_request: CreateUser
         db.commit()
         db.refresh(create_user_model)
         logger.info(f"Superadmin {create_user_request.username} registered successfully")
-        return {"message": "Superadmin created successfully"}
+        return {"message": "Superadmin created successfully", "user_id": create_user_model.id}
     except Exception as e:
         db.rollback()
         logger.error(f"Error creating superadmin: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to create superadmin")
 
-@router.post("/admin/create-admin", status_code=status.HTTP_201_CREATED)
+@router.post("/superadmin/create-admin", status_code=status.HTTP_201_CREATED)
 async def create_admin_by_superadmin(
     db: db_dependency, 
     create_admin_request: CreateAdminRequest,
@@ -199,7 +217,7 @@ async def create_admin_by_superadmin(
         db.commit()
         db.refresh(create_user_model)
         logger.info(f"Admin {create_admin_request.username} created by superadmin {current_user['username']}")
-        return {"message": "Admin created successfully"}
+        return {"message": "Admin created successfully", "user_id": create_user_model.id}
     except Exception as e:
         db.rollback()
         logger.error(f"Error creating admin: {str(e)}")
@@ -208,12 +226,21 @@ async def create_admin_by_superadmin(
 # Authentication endpoints
 @router.post("/login", response_model=Token)
 async def login(form_data: LoginUserRequest, db: db_dependency):
-    """User login endpoint"""
+    """User login endpoint - Works for all roles"""
     logger.info(f"Login attempt for email: {form_data.email}")
     user = authenticate_user(form_data.email, form_data.password, db)
-    token = create_access_token(user.username, user.id, user.role.value, timedelta(hours=1))
-    logger.info(f"User {user.username} logged in successfully with role: {user.role.value}")
-    return {"access_token": token, "token_type": "bearer"}
+    
+    # Handle different role formats (enum vs string)
+    user_role = user.role.value if hasattr(user.role, 'value') else user.role
+    
+    token = create_access_token(user.username, user.id, user_role, timedelta(hours=1))
+    logger.info(f"User {user.username} logged in successfully with role: {user_role}")
+    return {
+        "access_token": token, 
+        "token_type": "bearer",
+        "user_role": user_role,
+        "username": user.username
+    }
 
 @router.post("/verify-token", response_model=TokenVerificationResponse, status_code=status.HTTP_200_OK)
 async def verify_token(request_body: TokenVerifyRequest):
@@ -221,13 +248,20 @@ async def verify_token(request_body: TokenVerifyRequest):
     try:
         payload = jwt.decode(request_body.token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
+        user_role: str = payload.get("role")
         exp_timestamp = float(payload["exp"])
         exp_datetime = datetime.fromtimestamp(exp_timestamp)
+        
         if exp_datetime < datetime.utcnow():
             logger.warning("Token expired during verification")
             raise HTTPException(status_code=401, detail="Token expired")
-        logger.info(f"Token verified for user: {username}")
-        return {"username": username, "tokenverification": "success"}
+        
+        logger.info(f"Token verified for user: {username} with role: {user_role}")
+        return {
+            "username": username, 
+            "tokenverification": "success",
+            "role": user_role
+        }
     except jwt.DecodeError:
         logger.warning("Invalid token during verification")
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -241,12 +275,15 @@ async def get_current_user(db: db_dependency, user: dict = Depends(get_active_us
             logger.warning(f"User not found in database: {user['id']}")
             raise HTTPException(status_code=404, detail="User not found")
         
+        # Handle different role formats
+        user_role = current_user.role.value if hasattr(current_user.role, 'value') else current_user.role
+        
         logger.info(f"Retrieved user info for: {current_user.username}")
         return {
             "id": current_user.id,
             "username": current_user.username,
             "email": current_user.email,
-            "role": current_user.role.value
+            "role": user_role
         }
     except Exception as e:
         logger.error(f"Error retrieving user info: {str(e)}")
@@ -262,8 +299,11 @@ async def forgot_password(forgot_password_request: ForgotPasswordRequest, db: db
         logger.warning(f"Password reset requested for non-existent email: {email}")
         raise HTTPException(status_code=404, detail="User does not exist")
     
+    # Handle different role formats
+    user_role = user.role.value if hasattr(user.role, 'value') else user.role
+    
     token_expires = timedelta(hours=1)
-    reset_token = create_access_token(user.username, user.id, user.role.value, token_expires)
+    reset_token = create_access_token(user.username, user.id, user_role, token_expires)
     
     message = MessageSchema(
         subject="Password Reset Request",
@@ -314,8 +354,8 @@ async def reset_password(token: str, reset_password_request: ResetPasswordReques
         logger.error(f"Error resetting password: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to reset password")
 
-# Admin management endpoints (accessible by superadmin only)
-@router.get("/admin/users", status_code=status.HTTP_200_OK)
+# Superadmin-only endpoints
+@router.get("/superadmin/users", status_code=status.HTTP_200_OK)
 async def get_all_users(
     db: db_dependency,
     current_user: dict = Depends(require_superadmin),
@@ -356,11 +396,14 @@ async def get_all_users(
         # Convert to response format
         user_list = []
         for user in users:
+            # Handle different role formats
+            user_role = user.role.value if hasattr(user.role, 'value') else user.role
+            
             user_dict = {
                 "id": user.id,
                 "username": user.username,
                 "email": user.email,
-                "role": user.role.value,
+                "role": user_role,
                 "created_at": user.created_at.isoformat() if hasattr(user, 'created_at') and user.created_at else None,
                 "status": "active"
             }
@@ -386,7 +429,7 @@ async def get_all_users(
             detail="Failed to fetch users"
         )
 
-@router.get("/admin/users/{user_id}", status_code=status.HTTP_200_OK)
+@router.get("/superadmin/users/{user_id}", status_code=status.HTTP_200_OK)
 async def get_user_by_id(
     user_id: int,
     db: db_dependency,
@@ -402,11 +445,14 @@ async def get_user_by_id(
                 detail="User not found"
             )
         
+        # Handle different role formats
+        user_role = user.role.value if hasattr(user.role, 'value') else user.role
+        
         return {
             "id": user.id,
             "username": user.username,
             "email": user.email,
-            "role": user.role.value,
+            "role": user_role,
             "created_at": user.created_at.isoformat() if hasattr(user, 'created_at') and user.created_at else None,
             "status": "active"
         }
@@ -420,7 +466,7 @@ async def get_user_by_id(
             detail="Failed to fetch user"
         )
 
-@router.delete("/admin/users/{user_id}", status_code=status.HTTP_200_OK)
+@router.delete("/superadmin/users/{user_id}", status_code=status.HTTP_200_OK)
 async def delete_user(
     user_id: int,
     db: db_dependency,
@@ -443,8 +489,11 @@ async def delete_user(
                 detail="User not found"
             )
         
+        # Handle different role formats
+        user_role = user.role.value if hasattr(user.role, 'value') else user.role
+        
         # Prevent deletion of other superadmins
-        if user.role.value == Role.SUPERADMIN.value:
+        if user_role == Role.SUPERADMIN.value:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cannot delete superadmin accounts"
@@ -452,7 +501,6 @@ async def delete_user(
         
         # Store user info for logging before deletion
         user_username = user.username
-        user_role = user.role.value
         
         db.delete(user)
         db.commit()
@@ -471,7 +519,7 @@ async def delete_user(
             detail="Failed to delete user"
         )
 
-@router.get("/admin/stats", status_code=status.HTTP_200_OK)
+@router.get("/superadmin/stats", status_code=status.HTTP_200_OK)
 async def get_admin_stats(
     db: db_dependency,
     current_user: dict = Depends(require_superadmin)
@@ -483,17 +531,27 @@ async def get_admin_stats(
         total_admins = db.query(Users).filter(Users.role == Role.ADMIN.value).count()
         total_customers = db.query(Users).filter(Users.role == Role.CUSTOMER.value).count()
         
-        # Count users created this month
+        # Count users created this month (if created_at field exists)
         current_month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        admins_this_month = db.query(Users).filter(
-            Users.role == Role.ADMIN.value,
-            Users.created_at >= current_month_start
-        ).count() if hasattr(Users, 'created_at') else 0
+        admins_this_month = 0
+        customers_this_month = 0
+        superadmins_this_month = 0
         
-        customers_this_month = db.query(Users).filter(
-            Users.role == Role.CUSTOMER.value,
-            Users.created_at >= current_month_start
-        ).count() if hasattr(Users, 'created_at') else 0
+        if hasattr(Users, 'created_at'):
+            admins_this_month = db.query(Users).filter(
+                Users.role == Role.ADMIN.value,
+                Users.created_at >= current_month_start
+            ).count()
+            
+            customers_this_month = db.query(Users).filter(
+                Users.role == Role.CUSTOMER.value,
+                Users.created_at >= current_month_start
+            ).count()
+            
+            superadmins_this_month = db.query(Users).filter(
+                Users.role == Role.SUPERADMIN.value,
+                Users.created_at >= current_month_start
+            ).count()
         
         logger.info(f"User statistics retrieved by superadmin {current_user['username']}")
         
@@ -501,6 +559,7 @@ async def get_admin_stats(
             "total_superadmins": total_superadmins,
             "total_admins": total_admins,
             "total_customers": total_customers,
+            "superadmins_this_month": superadmins_this_month,
             "admins_this_month": admins_this_month,
             "customers_this_month": customers_this_month,
             "total_users": total_superadmins + total_admins + total_customers
@@ -512,3 +571,105 @@ async def get_admin_stats(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch user statistics"
         )
+
+# Admin-only endpoints (admins can manage customers but not other admins)
+@router.get("/admin/customers", status_code=status.HTTP_200_OK)
+async def get_customers_only(
+    db: db_dependency,
+    current_user: dict = Depends(require_admin_or_above),
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=100),
+    search: Optional[str] = Query(None)
+):
+    """Get customers only - accessible by admins and superadmins"""
+    try:
+        # Base query for customers only
+        query = db.query(Users).filter(Users.role == Role.CUSTOMER.value)
+        
+        # Add search filter if provided
+        if search:
+            search_term = f"%{search.lower()}%"
+            query = query.filter(
+                (func.lower(Users.username).like(search_term)) |
+                (func.lower(Users.email).like(search_term))
+            )
+        
+        # Get total count for pagination
+        total = query.count()
+        
+        # Apply pagination
+        offset = (page - 1) * limit
+        customers = query.offset(offset).limit(limit).all()
+        
+        # Convert to response format
+        customer_list = []
+        for customer in customers:
+            customer_dict = {
+                "id": customer.id,
+                "username": customer.username,
+                "email": customer.email,
+                "role": "customer",
+                "created_at": customer.created_at.isoformat() if hasattr(customer, 'created_at') and customer.created_at else None,
+                "status": "active"
+            }
+            customer_list.append(customer_dict)
+        
+        # Calculate pagination info
+        pages = (total + limit - 1) // limit
+        
+        logger.info(f"User {current_user['username']} retrieved {len(customer_list)} customers (page {page}/{pages})")
+        
+        return {
+            "items": customer_list,
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "pages": pages
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching customers: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch customers"
+        )
+
+# Customer-specific endpoints
+@router.get("/customer/profile", status_code=status.HTTP_200_OK)
+async def get_customer_profile(
+    db: db_dependency,
+    current_user: dict = Depends(require_customer_only)
+):
+    """Get customer profile - accessible by customers only"""
+    try:
+        customer = db.query(Users).filter(Users.id == current_user["id"]).first()
+        if not customer:
+            raise HTTPException(status_code=404, detail="Customer not found")
+        
+        return {
+            "id": customer.id,
+            "username": customer.username,
+            "email": customer.email,
+            "role": "customer",
+            "created_at": customer.created_at.isoformat() if hasattr(customer, 'created_at') and customer.created_at else None
+        }
+    except Exception as e:
+        logger.error(f"Error fetching customer profile: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch customer profile")
+
+# Role checking endpoint
+@router.get("/check-role", status_code=status.HTTP_200_OK)
+async def check_user_role(current_user: dict = Depends(get_active_user)):
+    """Check current user's role"""
+    return {
+        "username": current_user["username"],
+        "role": current_user["role"],
+        "permissions": {
+            "is_superadmin": current_user["role"] == Role.SUPERADMIN.value,
+            "is_admin": current_user["role"] == Role.ADMIN.value,
+            "is_customer": current_user["role"] == Role.CUSTOMER.value,
+            "can_manage_all_users": current_user["role"] == Role.SUPERADMIN.value,
+            "can_manage_customers": current_user["role"] in [Role.ADMIN.value, Role.SUPERADMIN.value],
+            "can_create_admins": current_user["role"] == Role.SUPERADMIN.value
+        }
+    }
