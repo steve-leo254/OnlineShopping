@@ -1,26 +1,25 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext"; // Import useAuth
+import { useAuth } from "../context/AuthContext";
 import CartDropdown from "./CartDropdown";
-import { useShoppingCart } from "../context/ShoppingCartContext"; // Import useShoppingCart
+import { useShoppingCart } from "../context/ShoppingCartContext";
 
-const Bar: React.FC = () => {
-  const { isAuthenticated, logout, role } = useAuth(); // Use AuthContext
+const Bar = () => {
+  const { isAuthenticated, logout, role } = useAuth();
   const { cartQuantity } = useShoppingCart();
 
-  // Initialize Flowbite
   useEffect(() => {
-    // Check if Flowbite is loaded and initialize
     if (window.initFlowbite) {
       window.initFlowbite();
     }
-  }, []); // Empty dependency array to run once on mount
+  }, []);
 
   const handleLogout = () => {
-    logout(); // Use context logout
-    localStorage.clear(); // Clear local storage
+    logout();
+    localStorage.clear();
     window.location.href = "/login";
   };
+
   return (
     <>
       <nav className="bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 antialiased sticky top-0 z-20">
@@ -28,16 +27,7 @@ const Bar: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-8">
               <div className="shrink-5">
-                <Link
-                  to="https://www.instagram.com/flowtechs_ltd"
-                  title=""
-                  className=""
-                >
-                  {/* <img
-                    className="block w-auto h-8 dark:hidden"
-                    src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/logo-full.svg"
-                    alt=""
-                  /> */}
+                <Link to="https://www.instagram.com/flowtechs_ltd" title="">
                   <img
                     className="hidden w-auto h-20 dark:block"
                     src="/flowtecho.png"
@@ -45,22 +35,18 @@ const Bar: React.FC = () => {
                   />
                 </Link>
               </div>
-
               <ul className="hidden lg:flex items-center justify-start gap-6 md:gap-8 py-3 sm:justify-center">
                 <li>
                   <Link
                     to="/"
-                    title=""
                     className="flex text-sm font-medium text-gray-900 hover:text-primary-700 dark:text-white dark:hover:text-primary-500"
                   >
                     Home
                   </Link>
                 </li>
-
                 <li className="shrink-0">
                   <Link
                     to="/store"
-                    title=""
                     className="text-sm font-medium text-gray-900 hover:text-primary-700 dark:text-white dark:hover:text-primary-500"
                   >
                     Today's Deals
@@ -69,7 +55,6 @@ const Bar: React.FC = () => {
                 <li className="shrink-0">
                   <Link
                     to="/about"
-                    title=""
                     className="text-sm font-medium text-gray-900 hover:text-primary-700 dark:text-white dark:hover:text-primary-500"
                   >
                     About us
@@ -77,7 +62,6 @@ const Bar: React.FC = () => {
                 </li>
               </ul>
             </div>
-
             <div className="flex items-center lg:space-x-2">
               <button
                 id="myCartDropdownButton1"
@@ -127,120 +111,122 @@ const Bar: React.FC = () => {
                   </span>
                 )}
               </button>
-
               <CartDropdown />
-
-              <button
-                id="userDropdownButton1"
-                data-dropdown-toggle="userDropdown1"
-                type="button"
-                className="inline-flex items-center rounded-lg justify-center p-2 cursor-pointer text-sm font-medium leading-none text-gray-900 dark:text-white"
-              >
-                <svg
-                  className="w-5 h-5 me-1"
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    d="M7 17v1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1a3 3 0 0 0-3-3h-4a3 3 0 0 0-3 3Zm8-9a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                  />
-                </svg>
-                Account
-                <svg
-                  className="w-4 h-4 text-gray-900 dark:text-white ms-1"
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="m19 9-7 7-7-7"
-                  />
-                </svg>
-              </button>
-
-              <div
-                id="userDropdown1"
-                className="hidden z-10 w-56 divide-y divide-gray-100 overflow-hidden overflow-y-auto rounded-lg bg-white antialiased shadow"
-              >
-                <ul className="p-2 text-start text-sm font-medium text-gray-900">
-                  <li>
-                    <Link
-                      to="/MyProfile"
-                      className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
-                    >
-                      My Account
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/orders-overview"
-                      className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
-                    >
-                      My Orders
-                    </Link>
-                  </li>
-                  {/* Admin and Superadmin Links */}
-                  {(role === "admin" || role === "superadmin") && (
-                    <li>
-                      <Link
-                        to="/products"
-                        className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
-                      >
-                        Products
-                      </Link>
-                    </li>
-                  )}
-                  {(role === "admin" || role === "superadmin") && (
-                    <li>
-                      <Link
-                        to="/Orders-management"
-                        className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
-                      >
-                        All Orders
-                      </Link>
-                    </li>
-                  )}
-                  {/* Superadmin-only Link */}
-                  {role === "superadmin" && (
-                    <li>
-                      <Link
-                        to="/AdminPage"
-                        className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
-                      >
-                        Admin Dashboard
-                      </Link>
-                    </li>
-                  )}
-                </ul>
-
-                <div className="p-2 text-sm font-medium text-gray-900 ">
-                  <Link
-                    id="logoutButton"
-                    data-modal-target="logoutModal"
-                    data-modal-toggle="logoutModal"
-                    to="#"
-                    title=""
-                    className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
+              {isAuthenticated ? (
+                <>
+                  <button
+                    id="userDropdownButton1"
+                    data-dropdown-toggle="userDropdown1"
+                    type="button"
+                    className="inline-flex items-center rounded-lg justify-center p-2 cursor-pointer text-sm font-medium leading-none text-gray-900 dark:text-white"
                   >
-                    {" "}
-                    Sign Out{" "}
-                  </Link>
-                </div>
-              </div>
-
+                    <svg
+                      className="w-5 h-5 me-1"
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        d="M7 17v1a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1a3 3 0 0 0-3-3h-4a3 3 0 0 0-3 3Zm8-9a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                      />
+                    </svg>
+                    Account
+                    <svg
+                      className="w-4 h-4 text-gray-900 dark:text-white ms-1"
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="m19 9-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                  <div
+                    id="userDropdown1"
+                    className="hidden z-10 w-56 divide-y divide-gray-100 overflow-hidden overflow-y-auto rounded-lg bg-white antialiased shadow"
+                  >
+                    <ul className="p-2 text-start text-sm font-medium text-gray-900">
+                      <li>
+                        <Link
+                          to="/MyProfile"
+                          className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
+                        >
+                          My Account
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/orders-overview"
+                          className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
+                        >
+                          My Orders
+                        </Link>
+                      </li>
+                      {(role === "admin" || role === "SUPERADMIN") && (
+                        <li>
+                          <Link
+                            to="/products"
+                            className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
+                          >
+                            Products
+                          </Link>
+                        </li>
+                      )}
+                      {(role === "admin" || role === "SUPERADMIN") && (
+                        <li>
+                          <Link
+                            to="/Orders-management"
+                            className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
+                          >
+                            All Orders
+                          </Link>
+                        </li>
+                      )}
+                      {role === "SUPERADMIN" && (
+                        <li>
+                          <Link
+                            to="/AdminPage"
+                            className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
+                          >
+                            Admin Dashboard
+                          </Link>
+                        </li>
+                      )}
+                    </ul>
+                    <div className="p-2 text-sm font-medium text-gray-900">
+                      <Link
+                        id="logoutButton"
+                        data-modal-target="logoutModal"
+                        data-modal-toggle="logoutModal"
+                        to="#"
+                        className="inline-flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-gray-100"
+                      >
+                        Sign Out
+                      </Link>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <Link
+                  to="/login"
+                  className="inline-flex items-center rounded-lg justify-center p-2 cursor-pointer text-sm font-medium leading-none text-gray-900 dark:text-white"
+                >
+                  Sign In
+                </Link>
+              )}
               <button
                 type="button"
                 data-collapse-toggle="ecommerce-navbar-menu-1"
@@ -268,12 +254,11 @@ const Bar: React.FC = () => {
               </button>
             </div>
           </div>
-
           <div
             id="ecommerce-navbar-menu-1"
-            className="bg-gray-50  border border-gray-200 rounded-lg py-3 hidden px-4 mt-4"
+            className="bg-gray-50 border border-gray-200 rounded-lg py-3 hidden px-4 mt-4"
           >
-            <ul className="text-gray-900  text-sm font-medium space-y-3">
+            <ul className="text-gray-900 text-sm font-medium space-y-3">
               <li>
                 <Link to="/" className="hover:text-primary-700">
                   Home
@@ -281,7 +266,7 @@ const Bar: React.FC = () => {
               </li>
               <li>
                 <Link to="/store" className="hover:text-primary-700">
-                  Todays Deals
+                  Today's Deals
                 </Link>
               </li>
               <li>
@@ -293,8 +278,6 @@ const Bar: React.FC = () => {
           </div>
         </div>
       </nav>
-
-      {/* ======== DELETE POP UP =============== */}
       <div
         id="logoutModal"
         tabIndex={-1}
@@ -302,7 +285,6 @@ const Bar: React.FC = () => {
         className="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-modal md:h-full"
       >
         <div className="relative p-4 w-full max-w-md h-full md:h-auto">
-          {/* <!-- Modal content --> */}
           <div className="relative p-4 text-center bg-white rounded-lg shadow dark:bg-gray-800 sm:p-5">
             <button
               type="button"
@@ -317,10 +299,10 @@ const Bar: React.FC = () => {
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <path
-                  fill-rule="evenodd"
+                  fillRule="evenodd"
                   d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clip-rule="evenodd"
-                ></path>
+                  clipRule="evenodd"
+                />
               </svg>
               <span className="sr-only">Close modal</span>
             </button>
@@ -332,10 +314,10 @@ const Bar: React.FC = () => {
               xmlns="http://www.w3.org/2000/svg"
             >
               <path
-                fill-rule="evenodd"
+                fillRule="evenodd"
                 d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                clip-rule="evenodd"
-              ></path>
+                clipRule="evenodd"
+              />
             </svg>
             <p className="mb-4 text-gray-500 dark:text-gray-300">
               Are you sure you want to Logout?
@@ -345,14 +327,12 @@ const Bar: React.FC = () => {
                 <Link
                   to="/"
                   data-modal-toggle="logoutModal"
-                  type="button"
                   className="py-2 px-3 text-sm font-medium text-gray-500 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-primary-300 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600"
                 >
                   No, back to home page
                 </Link>
                 <button
                   onClick={handleLogout}
-                  type="submit"
                   className="py-2 px-3 text-sm font-medium text-center text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-900"
                 >
                   Yes, Logout
