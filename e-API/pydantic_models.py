@@ -8,6 +8,7 @@ from pydantic import Field
 
 
 class Role(str, Enum):
+    SUPERADMIN = "SUPERADMIN"
     ADMIN = "admin"
     CUSTOMER = "customer"
 
@@ -27,6 +28,12 @@ class CreateUserRequest(BaseModel):
     username: str
     email: EmailStr
     password: str
+
+class CreateAdminRequest(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
+    role: Role = Role.ADMIN  # Default to admin, but can be overridden
 
 class LoginUserRequest(BaseModel):
     email: EmailStr
@@ -278,3 +285,23 @@ class CallbackRequest(BaseModel):
 
 class CheckTransactionStatus(BaseModel):
     order_id: str  # Assuming order_id is a string; adjust type if needed
+
+# User management models
+class AdminUserResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    role: str
+    created_at: Optional[datetime]
+    last_login: Optional[datetime]
+    status: str
+
+    class Config:
+        from_attributes = True
+
+class PaginatedUserResponse(BaseModel):
+    items: List[AdminUserResponse]
+    total: int
+    page: int
+    limit: int
+    pages: int
