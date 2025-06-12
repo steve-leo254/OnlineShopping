@@ -86,7 +86,7 @@ const useDebounce = (value, delay) => {
 };
 
 const Store = () => {
-  const { addToCart } = useShoppingCart();
+  const { addToCart, getItemQuantity } = useShoppingCart(); // Destructure getItemQuantity
   const {
     isLoading,
     products: apiProducts,
@@ -279,6 +279,15 @@ const Store = () => {
   };
 
   const handleAddToCart = (product) => {
+    const currentQuantityInCart = getItemQuantity(product.id);
+    if (currentQuantityInCart >= product.stockQuantity) {
+      showNotification(
+        `Cannot add more than available stock (${product.stockQuantity}) for ${product.name}`,
+        "error"
+      );
+      return; // Prevent adding to cart
+    }
+
     try {
       addToCart(product);
       showNotification(`${product.name} added to cart!`, "success");
@@ -331,7 +340,7 @@ const Store = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Enhanced Notification Component with Animations (matching Home page) */}
       <div
         className={`fixed top-4 left-4 z-50 transition-all duration-500 ease-in-out transform ${
@@ -748,9 +757,9 @@ const Store = () => {
                           </div>
                           <button
                             onClick={() => handleAddToCart(product)}
-                            disabled={!product.inStock}
+                            disabled={!product.inStock || (getItemQuantity(product.id) >= product.stockQuantity)} // Disable if already at max stock
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                              product.inStock
+                              product.inStock && (getItemQuantity(product.id) < product.stockQuantity)
                                 ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
                                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
                             }`}
@@ -821,9 +830,9 @@ const Store = () => {
                             </div>
                             <button
                               onClick={() => handleAddToCart(product)}
-                              disabled={!product.inStock}
+                              disabled={!product.inStock || (getItemQuantity(product.id) >= product.stockQuantity)} // Disable if already at max stock
                               className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
-                                product.inStock
+                                product.inStock && (getItemQuantity(product.id) < product.stockQuantity)
                                   ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
                                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
                               }`}

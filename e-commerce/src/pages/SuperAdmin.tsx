@@ -63,7 +63,7 @@ const SuperAdminRegister: React.FC = () => {
     }
 
     try {
-      const apiUrl = "http://localhost:8000/auth/register/superadmin";
+      const apiUrl = "http://localhost:8000/auth/admin/create-admin";
       const response = await axios.post<ApiResponse>(
         apiUrl,
         {
