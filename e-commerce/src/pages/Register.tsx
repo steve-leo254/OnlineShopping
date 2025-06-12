@@ -89,7 +89,7 @@ const Register: React.FC = () => {
           >
             <img
               className="w-20 h-20 mr-2"
-              src="/logos.png"
+              src="/logomoto.png"
               alt="logo"
             />
             FlowTech

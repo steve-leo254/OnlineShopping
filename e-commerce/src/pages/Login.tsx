@@ -157,7 +157,7 @@ const Login: React.FC = () => {
           >
             <img
               className="w-20 h-20 mr-4"
-              src="/logos.png"
+              src="/logomoto.png"
               alt="logo"
             />
             FlowTech

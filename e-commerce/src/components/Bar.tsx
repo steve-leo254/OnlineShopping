@@ -35,7 +35,7 @@ const Bar: React.FC = () => {
                 <Link to="https://www.instagram.com/flowtechs_ltd" title="">
                   <img
                     className="hidden w-auto h-20 dark:block"
-                    src="/flowtecho.png"
+                    src="/logomoto.png"
                     alt="Flowtechs Logo" // Added alt text for accessibility
                   />
                 </Link>
