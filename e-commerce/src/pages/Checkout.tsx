@@ -526,32 +526,7 @@ const Checkout = () => {
                 <div className="grid grid-cols-1 gap-4">
                   <DeliveryDetails />
                   <AddDeliveryDetails />
-                  <div className="w-full">
-                    <button
-                      type="button"
-                      onClick={openAddressModal}
-                      className="group w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg sm:rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center justify-center space-x-2 text-sm sm:text-base"
-                    >
-                      <svg
-                        className="h-4 w-4 sm:h-5 sm:w-5"
-                        aria-hidden="true"
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke="currentColor"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M5 12h14m-7 7V5"
-                        />
-                      </svg>
-                      <span>Add new address</span>
-                    </button>
-                  </div>
+
                   <DeliveryOptions />
                 </div>
 
