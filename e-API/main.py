@@ -485,28 +485,6 @@ async def update_order_status(
         raise HTTPException(status_code=500, detail="Error updating order status")
 
 
-@app.get("/dashboard", status_code=status.HTTP_200_OK)
-async def dashboard(user: user_dependency, db: db_dependency):
-    require_admin(user)
-    try:
-        id = user.get("id")
-        today = datetime.utcnow().date()
-        
-        total_sales = db.query(func.sum(models.Orders.total)).filter(models.Orders.user_id == id).scalar() or 0
-        total_products = db.query(func.count(models.Products.id)).filter(models.Products.user_id == id).scalar() or 0
-        today_sale = db.query(func.sum(models.Orders.total)).filter(
-            models.Orders.user_id == id, func.date(models.Orders.datetime) == today
-        ).scalar() or 0
-        
-        return {
-            "total_sales": float(total_sales),
-            "total_products": total_products,
-            "today_sale": float(today_sale),
-        }
-    except SQLAlchemyError as e:
-        logger.error(f"Error fetching dashboard data: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error fetching dashboard data")
-
 
  
 
@@ -581,7 +559,42 @@ async def delete_address(address_id: int, user: user_dependency, db: db_dependen
         raise HTTPException(status_code=500, detail="Error deleting address")
 
 
+@app.put("/addresses/{address_id}", response_model=AddressResponse, status_code=status.HTTP_200_OK)
+async def update_address(
+    address_id: int,
+    address_update: AddressCreate, # Use AddressCreate or a dedicated AddressUpdate model
+    user: user_dependency,
+    db: db_dependency
+):
+    try:
+        address = db.query(models.Address).filter(
+            models.Address.id == address_id,
+            models.Address.user_id == user.get("id")
+        ).first()
+        if not address:
+            logger.info(f"Address not found: ID {address_id} for user {user.get('id')}")
+            raise HTTPException(status_code=404, detail="Address not found")
 
+        # Handle default logic: if this address is being set to default, unset others
+        if address_update.is_default:
+            db.query(models.Address).filter(
+                models.Address.user_id == user.get("id"),
+                models.Address.id != address_id
+            ).update({"is_default": False})
+            db.commit() # Commit this update first
+
+        for field, value in address_update.model_dump(exclude_unset=True).items():
+            setattr(address, field, value)
+
+        db.add(address)
+        db.commit()
+        db.refresh(address)
+        logger.info(f"Address {address_id} updated by user {user.get('id')}")
+        return address
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error updating address {address_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error updating address")
 
 
 from typing import Optional
