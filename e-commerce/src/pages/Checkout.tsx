@@ -16,6 +16,7 @@ import { useShoppingCart } from "../context/ShoppingCartContext";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrency } from "../cart/formatCurrency";
+import AddressBook from "../components/TestProductTable";
 
 const Checkout = () => {
   const [showTooltip, setShowTooltip] = useState(false);
