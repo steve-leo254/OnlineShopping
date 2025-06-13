@@ -24,7 +24,6 @@ const AboutPage: React.FC = () => {
     "https://flowbite.s3.amazonaws.com/docs/gallery/square/image-2.jpg",
     "https://flowbite.s3.amazonaws.com/docs/gallery/square/image-3.jpg",
     "https://flowbite.s3.amazonaws.com/docs/gallery/square/image-4.jpg",
-    
   ];
 
   // Auto-advance carousel
@@ -64,6 +63,19 @@ const AboutPage: React.FC = () => {
     );
   };
 
+  // Enhanced Contact Button Handlers
+  const handleEmailClick = () => {
+    const email = "flowtechs254@gmail.com";
+    const subject = "Inquiry from Website - Let's Work Together";
+    const body = "Hello Steve,\n\nI'm interested in discussing a potential project with you. I'd love to learn more about your services and how we can collaborate.\n\nBest regards,";
+    window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
+  const handlePhoneClick = () => {
+    const phoneNumber = "0758510206";
+    window.location.href = `tel:${phoneNumber}`;
+  };
+
   const values = [
     {
       icon: <Target className="w-8 h-8" />,
@@ -94,7 +106,7 @@ const AboutPage: React.FC = () => {
   const stats = [
     { number: "500+", label: "Projects Completed" },
     { number: "1500+", label: "Happy Clients" },
-    { number: "6+", label: "Years Experience" },
+    { number: "1+", label: "Year Experience" },
     { number: "24/7", label: "Support Available" },
   ];
 
@@ -127,7 +139,7 @@ const AboutPage: React.FC = () => {
                 experiences. Small enough to be agile, experienced enough to
                 deliver at scale.
               </p>
-               <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-4">
                 <Link to="/store">
                   <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-full font-medium hover:shadow-lg transform hover:scale-105 transition-all duration-300">
                     Our Products
@@ -325,7 +337,7 @@ const AboutPage: React.FC = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* Enhanced CTA Section with New Contact Buttons */}
       <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <div
@@ -341,20 +353,93 @@ const AboutPage: React.FC = () => {
             <h2 className="text-4xl font-bold text-white mb-6">
               Ready to Build Something Amazing?
             </h2>
-            <p className="text-xl text-white/90 mb-8 leading-relaxed">
+            <p className="text-xl text-white/90 mb-12 leading-relaxed">
               Let's collaborate and turn your vision into reality. We're excited
               to hear about your next project.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="bg-white text-blue-600 px-8 py-4 rounded-full font-bold hover:shadow-lg transform hover:scale-105 transition-all duration-300">
-                <Mail className="w-5 h-5 inline-block mr-2" />
-                Get In Touch
-              </button>
-              <button className="border-2 border-white text-white px-8 py-4 rounded-full font-bold hover:bg-white hover:text-blue-600 transition-all duration-300">
-                <Phone className="w-5 h-5 inline-block mr-2" />
-                Schedule a Call
-              </button>
+            
+            {/* Enhanced Contact Buttons */}
+            {/* Enhanced Contact Buttons with Popup Effects */}
+            <div className="flex flex-col sm:flex-row gap-8 justify-center items-center max-w-3xl mx-auto">
+              {/* Email Button with Popup */}
+              <div className="relative group">
+                {/* Floating Popup */}
+                <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 bg-white/95 backdrop-blur-sm text-gray-800 px-4 py-2 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 pointer-events-none z-20 border border-blue-200">
+                  <div className="text-sm font-medium">💬 Send us a message</div>
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white/95"></div>
+                </div>
+
+                <button 
+                  onClick={handleEmailClick}
+                  className="group relative bg-white/10 backdrop-blur-sm text-white px-12 py-6 rounded-3xl font-bold hover:shadow-2xl transform hover:scale-110 transition-all duration-500 overflow-hidden border-2 border-white/20 hover:border-white/40 min-w-[320px] hover:bg-white hover:text-blue-600"
+                >
+                  {/* Animated Background Gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400/20 via-purple-400/20 to-pink-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
+                  
+                  {/* Ripple Effect */}
+                  <div className="absolute inset-0 bg-white/20 rounded-3xl scale-0 group-hover:scale-150 opacity-0 group-hover:opacity-30 transition-all duration-700"></div>
+                  
+                  {/* Floating Particles */}
+                  <div className="absolute top-2 left-4 w-2 h-2 bg-white/40 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-bounce transition-all duration-300 delay-100"></div>
+                  <div className="absolute bottom-3 right-6 w-1 h-1 bg-white/60 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-bounce transition-all duration-300 delay-300"></div>
+                  
+                  {/* Content */}
+                  <div className="relative z-10 flex flex-col items-center">
+                    <div className="flex items-center mb-3">
+                      <div className="bg-white/20 p-3 rounded-full mr-4 group-hover:bg-blue-100 transition-all duration-300 group-hover:scale-110">
+                        <Mail className="w-7 h-7 text-white group-hover:text-blue-600 group-hover:animate-pulse" />
+                      </div>
+                      <span className="text-xl font-bold tracking-wide">Get In Touch</span>
+                    </div>
+                    <div className="text-sm text-white/90 group-hover:text-blue-500 font-medium transition-all duration-300 bg-white/10 group-hover:bg-blue-50 px-3 py-1 rounded-full">
+                      📧 flowtechs254@gmail.com
+                    </div>
+                  </div>
+                  
+                  {/* Shine Effect */}
+                  <div className="absolute top-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-0 group-hover:opacity-100 group-hover:left-full transition-all duration-1000 transform skew-x-12"></div>
+                </button>
+              </div>
+
+              {/* Phone Button with Popup */}
+              <div className="relative group">
+                {/* Floating Popup */}
+                <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 bg-white/95 backdrop-blur-sm text-gray-800 px-4 py-2 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-500 pointer-events-none z-20 border border-green-200">
+                  <div className="text-sm font-medium">📞 Let's talk directly</div>
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white/95"></div>
+                </div>
+
+                <button 
+                  onClick={handlePhoneClick}
+                  className="group relative bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-sm text-white px-12 py-6 rounded-3xl font-bold hover:shadow-2xl transform hover:scale-110 transition-all duration-500 overflow-hidden border-2 border-green-400/30 hover:border-green-400/60 min-w-[320px] hover:from-green-400 hover:to-emerald-400"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-400/30 via-emerald-400/30 to-teal-400/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  
+                  <div className="absolute inset-0 border-2 border-green-400/50 rounded-3xl scale-100 group-hover:scale-110 opacity-0 group-hover:opacity-60 transition-all duration-700"></div>
+                  <div className="absolute inset-0 border-2 border-green-400/30 rounded-3xl scale-100 group-hover:scale-125 opacity-0 group-hover:opacity-40 transition-all duration-1000 delay-200"></div>
+                  
+                  <div className="absolute top-3 right-4 w-2 h-2 bg-green-300/60 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-bounce transition-all duration-300 delay-150"></div>
+                  <div className="absolute bottom-4 left-6 w-1 h-1 bg-emerald-300/80 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-bounce transition-all duration-300 delay-400"></div>
+                  
+                  <div className="relative z-10 flex flex-col items-center">
+                    <div className="flex items-center mb-3">
+                      <div className="bg-green-400/30 p-3 rounded-full mr-4 group-hover:bg-white/20 transition-all duration-300 group-hover:scale-110">
+                        <Phone className="w-7 h-7 text-white group-hover:animate-pulse" />
+                      </div>
+                      <span className="text-xl font-bold tracking-wide">Schedule a Call</span>
+                    </div>
+                    <div className="text-sm text-white/90 font-medium transition-all duration-300 bg-green-400/20 group-hover:bg-white/20 px-3 py-1 rounded-full">
+                      📞 +254 758 510 206
+                    </div>
+                  </div>
+                  
+                  <div className="absolute top-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:left-full transition-all duration-1000 transform skew-x-12"></div>
+                </button>
+              </div>
             </div>
+
+            <div className="absolute top-10 left-10 w-32 h-32 bg-white/5 rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-10 right-10 w-24 h-24 bg-purple-300/10 rounded-full blur-2xl animate-pulse delay-1000"></div>
           </div>
         </div>
       </section>

@@ -662,7 +662,7 @@ const SuperAdminDashboard: React.FC = () => {
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex gap-4 w-full sm:w-auto">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
                 <input
                   type="text"
                   placeholder="Search users..."
