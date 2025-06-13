@@ -1,129 +1,245 @@
-import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, MapPin, Home, Building, Star } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit2, Trash2, MapPin, Home, Building, Star, AlertCircle } from 'lucide-react';
 
 const AddressBook = () => {
-  const [addresses, setAddresses] = useState([
-    {
-      id: 1,
-      type: 'home',
-      title: 'Home',
-      name: 'John Doe',
-      street: '123 Main Street',
-      city: 'New York',
-      state: 'NY',
-      zipCode: '10001',
-      country: 'United States',
-      phone: '+1 (555) 123-4567',
-      isDefault: true
-    },
-    {
-      id: 2,
-      type: 'work',
-      title: 'Office',
-      name: 'John Doe',
-      street: '456 Business Ave',
-      city: 'New York',
-      state: 'NY',
-      zipCode: '10002',
-      country: 'United States',
-      phone: '+1 (555) 987-6543',
-      isDefault: false
-    }
-  ]);
-
+  const [addresses, setAddresses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    type: 'home',
-    title: '',
-    name: '',
-    street: '',
+    first_name: '',
+    last_name: '',
+    phone_number: '',
+    address: '',
+    additional_info: '',
+    region: '',
     city: '',
-    state: '',
-    zipCode: '',
-    country: '',
-    phone: ''
+    is_default: false
   });
 
-  const addressTypes = {
-    home: { icon: Home, label: 'Home', color: 'text-blue-600' },
-    work: { icon: Building, label: 'Work', color: 'text-purple-600' },
-    other: { icon: MapPin, label: 'Other', color: 'text-green-600' }
+  // You'll need to replace this with your actual API base URL
+  const API_BASE_URL = 'http://localhost:8000'; // Adjust this to your FastAPI server
+
+  // Function to get auth headers (adjust based on your auth implementation)
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token'); // Adjust based on how you store auth token
+    return {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    };
   };
 
+  // Fetch addresses from API
+  const fetchAddresses = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/addresses`, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setAddresses(data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching addresses:', err);
+      setError('Failed to load addresses. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Create new address
+  const createAddress = async (addressData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/addresses`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(addressData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const newAddress = await response.json();
+      setAddresses(prev => [...prev, newAddress]);
+      return newAddress;
+    } catch (err) {
+      console.error('Error creating address:', err);
+      throw new Error('Failed to create address. Please try again.');
+    }
+  };
+
+  // Update address
+  const updateAddress = async (addressId, addressData) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/addresses/${addressId}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(addressData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const updatedAddress = await response.json();
+      setAddresses(prev => prev.map(addr => 
+        addr.id === addressId ? updatedAddress : addr
+      ));
+      return updatedAddress;
+    } catch (err) {
+      console.error('Error updating address:', err);
+      throw new Error('Failed to update address. Please try again.');
+    }
+  };
+
+  // Delete address
+  const deleteAddress = async (addressId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/addresses/${addressId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+
+      if (!response.ok) {
+        if (response.status === 400) {
+          throw new Error('Cannot delete address used in orders');
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      setAddresses(prev => prev.filter(addr => addr.id !== addressId));
+    } catch (err) {
+      console.error('Error deleting address:', err);
+      throw new Error(err.message || 'Failed to delete address. Please try again.');
+    }
+  };
+
+  // Load addresses on component mount
+  useEffect(() => {
+    fetchAddresses();
+  }, []);
+
   const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: type === 'checkbox' ? checked : value
     });
   };
 
-  const handleSubmit = () => {
-    if (!formData.title || !formData.name || !formData.street || !formData.city || !formData.state || !formData.zipCode || !formData.country || !formData.phone) {
+  const handleSubmit = async () => {
+    // Validate required fields
+    if (!formData.first_name || !formData.last_name || !formData.phone_number || 
+        !formData.address || !formData.city || !formData.region) {
+      setError('Please fill in all required fields');
       return;
     }
-    
-    if (editingAddress) {
-      setAddresses(addresses.map(addr => 
-        addr.id === editingAddress.id 
-          ? { ...formData, id: editingAddress.id, isDefault: editingAddress.isDefault }
-          : addr
-      ));
-    } else {
-      const newAddress = {
-        ...formData,
-        id: Date.now(),
-        isDefault: addresses.length === 0
-      };
-      setAddresses([...addresses, newAddress]);
+
+    try {
+      setSubmitting(true);
+      setError(null);
+
+      if (editingAddress) {
+        await updateAddress(editingAddress.id, formData);
+      } else {
+        await createAddress(formData);
+      }
+      
+      resetForm();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
     }
-    resetForm();
   };
 
   const resetForm = () => {
     setFormData({
-      type: 'home',
-      title: '',
-      name: '',
-      street: '',
+      first_name: '',
+      last_name: '',
+      phone_number: '',
+      address: '',
+      additional_info: '',
+      region: '',
       city: '',
-      state: '',
-      zipCode: '',
-      country: '',
-      phone: ''
+      is_default: false
     });
     setShowForm(false);
     setEditingAddress(null);
+    setError(null);
   };
 
   const handleEdit = (address) => {
-    setFormData({ ...address });
+    setFormData({
+      first_name: address.first_name,
+      last_name: address.last_name,
+      phone_number: address.phone_number,
+      address: address.address,
+      additional_info: address.additional_info || '',
+      region: address.region,
+      city: address.city,
+      is_default: address.is_default
+    });
     setEditingAddress(address);
     setShowForm(true);
+    setError(null);
   };
 
-  const handleDelete = (id) => {
-    const updatedAddresses = addresses.filter(addr => addr.id !== id);
-    const deletedAddress = addresses.find(addr => addr.id === id);
-    
-    if (deletedAddress?.isDefault && updatedAddresses.length > 0) {
-      updatedAddresses[0].isDefault = true;
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this address?')) {
+      try {
+        setError(null);
+        await deleteAddress(id);
+      } catch (err) {
+        setError(err.message);
+      }
     }
-    
-    setAddresses(updatedAddresses);
   };
 
-  const setDefault = (id) => {
-    setAddresses(addresses.map(addr => ({
-      ...addr,
-      isDefault: addr.id === id
-    })));
+  const setDefault = async (id) => {
+    const addressToUpdate = addresses.find(addr => addr.id === id);
+    if (addressToUpdate) {
+      try {
+        setError(null);
+        await updateAddress(id, { ...addressToUpdate, is_default: true });
+      } catch (err) {
+        setError(err.message);
+      }
+    }
   };
 
-  const getTypeIcon = (type) => {
-    const TypeIcon = addressTypes[type]?.icon || MapPin;
-    return <TypeIcon className={`w-5 h-5 ${addressTypes[type]?.color || 'text-gray-600'}`} />;
+  // Format address display
+  const formatAddress = (address) => {
+    const parts = [address.address];
+    if (address.additional_info) parts.push(address.additional_info);
+    parts.push(`${address.city}, ${address.region}`);
+    return parts;
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-300 rounded w-1/3 mb-4"></div>
+            <div className="space-y-4">
+              <div className="h-32 bg-gray-300 rounded"></div>
+              <div className="h-32 bg-gray-300 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
@@ -146,6 +262,20 @@ const AddressBook = () => {
         </div>
 
         <div className="p-8">
+          {/* Error Display */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+              <span className="text-red-700">{error}</span>
+              <button 
+                onClick={() => setError(null)}
+                className="ml-auto text-red-600 hover:text-red-800"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
           {/* Address Form */}
           {showForm && (
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 mb-8 border border-blue-200 animate-in slide-in-from-top duration-300">
@@ -155,129 +285,133 @@ const AddressBook = () => {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Address Type</label>
-                    <select
-                      name="type"
-                      value={formData.type}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    >
-                      {Object.entries(addressTypes).map(([key, value]) => (
-                        <option key={key} value={key}>{value.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      First Name <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
-                      name="title"
-                      value={formData.title}
+                      name="first_name"
+                      value={formData.first_name}
                       onChange={handleInputChange}
-                      placeholder="e.g., Home, Office"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Last Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="last_name"
+                      value={formData.last_name}
+                      onChange={handleInputChange}
+                      className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                       required
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Phone Number <span className="text-red-500">*</span>
+                  </label>
                   <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
+                    type="tel"
+                    name="phone_number"
+                    value={formData.phone_number}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Street Address</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Address <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    name="street"
-                    value={formData.street}
+                    name="address"
+                    value={formData.address}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Additional Info</label>
+                  <input
+                    type="text"
+                    name="additional_info"
+                    value={formData.additional_info}
+                    onChange={handleInputChange}
+                    placeholder="Apartment, suite, unit, building, floor, etc."
+                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Region <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="region"
+                      value={formData.region}
+                      onChange={handleInputChange}
+                      className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      City <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       name="city"
                       value={formData.city}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
-                    <input
-                      type="text"
-                      name="state"
-                      value={formData.state}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">ZIP Code</label>
-                    <input
-                      type="text"
-                      name="zipCode"
-                      value={formData.zipCode}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                       required
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
-                    <input
-                      type="text"
-                      name="country"
-                      value={formData.country}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      required
-                    />
-                  </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    name="is_default"
+                    id="is_default"
+                    checked={formData.is_default}
+                    onChange={handleInputChange}
+                    className="text-blue-500 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                  />
+                  <label htmlFor="is_default" className="ml-2 text-sm font-medium text-gray-700">
+                    Set as default address
+                  </label>
                 </div>
 
                 <div className="flex gap-4 pt-4">
                   <button
                     type="button"
                     onClick={handleSubmit}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:scale-105 font-medium"
+                    disabled={submitting}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:scale-105 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {editingAddress ? 'Update Address' : 'Save Address'}
+                    {submitting 
+                      ? (editingAddress ? 'Updating...' : 'Saving...') 
+                      : (editingAddress ? 'Update Address' : 'Save Address')
+                    }
                   </button>
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="bg-gray-100 text-gray-600 px-8 py-3 rounded-xl hover:bg-gray-200 transition-all duration-300 font-medium"
+                    disabled={submitting}
+                    className="bg-gray-100 text-gray-600 px-8 py-3 rounded-xl hover:bg-gray-200 transition-all duration-300 font-medium disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -299,7 +433,7 @@ const AddressBook = () => {
                 <div
                   key={address.id}
                   className={`bg-white border-2 rounded-2xl p-6 transition-all duration-300 hover:shadow-lg ${
-                    address.isDefault 
+                    address.is_default 
                       ? 'border-blue-300 bg-gradient-to-r from-blue-50 to-purple-50' 
                       : 'border-gray-200 hover:border-blue-200'
                   }`}
@@ -307,9 +441,11 @@ const AddressBook = () => {
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
-                        {getTypeIcon(address.type)}
-                        <h3 className="text-lg font-semibold text-gray-800">{address.title}</h3>
-                        {address.isDefault && (
+                        <Home className="w-5 h-5 text-blue-600" />
+                        <h3 className="text-lg font-semibold text-gray-800">
+                          {address.first_name} {address.last_name}
+                        </h3>
+                        {address.is_default && (
                           <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
                             <Star className="w-3 h-3" />
                             Default
@@ -317,15 +453,14 @@ const AddressBook = () => {
                         )}
                       </div>
                       <div className="text-gray-600 space-y-1">
-                        <p className="font-medium text-gray-800">{address.name}</p>
-                        <p>{address.street}</p>
-                        <p>{address.city}, {address.state} {address.zipCode}</p>
-                        <p>{address.country}</p>
-                        <p className="text-blue-600 font-medium">{address.phone}</p>
+                        {formatAddress(address).map((line, index) => (
+                          <p key={index}>{line}</p>
+                        ))}
+                        <p className="text-blue-600 font-medium">{address.phone_number}</p>
                       </div>
                       
-                      {/* Set Default Button - More Prominent */}
-                      {!address.isDefault && (
+                      {/* Set Default Button */}
+                      {!address.is_default && (
                         <div className="mt-4">
                           <button
                             onClick={() => setDefault(address.id)}
