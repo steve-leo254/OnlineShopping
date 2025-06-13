@@ -227,13 +227,13 @@ const AddressBook = () => {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto p-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+      <div className="bg-white h-full">
+        <div className="p-6">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/3 mb-4"></div>
+            <div className="h-6 bg-gray-300 rounded w-1/3 mb-6"></div>
             <div className="space-y-4">
-              <div className="h-32 bg-gray-300 rounded"></div>
-              <div className="h-32 bg-gray-300 rounded"></div>
+              <div className="h-24 bg-gray-300 rounded"></div>
+              <div className="h-24 bg-gray-300 rounded"></div>
             </div>
           </div>
         </div>
@@ -242,257 +242,256 @@ const AddressBook = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Address Book</h1>
-              <p className="text-blue-100">Manage your delivery addresses</p>
-            </div>
-            <button
-              onClick={() => setShowForm(true)}
-              className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-xl flex items-center gap-2 transition-all duration-300 hover:scale-105 backdrop-blur-sm"
+    <div className="bg-white h-full flex flex-col">
+      {/* Compact Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4 flex-shrink-0">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-white mb-1">Address Book</h1>
+            <p className="text-blue-100 text-sm">Manage your delivery addresses</p>
+          </div>
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-300 hover:scale-105 backdrop-blur-sm text-sm font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            Add Address
+          </button>
+        </div>
+      </div>
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto p-6">
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 flex items-center gap-3">
+            <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+            <span className="text-red-700 text-sm">{error}</span>
+            <button 
+              onClick={() => setError(null)}
+              className="ml-auto text-red-600 hover:text-red-800 text-lg leading-none"
             >
-              <Plus className="w-5 h-5" />
-              Add Address
+              ×
             </button>
           </div>
-        </div>
+        )}
 
-        <div className="p-8">
-          {/* Error Display */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-              <span className="text-red-700">{error}</span>
-              <button 
-                onClick={() => setError(null)}
-                className="ml-auto text-red-600 hover:text-red-800"
-              >
-                ×
-              </button>
-            </div>
-          )}
-
-          {/* Address Form */}
-          {showForm && (
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 mb-8 border border-blue-200 animate-in slide-in-from-top duration-300">
-              <h3 className="text-xl font-semibold text-gray-800 mb-6">
-                {editingAddress ? 'Edit Address' : 'Add New Address'}
-              </h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      First Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="first_name"
-                      value={formData.first_name}
-                      onChange={handleInputChange}
-                      className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Last Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="last_name"
-                      value={formData.last_name}
-                      onChange={handleInputChange}
-                      className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      required
-                    />
-                  </div>
-                </div>
-
+        {/* Address Form */}
+        {showForm && (
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-6 border border-blue-200 animate-in slide-in-from-top duration-300">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              {editingAddress ? 'Edit Address' : 'Add New Address'}
+            </h3>
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone_number"
-                    value={formData.phone_number}
-                    onChange={handleInputChange}
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Address <span className="text-red-500">*</span>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    First Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    name="address"
-                    value={formData.address}
+                    name="first_name"
+                    value={formData.first_name}
                     onChange={handleInputChange}
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="text-gray-500 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
                     required
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Additional Info</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Last Name <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
-                    name="additional_info"
-                    value={formData.additional_info}
+                    name="last_name"
+                    value={formData.last_name}
                     onChange={handleInputChange}
-                    placeholder="Apartment, suite, unit, building, floor, etc."
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="text-gray-500 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                    required
                   />
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Region <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="region"
-                      value={formData.region}
-                      onChange={handleInputChange}
-                      className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      City <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      required
-                    />
-                  </div>
-                </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  name="phone_number"
+                  value={formData.phone_number}
+                  onChange={handleInputChange}
+                  className="text-gray-500 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                  required
+                />
+              </div>
 
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="is_default"
-                    id="is_default"
-                    checked={formData.is_default}
-                    onChange={handleInputChange}
-                    className="text-blue-500 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                  />
-                  <label htmlFor="is_default" className="ml-2 text-sm font-medium text-gray-700">
-                    Set as default address
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  className="text-gray-500 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Additional Info</label>
+                <input
+                  type="text"
+                  name="additional_info"
+                  value={formData.additional_info}
+                  onChange={handleInputChange}
+                  placeholder="Apartment, suite, unit, building, floor, etc."
+                  className="text-gray-500 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Region <span className="text-red-500">*</span>
                   </label>
+                  <input
+                    type="text"
+                    name="region"
+                    value={formData.region}
+                    onChange={handleInputChange}
+                    className="text-gray-500 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                    required
+                  />
                 </div>
-
-                <div className="flex gap-4 pt-4">
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={submitting}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:scale-105 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {submitting 
-                      ? (editingAddress ? 'Updating...' : 'Saving...') 
-                      : (editingAddress ? 'Update Address' : 'Save Address')
-                    }
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    disabled={submitting}
-                    className="bg-gray-100 text-gray-600 px-8 py-3 rounded-xl hover:bg-gray-200 transition-all duration-300 font-medium disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    City <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleInputChange}
+                    className="text-gray-500 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
+                    required
+                  />
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Address List */}
-          <div className="space-y-4">
-            {addresses.length === 0 ? (
-              <div className="text-center py-12">
-                <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-medium text-gray-500 mb-2">No addresses yet</h3>
-                <p className="text-gray-400">Add your first address to get started</p>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="is_default"
+                  id="is_default"
+                  checked={formData.is_default}
+                  onChange={handleInputChange}
+                  className="text-blue-500 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <label htmlFor="is_default" className="ml-2 text-xs font-medium text-gray-700">
+                  Set as default address
+                </label>
               </div>
-            ) : (
-              addresses.map((address) => (
-                <div
-                  key={address.id}
-                  className={`bg-white border-2 rounded-2xl p-6 transition-all duration-300 hover:shadow-lg ${
-                    address.is_default 
-                      ? 'border-blue-300 bg-gradient-to-r from-blue-50 to-purple-50' 
-                      : 'border-gray-200 hover:border-blue-200'
-                  }`}
+
+              <div className="flex gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:scale-105 font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <Home className="w-5 h-5 text-blue-600" />
-                        <h3 className="text-lg font-semibold text-gray-800">
-                          {address.first_name} {address.last_name}
-                        </h3>
-                        {address.is_default && (
-                          <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                            <Star className="w-3 h-3" />
-                            Default
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-gray-600 space-y-1">
-                        {formatAddress(address).map((line, index) => (
-                          <p key={index}>{line}</p>
-                        ))}
-                        <p className="text-blue-600 font-medium">{address.phone_number}</p>
-                      </div>
-                      
-                      {/* Set Default Button */}
-                      {!address.is_default && (
-                        <div className="mt-4">
-                          <button
-                            onClick={() => setDefault(address.id)}
-                            className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-4 py-2 rounded-xl hover:from-yellow-500 hover:to-orange-500 transition-all duration-300 hover:scale-105 font-medium text-sm flex items-center gap-2"
-                          >
-                            <Star className="w-4 h-4" />
-                            Set as Default
-                          </button>
-                        </div>
+                  {submitting 
+                    ? (editingAddress ? 'Updating...' : 'Saving...') 
+                    : (editingAddress ? 'Update Address' : 'Save Address')
+                  }
+                </button>
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  disabled={submitting}
+                  className="bg-gray-100 text-gray-600 px-6 py-2 rounded-lg hover:bg-gray-200 transition-all duration-300 font-medium disabled:opacity-50 text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Address List */}
+        <div className="space-y-3">
+          {addresses.length === 0 ? (
+            <div className="text-center py-8">
+              <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <h3 className="text-lg font-medium text-gray-500 mb-2">No addresses yet</h3>
+              <p className="text-gray-400 text-sm">Add your first address to get started</p>
+            </div>
+          ) : (
+            addresses.map((address) => (
+              <div
+                key={address.id}
+                className={`bg-white border-2 rounded-lg p-4 transition-all duration-300 hover:shadow-md ${
+                  address.is_default 
+                    ? 'border-blue-300 bg-gradient-to-r from-blue-50 to-purple-50' 
+                    : 'border-gray-200 hover:border-blue-200'
+                }`}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Home className="w-4 h-4 text-blue-600" />
+                      <h3 className="text-base font-semibold text-gray-800">
+                        {address.first_name} {address.last_name}
+                      </h3>
+                      {address.is_default && (
+                        <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1">
+                          <Star className="w-2.5 h-2.5" />
+                          Default
+                        </span>
                       )}
                     </div>
-                    <div className="flex flex-col gap-2 ml-4">
-                      <button
-                        onClick={() => handleEdit(address)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 hover:scale-105"
-                        title="Edit address"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(address.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 hover:scale-105"
-                        title="Delete address"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    <div className="text-gray-600 space-y-0.5 text-sm">
+                      {formatAddress(address).map((line, index) => (
+                        <p key={index}>{line}</p>
+                      ))}
+                      <p className="text-blue-600 font-medium">{address.phone_number}</p>
                     </div>
+                    
+                    {/* Set Default Button */}
+                    {!address.is_default && (
+                      <div className="mt-3">
+                        <button
+                          onClick={() => setDefault(address.id)}
+                          className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-3 py-1.5 rounded-lg hover:from-yellow-500 hover:to-orange-500 transition-all duration-300 hover:scale-105 font-medium text-xs flex items-center gap-1"
+                        >
+                          <Star className="w-3 h-3" />
+                          Set as Default
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1 ml-3">
+                    <button
+                      onClick={() => handleEdit(address)}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 hover:scale-105"
+                      title="Edit address"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(address.id)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-105"
+                      title="Delete address"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
