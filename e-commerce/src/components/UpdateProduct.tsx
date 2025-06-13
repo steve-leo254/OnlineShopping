@@ -214,7 +214,7 @@ const UpdateProductModal: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!token || role !== "admin") {
+    if (!token || !["admin", "SUPERADMIN"].includes(role)) {
       toast.error("Admin access required");
       return;
     }
