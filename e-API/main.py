@@ -44,21 +44,17 @@ app.add_middleware(
 
 user_dependency = Annotated[dict, Depends(get_active_user)]
 
-
-
-
 def require_admin(user: user_dependency):
-    """Check if user has admin or superadmin role"""
-    role = user.get('role')
-    print(f"DEBUG: User role from token: '{role}'") # Add this line
-    print(f"DEBUG: Role.ADMIN.value: '{Role.ADMIN.value}', Role.SUPERADMIN.value: '{Role.SUPERADMIN.value}'") # Add this line
-    
-    if role not in [Role.ADMIN.value, Role.SUPERADMIN.value]:
-        print(f"Access denied for role: {role}")
+    print(f"User role: {user.get('role')}")
+    try:
+        user_role = Role(user.get("role"))  # Convert string to Role enum
+    except ValueError:
+        # Handle case where role is not a valid enum value
+        raise HTTPException(status_code=403, detail="Invalid role")
+    if user_role != Role.ADMIN:  # Compare enum members
         raise HTTPException(status_code=403, detail="Admin access required")
-    
-    print(f"Access granted for role: {role}")
     return user
+
 
 
 # Ensure uploads directory exists
@@ -196,7 +192,28 @@ async def add_product(user: user_dependency, db: db_dependency, create_product: 
         logger.error(f"Error adding product: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
+# @app.get("/products", response_model=PaginatedProductResponse, status_code=status.HTTP_200_OK)
+# async def fetch_products(user: user_dependency, db: db_dependency, search: str = None, page: int = 1, limit: int = 10):
+#     require_admin(user)
+#     try:
+#         skip = (page - 1) * limit
+#         query = db.query(models.Products).filter(models.Products.user_id == user.get("id"))
+#         if search:
+#             query = query.filter(models.Products.name.ilike(f"%{search}%"))
+#             logger.info(f"Admin product search query: {search}")
+#         total = query.count()
+#         products = query.offset(skip).limit(limit).all()
+#         total_pages = ceil(total / limit)
+#         return {
+#             "items": products,
+#             "total": total,
+#             "page": page,
+#             "limit": limit,
+#             "pages": total_pages
+#         }
+#     except SQLAlchemyError as e:
+#         logger.error(f"Error fetching products: {str(e)}")
+#         raise HTTPException(status_code=500, detail="Error fetching products")
 
 @app.put("/update-product/{product_id}", status_code=status.HTTP_200_OK)
 async def update_product(product_id: int, updated_data: UpdateProduct, user: user_dependency, db: db_dependency):

@@ -1,20 +1,9 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { toast } from "react-toastify";
-import { useAuth } from "../context/AuthContext";
-import {
-  X,
-  Upload,
-  Save,
-  Loader2,
-  Tag,
-  DollarSign,
-  Package,
-  Star,
-  Image as ImageIcon,
-  PlusCircle,
-} from "lucide-react";
-import CategoryForm from "./AddCategory"; // Import the CategoryForm component
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+import { useAuth } from '../context/AuthContext';
+import { X, Upload, Save, Loader2, Tag, DollarSign, Package, Star, Image as ImageIcon, PlusCircle } from 'lucide-react';
+import CategoryForm from './AddCategory'; // Import the CategoryForm component
 
 // Define types based on your Pydantic models
 type Category = {
@@ -48,16 +37,16 @@ interface AddProductProps {
 const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
   const { token, role } = useAuth();
   const [formData, setFormData] = useState<ProductForm>({
-    name: "",
+    name: '',
     cost: 0,
     price: 0,
     original_price: 0,
-    img_url: "",
+    img_url: '',
     stock_quantity: 0,
     barcode: 0,
     category_id: null,
-    brand: "",
-    description: "",
+    brand: '',
+    description: '',
     rating: 0,
     reviews: 0,
     discount: 0,
@@ -73,13 +62,11 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
   // Fetch categories on mount and when a new category is added
   const fetchCategories = async () => {
     try {
-      const response = await axios.get<Category[]>(
-        "http://localhost:8000/public/categories"
-      );
+      const response = await axios.get<Category[]>('http://localhost:8000/public/categories');
       setCategories(response.data);
     } catch (err) {
-      toast.error("Failed to fetch categories");
-      console.error("Error fetching categories:", err);
+      toast.error('Failed to fetch categories');
+      console.error('Error fetching categories:', err);
     }
   };
 
@@ -90,42 +77,30 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
   // Calculate selling price whenever original_price or discount changes
   useEffect(() => {
     if (formData.original_price > 0) {
-      const discountAmount =
-        (formData.original_price * formData.discount) / 100;
+      const discountAmount = (formData.original_price * formData.discount) / 100;
       const calculatedPrice = formData.original_price - discountAmount;
-
-      setFormData((prev) => ({
+      
+      setFormData(prev => ({
         ...prev,
-        price: Math.round(calculatedPrice * 100) / 100, // Round to 2 decimal places
+        price: Math.round(calculatedPrice * 100) / 100 // Round to 2 decimal places
       }));
     }
   }, [formData.original_price, formData.discount]);
 
   // Handle form input changes
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]:
-        type === "checkbox"
+        type === 'checkbox'
           ? (e.target as HTMLInputElement).checked
-          : name === "cost" ||
-            name === "price" ||
-            name === "original_price" ||
-            name === "stock_quantity" ||
-            name === "barcode" ||
-            name === "rating" ||
-            name === "reviews" ||
-            name === "discount"
+          : name === 'cost' || name === 'price' || name === 'original_price' || name === 'stock_quantity' || name === 'barcode' || name === 'rating' || name === 'reviews' || name === 'discount'
           ? Number(value) || 0
-          : name === "category_id"
-          ? value
-            ? Number(value)
-            : null
+          : name === 'category_id'
+          ? value ? Number(value) : null
           : value,
     }));
   };
@@ -134,12 +109,12 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (!file.type.startsWith("image/")) {
-        toast.error("Please select an image file (jpg, png, gif)");
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file (jpg, png, gif)');
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image size must be less than 5MB");
+        toast.error('Image size must be less than 5MB');
         return;
       }
       setImageFile(file);
@@ -159,46 +134,46 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!token || !["admin", "SUPERADMIN"].includes(role)) {
-      toast.error("Admin access required");
+    if (!token || role !== 'admin') {
+      toast.error('Admin access required');
       return;
     }
 
     // Client-side validation
     if (!formData.name) {
-      toast.error("Product name is required");
+      toast.error('Product name is required');
       return;
     }
     if (formData.cost <= 0) {
-      toast.error("Cost must be greater than 0");
+      toast.error('Cost must be greater than 0');
       return;
     }
     if (formData.price <= 0) {
-      toast.error("Price must be greater than 0");
+      toast.error('Price must be greater than 0');
       return;
     }
     if (formData.original_price <= 0) {
-      toast.error("Original price must be greater than 0");
+      toast.error('Original price must be greater than 0');
       return;
     }
     if (formData.stock_quantity < 0) {
-      toast.error("Stock quantity cannot be negative");
+      toast.error('Stock quantity cannot be negative');
       return;
     }
     if (formData.barcode <= 0) {
-      toast.error("Barcode must be a positive number");
+      toast.error('Barcode must be a positive number');
       return;
     }
     if (formData.rating < 0 || formData.rating > 5) {
-      toast.error("Rating must be between 0 and 5");
+      toast.error('Rating must be between 0 and 5');
       return;
     }
     if (formData.reviews < 0) {
-      toast.error("Reviews cannot be negative");
+      toast.error('Reviews cannot be negative');
       return;
     }
     if (formData.discount < 0 || formData.discount > 100) {
-      toast.error("Discount must be between 0 and 100");
+      toast.error('Discount must be between 0 and 100');
       return;
     }
 
@@ -209,35 +184,30 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
       if (imageFile) {
         // Upload image
         const formDataImage = new FormData();
-        formDataImage.append("file", imageFile);
-        const imageResponse = await axios.post(
-          "http://localhost:8000/upload-image",
-          formDataImage,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
+        formDataImage.append('file', imageFile);
+        const imageResponse = await axios.post('http://localhost:8000/upload-image', formDataImage, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        });
         img_url = imageResponse.data.img_url;
       }
 
       // Create product
       const productData = { ...formData, img_url };
-      await axios.post("http://localhost:8000/products", productData, {
+      await axios.post('http://localhost:8000/products', productData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      toast.success("Product added successfully");
+      toast.success('Product added successfully');
       onClose();
     } catch (err: any) {
       const errorMessage =
-        err.response?.data?.detail ||
-        "Failed to add product. Please try again.";
+        err.response?.data?.detail || 'Failed to add product. Please try again.';
       toast.error(errorMessage);
-      console.error("Error adding product:", err);
+      console.error('Error adding product:', err);
     } finally {
       setIsLoading(false);
     }
@@ -259,9 +229,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
             </div>
             <div>
               <h2 className="text-xl font-bold text-white">Add New Product</h2>
-              <p className="text-blue-100 text-sm">
-                Fill in the details to create a new product
-              </p>
+              <p className="text-blue-100 text-sm">Fill in the details to create a new product</p>
             </div>
           </div>
           <button
@@ -280,9 +248,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
           <div className="bg-gray-50 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-4">
               <Tag className="w-5 h-5 text-blue-600" />
-              <h3 className="text-lg font-semibold text-gray-900">
-                Basic Information
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="lg:col-span-2">
@@ -316,12 +282,10 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category
                 </label>
-                <div className="flex items-center gap-2">
-                  {" "}
-                  {/* Added for button next to select */}
+                <div className="flex items-center gap-2"> {/* Added for button next to select */}
                   <select
                     name="category_id"
-                    value={formData.category_id ?? ""}
+                    value={formData.category_id ?? ''}
                     onChange={handleChange}
                     className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   >
@@ -376,9 +340,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
           <div className="bg-green-50 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-4">
               <DollarSign className="w-5 h-5 text-green-600" />
-              <h3 className="text-lg font-semibold text-gray-900">
-                Pricing & Stock
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900">Pricing & Stock</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
@@ -469,9 +431,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
           <div className="bg-purple-50 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-4">
               <ImageIcon className="w-5 h-5 text-purple-600" />
-              <h3 className="text-lg font-semibold text-gray-900">
-                Product Image
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900">Product Image</h3>
             </div>
             <div className="flex flex-col lg:flex-row gap-6">
               <div className="flex-1">
@@ -521,9 +481,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
           <div className="bg-yellow-50 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-4">
               <Star className="w-5 h-5 text-yellow-600" />
-              <h3 className="text-lg font-semibold text-gray-900">
-                Rating & Reviews
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900">Rating & Reviews</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -561,9 +519,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
 
           {/* Product Status */}
           <div className="bg-blue-50 rounded-2xl p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Product Status
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Product Status</h3>
             <div className="flex flex-wrap gap-6">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -573,9 +529,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                   onChange={handleChange}
                   className="text-gray-500 w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                 />
-                <span className="text-sm font-medium text-gray-700">
-                  New Product
-                </span>
+                <span className="text-sm font-medium text-gray-700">New Product</span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -585,9 +539,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                   onChange={handleChange}
                   className="text-gray-500 w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                 />
-                <span className="text-sm font-medium text-gray-700">
-                  Featured Product
-                </span>
+                <span className="text-sm font-medium text-gray-700">Featured Product</span>
               </label>
             </div>
           </div>
@@ -598,9 +550,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
               type="submit"
               disabled={isLoading}
               className={`w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 ${
-                isLoading
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:from-blue-700 hover:to-purple-700"
+                isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:from-blue-700 hover:to-purple-700'
               }`}
             >
               {isLoading ? (
