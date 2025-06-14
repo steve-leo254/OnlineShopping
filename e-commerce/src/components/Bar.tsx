@@ -4,6 +4,12 @@ import { useAuth } from "../context/AuthContext";
 import CartDropdown from "./CartDropdown";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 
+declare global {
+  interface Window {
+    initFlowbite?: () => void;
+  }
+}
+
 // Define the component as a React Functional Component (React.FC) for TypeScript compliance
 const Bar: React.FC = () => {
   const { isAuthenticated, logout, role } = useAuth();
