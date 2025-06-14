@@ -25,6 +25,7 @@ import AboutPage from "./pages/AboutUs";
 import AccountProfile from "./pages/MyProfile";
 import SuperAdminDashboard from "./pages/AdminPage";
 import SuperAdminRegister from "./pages/SuperAdmin";
+import AddressBook from "./components/AddressBook";
 
 
 
@@ -71,6 +72,7 @@ function App() {
               <Route path="*" element={<NotFound />} />
               <Route path="/SuperAdmin" element={<SuperAdminRegister />} />
               <Route path="/MyProfile" element={<AccountProfile />} />
+              <Route path="/address-book" element={<AddressBook />} />
             </Route>
             {/* </Route> */}
           </Routes>
