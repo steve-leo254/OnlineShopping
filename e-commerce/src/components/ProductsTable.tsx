@@ -14,36 +14,49 @@ import { useFetchProducts } from "./UseFetchProducts";
 import UpdateProductModal from "./UpdateProductModal";
 import AddProduct from "./AddProduct";
 
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  stock_quantity: number;
+  brand: string;
+  discount?: number;
+}
+
+interface Category {
+  id: number;
+  name: string;
+}
+
 const ProductsTable = () => {
   const { isLoading, products, totalPages, totalItems, error, fetchProducts } =
     useFetchProducts();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedProducts, setSelectedProducts] = useState([]);
-  const [openDropdown, setOpenDropdown] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedStockLevel, setSelectedStockLevel] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [selectedProductForEdit, setSelectedProductForEdit] = useState(null);
+  const [selectedProductForEdit, setSelectedProductForEdit] = useState<Product | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
   const limit = 10;
 
   useEffect(() => {
-    fetchProducts(currentPage, limit, searchQuery, selectedCategory);
+    fetchProducts(currentPage, limit, searchQuery, selectedCategory?.toString());
   }, [currentPage, searchQuery, selectedCategory, fetchProducts]);
 
-  const handleSearch = (e) => {
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setCurrentPage(1);
   };
 
-  const handlePageChange = (page) => {
+  const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
@@ -58,7 +71,7 @@ const ProductsTable = () => {
     }
   };
 
-  const handleCategoryFilter = (categoryId) => {
+  const handleCategoryFilter = (categoryId: number | null) => {
     setSelectedCategory(categoryId);
     setCurrentPage(1);
   };
@@ -69,7 +82,7 @@ const ProductsTable = () => {
 
   const handleAddModalClose = () => {
     setShowAddModal(false);
-    fetchProducts(currentPage, limit, searchQuery, selectedCategory);
+    fetchProducts(currentPage, limit, searchQuery, selectedCategory?.toString());
   };
 
   const startItem = (currentPage - 1) * limit + 1;
@@ -142,7 +155,7 @@ const ProductsTable = () => {
     return items;
   };
 
-  const getStockStatus = (stock) => {
+  const getStockStatus = (stock: number) => {
     if (stock > 20)
       return { text: "In Stock", color: "bg-emerald-100 text-emerald-800" };
     if (stock > 5)
@@ -150,11 +163,11 @@ const ProductsTable = () => {
     return { text: "Out of Stock", color: "bg-red-100 text-red-800" };
   };
 
-  const toggleDropdown = (productId) => {
+  const toggleDropdown = (productId: string) => {
     setOpenDropdown(openDropdown === productId ? null : productId);
   };
 
-  const handleEdit = (product) => {
+  const handleEdit = (product: Product) => {
     setSelectedProductForEdit(product);
     setShowUpdateModal(true);
     setOpenDropdown(null);
@@ -164,10 +177,10 @@ const ProductsTable = () => {
     setShowUpdateModal(false);
     setSelectedProductForEdit(null);
     // Refresh the products data
-    fetchProducts(currentPage, limit, searchQuery, selectedCategory);
+    fetchProducts(currentPage, limit, searchQuery, selectedCategory?.toString());
   };
 
-  const handleDelete = (product) => {
+  const handleDelete = (product: Product) => {
     console.log("Delete product:", product);
     setOpenDropdown(null);
   };
@@ -192,8 +205,9 @@ const ProductsTable = () => {
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest(".dropdown-container")) {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".dropdown-container")) {
         setOpenDropdown(null);
       }
     };
@@ -414,7 +428,7 @@ const ProductsTable = () => {
               <tbody className="divide-y divide-gray-100">
                 {isLoading ? (
                   <tr>
-                    <td colSpan="9" className="py-12 text-center">
+                    <td colSpan={9} className="py-12 text-center">
                       <div className="flex items-center justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                         <span className="ml-3 text-gray-600">
@@ -425,7 +439,7 @@ const ProductsTable = () => {
                   </tr>
                 ) : filteredProducts.length === 0 ? (
                   <tr>
-                    <td colSpan="9" className="py-12 text-center text-gray-500">
+                    <td colSpan={9} className="py-12 text-center text-gray-500">
                       No products found
                     </td>
                   </tr>
@@ -445,7 +459,7 @@ const ProductsTable = () => {
                                 alt={product.name}
                                 className="w-12 h-12 rounded-lg object-cover bg-gray-100"
                                 onError={(e) => {
-                                  e.target.style.display = "none";
+                                  (e.target as HTMLImageElement).style.display = "none";
                                 }}
                               />
                             )}
@@ -460,7 +474,7 @@ const ProductsTable = () => {
                           <span className="font-semibold text-gray-900">
                             Ksh {product.price?.toLocaleString() || 0}
                           </span>
-                          {product.discount > 0 && (
+                          {(product.discount ?? 0) > 0 && (
                             <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
                               -{product.discount}%
                             </span>
