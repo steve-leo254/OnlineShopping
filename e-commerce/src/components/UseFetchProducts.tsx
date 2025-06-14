@@ -1,71 +1,74 @@
-// Updated useFetchProducts hook to support category filtering
+import { useState, useEffect } from 'react';
+import axios, { AxiosError } from 'axios';
+import { useAuth } from '../context/AuthContext';
 
-import { useState, useCallback } from 'react';
-import axios from 'axios';
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  original_price?: number;
-  cost?: number;
-  rating?: number;
-  reviews?: number;
-  img_url?: string;
-  category?: { id: string; name: string };
-  brand?: string;
-  stock_quantity: number;
-  discount?: number;
-  is_new?: boolean;
-  is_favorite?: boolean;
-  description?: string;
-  barcode?: string;
-  created_at: string;
+// Define the AddressResponse type based on your backend model
+interface AddressResponse {
+  id: number;
+  phone_number: string;
+  user_id: number;
+  street: string;
+  city: string;
+  state: string | null;
+  postal_code: string;
+  country: string;
+  is_default: boolean;
 }
 
-export const useFetchProducts = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalItems, setTotalItems] = useState(0);
+// Define the error response type based on your backend's error format
+interface ErrorResponse {
+  detail: string | { type: string; loc: string[]; msg: string; input: string }[];
+}
+
+// Define the hook's return type
+interface FetchAddressesResult {
+  addresses: AddressResponse[] | null;
+  loading: boolean;
+  error: string | null;
+  refetch: () => void;
+}
+
+// Custom hook to fetch addresses
+export const useFetchAddresses = (): FetchAddressesResult => {
+  const [addresses, setAddresses] = useState<AddressResponse[] | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const {token} = useAuth();
 
-  const fetchProducts = useCallback(async (page = 1, limit = 8, search = "", categoryId: string | null | undefined = null) => {
-    setIsLoading(true);
+  const fetchAddresses = async () => {
+    setLoading(true);
     setError(null);
-    
-    try {
-      const params = {
-        page,
-        limit,
-        ...(search && { search }),
-        ...(categoryId && { category_id: categoryId })
-      };
 
-      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/public/products`, { params });
-      
-      if (response.data) {
-        setProducts(response.data.items || []);
-        setTotalPages(response.data.pages || 0);
-        setTotalItems(response.data.total || 0);
+
+    try {
+      const response = await axios.get<AddressResponse[]>(
+        `${import.meta.env.VITE_API_BASE_URL}/addresses/`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setAddresses(response.data);
+    } catch (err) {
+      const axiosError = err as AxiosError<ErrorResponse>;
+      let errorMessage = 'Failed to fetch addresses';
+      if (axiosError.response?.data?.detail) {
+        const detail = axiosError.response.data.detail;
+        errorMessage =
+          typeof detail === 'string'
+            ? detail
+            : detail.map((e) => e.msg).join(', ');
       }
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      setError(axios.isAxiosError(error) ? error.response?.data?.detail || 'Failed to fetch products' : 'Failed to fetch products');
-      setProducts([]);
-      setTotalPages(0);
-      setTotalItems(0);
+      setError(errorMessage);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchAddresses();
   }, []);
 
-  return {
-    isLoading,
-    products,
-    totalPages,
-    totalItems,
-    error,
-    fetchProducts
-  };
+  return { addresses, loading, error, refetch: fetchAddresses };
 };
