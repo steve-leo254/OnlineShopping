@@ -14,23 +14,53 @@ import { useFetchProducts } from "./UseFetchProducts";
 import UpdateProductModal from "./UpdateProductModal";
 import AddProduct from "./AddProduct";
 
-const ProductsTable = () => {
+interface Category {
+  id: string;
+  name: string;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  original_price?: number;
+  cost?: number;
+  rating?: number;
+  reviews?: number;
+  img_url?: string;
+  category?: { id: string; name: string };
+  brand?: string;
+  stock_quantity: number;
+  discount?: number;
+  is_new?: boolean;
+  is_favorite?: boolean;
+  description?: string;
+  created_at: string;
+}
+
+interface StockStatus {
+  text: string;
+  color: string;
+}
+
+const ProductsTable: React.FC = () => {
   const { isLoading, products, totalPages, totalItems, error, fetchProducts } =
     useFetchProducts();
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedProducts, setSelectedProducts] = useState([]);
-  const [openDropdown, setOpenDropdown] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedBrand, setSelectedBrand] = useState("");
-  const [selectedStockLevel, setSelectedStockLevel] = useState("");
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [categories, setCategories] = useState([]);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [selectedProductForEdit, setSelectedProductForEdit] = useState(null);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<string>("");
+  const [selectedStockLevel, setSelectedStockLevel] = useState<string>("");
+  const [minPrice, setMinPrice] = useState<string>("");
+  const [maxPrice, setMaxPrice] = useState<string>("");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [showUpdateModal, setShowUpdateModal] = useState<boolean>(false);
+  const [selectedProductForEdit, setSelectedProductForEdit] =
+    useState<Product | null>(null);
+  const [showAddModal, setShowAddModal] = useState<boolean>(false);
 
   const limit = 10;
 
@@ -38,19 +68,22 @@ const ProductsTable = () => {
     fetchProducts(currentPage, limit, searchQuery, selectedCategory);
   }, [currentPage, searchQuery, selectedCategory, fetchProducts]);
 
-  const handleSearch = (e) => {
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setCurrentPage(1);
   };
 
-  const handlePageChange = (page) => {
+  const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
   };
+
   const fetchCategories = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/public/categories`); // Replace with your actual endpoint
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/public/categories`
+      );
       const data = await response.json();
       setCategories(data);
     } catch (error) {
@@ -58,7 +91,7 @@ const ProductsTable = () => {
     }
   };
 
-  const handleCategoryFilter = (categoryId) => {
+  const handleCategoryFilter = (categoryId: string | null) => {
     setSelectedCategory(categoryId);
     setCurrentPage(1);
   };
@@ -76,7 +109,7 @@ const ProductsTable = () => {
   const endItem = Math.min(currentPage * limit, totalItems);
 
   const getPaginationItems = () => {
-    const items = [];
+    const items: JSX.Element[] = [];
     const maxPagesToShow = 5;
     let startPage = Math.max(1, currentPage - 2);
     let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
@@ -142,7 +175,7 @@ const ProductsTable = () => {
     return items;
   };
 
-  const getStockStatus = (stock) => {
+  const getStockStatus = (stock: number): StockStatus => {
     if (stock > 20)
       return { text: "In Stock", color: "bg-emerald-100 text-emerald-800" };
     if (stock > 5)
@@ -150,11 +183,11 @@ const ProductsTable = () => {
     return { text: "Out of Stock", color: "bg-red-100 text-red-800" };
   };
 
-  const toggleDropdown = (productId) => {
+  const toggleDropdown = (productId: string) => {
     setOpenDropdown(openDropdown === productId ? null : productId);
   };
 
-  const handleEdit = (product) => {
+  const handleEdit = (product: Product) => {
     setSelectedProductForEdit(product);
     setShowUpdateModal(true);
     setOpenDropdown(null);
@@ -163,11 +196,10 @@ const ProductsTable = () => {
   const handleModalClose = () => {
     setShowUpdateModal(false);
     setSelectedProductForEdit(null);
-    // Refresh the products data
     fetchProducts(currentPage, limit, searchQuery, selectedCategory);
   };
 
-  const handleDelete = (product) => {
+  const handleDelete = (product: Product) => {
     console.log("Delete product:", product);
     setOpenDropdown(null);
   };
@@ -192,8 +224,8 @@ const ProductsTable = () => {
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest(".dropdown-container")) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!(event.target as Element).closest(".dropdown-container")) {
         setOpenDropdown(null);
       }
     };
@@ -347,7 +379,7 @@ const ProductsTable = () => {
                     value={selectedCategory || ""}
                     onChange={(e) =>
                       handleCategoryFilter(
-                        e.target.value ? parseInt(e.target.value) : null
+                        e.target.value ? e.target.value : null
                       )
                     }
                   >
@@ -441,7 +473,9 @@ const ProductsTable = () => {
                           <div className="flex items-center gap-3">
                             {product.img_url && (
                               <img
-                                src={`${import.meta.env.VITE_API_BASE_URL}${product.img_url}`}
+                                src={`${import.meta.env.VITE_API_BASE_URL}${
+                                  product.img_url
+                                }`}
                                 alt={product.name}
                                 className="w-12 h-12 rounded-lg object-cover bg-gray-100"
                                 onError={(e) => {
