@@ -1,593 +1,569 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, MapPin, Home, Building, Star, AlertCircle } from 'lucide-react';
-import { useShoppingCart } from '../context/ShoppingCartContext';
-import { useAuth } from '../context/AuthContext';
+import React, { useState } from "react";
+import {
+  ArrowLeft,
+  Star,
+  Heart,
+  ShoppingCart,
+  Plus,
+  Minus,
+  Share2,
+  ChevronLeft,
+  ChevronRight,
+  Shield,
+  Truck,
+  RotateCcw,
+  CheckCircle,
+  X,
+  Eye,
+} from "lucide-react";
 
-interface AddressBookProps {
-  onAddressChange?: () => void; // Optional callback for when addresses change
-}
+// Static data
+const staticProduct = {
+  id: 1,
+  name: "Premium Wireless Headphones",
+  price: 199.99,
+  originalPrice: 249.99,
+  rating: 4.5,
+  reviews: 324,
+  images: [
+    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=800&fit=crop",
+    "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=800&h=800&fit=crop",
+    "https://images.unsplash.com/photo-1572536147248-ac59a8abfa4b?w=800&h=800&fit=crop",
+  ],
+  category: "Electronics",
+  brand: "AudioTech",
+  inStock: true,
+  discount: 20,
+  isNew: true,
+  isFavorite: false,
+  stockQuantity: 15,
+  description: "Experience premium sound quality with these wireless headphones featuring active noise cancellation, 30-hour battery life, and premium comfort padding. Perfect for music lovers, professionals, and anyone who values high-quality audio.",
+  barcode: "AT-WH-001",
+  createdAt: "2024-01-01T00:00:00Z",
+  specifications: {
+    Brand: "AudioTech",
+    Category: "Electronics",
+    SKU: "AT-WH-001",
+    "Battery Life": "30 hours",
+    "Connectivity": "Bluetooth 5.0",
+    "Noise Cancellation": "Active",
+    "Weight": "250g",
+    "Warranty": "2 years",
+    "In Stock": "Yes",
+    "Stock Quantity": "15",
+    "Date Added": "January 1, 2024",
+  },
+};
 
-const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
-  const [addresses, setAddresses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [editingAddress, setEditingAddress] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    phone_number: '',
-    address: '',
-    additional_info: '',
-    region: '',
-    city: '',
-    is_default: false
+const staticReviews = [
+  {
+    id: 1,
+    user: "John D.",
+    rating: 5,
+    comment: "Excellent product! The sound quality is amazing and the noise cancellation works perfectly. Highly recommended!",
+    date: "2024-01-15",
+    verified: true,
+  },
+  {
+    id: 2,
+    user: "Sarah M.",
+    rating: 4,
+    comment: "Good quality headphones. The battery life is impressive, though I wish they were a bit lighter.",
+    date: "2024-01-10",
+    verified: true,
+  },
+  {
+    id: 3,
+    user: "Mike R.",
+    rating: 5,
+    comment: "Amazing value for money. The sound is crisp and clear, and they're very comfortable for long listening sessions.",
+    date: "2024-01-08",
+    verified: false,
+  },
+];
+
+const relatedProducts = [
+  {
+    id: 2,
+    name: "Wireless Earbuds Pro",
+    price: 129.99,
+    originalPrice: 149.99,
+    rating: 4.3,
+    reviews: 156,
+    images: ["https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop"],
+  },
+  {
+    id: 3,
+    name: "Gaming Headset RGB",
+    price: 89.99,
+    originalPrice: 99.99,
+    rating: 4.7,
+    reviews: 89,
+    images: ["https://images.unsplash.com/photo-1599669454699-248893623440?w=400&h=400&fit=crop"],
+  },
+  {
+    id: 4,
+    name: "Studio Monitor Speakers",
+    price: 299.99,
+    originalPrice: 349.99,
+    rating: 4.6,
+    reviews: 203,
+    images: ["https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&h=400&fit=crop"],
+  },
+  {
+    id: 5,
+    name: "Bluetooth Speaker",
+    price: 79.99,
+    originalPrice: 99.99,
+    rating: 4.4,
+    reviews: 445,
+    images: ["https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&h=400&fit=crop"],
+  },
+];
+
+type TabType = "description" | "specifications" | "reviews";
+type NotificationType = "success" | "error" | "info";
+
+const ProductDetail: React.FC = () => {
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
+  const [quantity, setQuantity] = useState<number>(1);
+  const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<TabType>("description");
+  const [showImageModal, setShowImageModal] = useState<boolean>(false);
+  const [notification, setNotification] = useState<{
+    show: boolean;
+    message: string;
+    type: NotificationType;
+  }>({
+    show: false,
+    message: "",
+    type: "success",
   });
 
-  // Get context functions and auth
-  const { selectedAddress, setSelectedAddress } = useShoppingCart();
-  const { token } = useAuth();
-
-  // You'll need to replace this with your actual API base URL
-  const API_BASE_URL = 'http://localhost:8000'; // Adjust this to your FastAPI server
-
-  // Function to get auth headers
-  const getAuthHeaders = () => {
-    return {
-      'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` })
-    };
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
   };
 
-  // Fetch addresses from API
-  const fetchAddresses = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/addresses`, {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setAddresses(data);
-      
-      // Update context with the current default address
-      const defaultAddress = data.find(addr => addr.is_default);
-      if (defaultAddress && (!selectedAddress || selectedAddress.id !== defaultAddress.id)) {
-        setSelectedAddress(defaultAddress);
-      }
-      
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching addresses:', err);
-      setError('Failed to load addresses. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+  const showNotification = (message: string, type: NotificationType = "success"): void => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => {
+      setNotification(prev => ({ ...prev, show: false }));
+    }, 4000);
   };
 
-  // Create new address
-  const createAddress = async (addressData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/addresses`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(addressData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const newAddress = await response.json();
-      
-      // Update local state
-      setAddresses(prev => {
-        let updatedAddresses = [...prev, newAddress];
-        
-        // If the new address is default, unset other defaults
-        if (newAddress.is_default) {
-          updatedAddresses = updatedAddresses.map(addr => 
-            addr.id !== newAddress.id ? { ...addr, is_default: false } : addr
-          );
-        }
-        
-        return updatedAddresses;
-      });
-      
-      // Update context if this is now the default address
-      if (newAddress.is_default) {
-        setSelectedAddress(newAddress);
-      }
-      
-      // Notify parent component of address change
-      if (onAddressChange) {
-        onAddressChange();
-      }
-      
-      return newAddress;
-    } catch (err) {
-      console.error('Error creating address:', err);
-      throw new Error('Failed to create address. Please try again.');
-    }
-  };
-
-  // Update address
-  const updateAddress = async (addressId, addressData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/addresses/${addressId}`, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(addressData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const updatedAddress = await response.json();
-      
-      // Update local state
-      setAddresses(prev => {
-        let updatedAddresses = prev.map(addr => 
-          addr.id === addressId ? updatedAddress : addr
-        );
-        
-        // If this address is now default, unset other defaults
-        if (updatedAddress.is_default) {
-          updatedAddresses = updatedAddresses.map(addr => 
-            addr.id !== updatedAddress.id ? { ...addr, is_default: false } : addr
-          );
-        }
-        
-        return updatedAddresses;
-      });
-      
-      // Update context if this is now the default address or if we're updating the currently selected address
-      if (updatedAddress.is_default || (selectedAddress && selectedAddress.id === addressId)) {
-        setSelectedAddress(updatedAddress.is_default ? updatedAddress : 
-          (selectedAddress && selectedAddress.id === addressId ? updatedAddress : selectedAddress));
-      }
-      
-      // Notify parent component of address change
-      if (onAddressChange) {
-        onAddressChange();
-      }
-      
-      return updatedAddress;
-    } catch (err) {
-      console.error('Error updating address:', err);
-      throw new Error('Failed to update address. Please try again.');
-    }
-  };
-
-  // Delete address
-  const deleteAddress = async (addressId) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/addresses/${addressId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
-
-      if (!response.ok) {
-        if (response.status === 400) {
-          throw new Error('Cannot delete address used in orders');
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      // Update local state
-      setAddresses(prev => {
-        const updatedAddresses = prev.filter(addr => addr.id !== addressId);
-        
-        // If we deleted the selected address, update context
-        if (selectedAddress && selectedAddress.id === addressId) {
-          const newDefaultAddress = updatedAddresses.find(addr => addr.is_default);
-          setSelectedAddress(newDefaultAddress || null);
-        }
-        
-        return updatedAddresses;
-      });
-      
-      // Notify parent component of address change
-      if (onAddressChange) {
-        onAddressChange();
-      }
-      
-    } catch (err) {
-      console.error('Error deleting address:', err);
-      throw new Error(err.message || 'Failed to delete address. Please try again.');
-    }
-  };
-
-  // Load addresses on component mount
-  useEffect(() => {
-    fetchAddresses();
-  }, []);
-
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value
-    });
-  };
-
-  const handleSubmit = async () => {
-    // Validate required fields
-    if (!formData.first_name || !formData.last_name || !formData.phone_number || 
-        !formData.address || !formData.city || !formData.region) {
-      setError('Please fill in all required fields');
+  const handleAddToCart = (): void => {
+    if (quantity > staticProduct.stockQuantity) {
+      showNotification(
+        `Cannot add more than available stock (${staticProduct.stockQuantity})`,
+        "error"
+      );
       return;
     }
+    showNotification(`${quantity} ${staticProduct.name}(s) added to cart!`, "success");
+  };
 
-    try {
-      setSubmitting(true);
-      setError(null);
+  const handleQuantityChange = (newQuantity: number): void => {
+    if (newQuantity >= 1 && newQuantity <= staticProduct.stockQuantity) {
+      setQuantity(newQuantity);
+    }
+  };
 
-      if (editingAddress) {
-        await updateAddress(editingAddress.id, formData);
+  const toggleFavorite = (): void => {
+    setIsFavorite(!isFavorite);
+    showNotification(
+      isFavorite ? "Removed from favorites" : "Added to favorites!",
+      isFavorite ? "info" : "success"
+    );
+  };
+
+  const handleShare = async (): Promise<void> => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: staticProduct.name,
+          text: `Check out this amazing product: ${staticProduct.name}`,
+          url: window.location.href,
+        });
+      } catch (error) {
+        console.log("Error sharing:", error);
+      }
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      showNotification("Product link copied to clipboard!", "info");
+    }
+  };
+
+  const handleImageNavigation = (direction: 'prev' | 'next'): void => {
+    setSelectedImageIndex(prevIndex => {
+      if (direction === 'prev') {
+        return prevIndex === 0 ? staticProduct.images.length - 1 : prevIndex - 1;
       } else {
-        await createAddress(formData);
+        return prevIndex === staticProduct.images.length - 1 ? 0 : prevIndex + 1;
       }
-      
-      resetForm();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      first_name: '',
-      last_name: '',
-      phone_number: '',
-      address: '',
-      additional_info: '',
-      region: '',
-      city: '',
-      is_default: false
     });
-    setShowForm(false);
-    setEditingAddress(null);
-    setError(null);
   };
 
-  const handleEdit = (address) => {
-    setFormData({
-      first_name: address.first_name,
-      last_name: address.last_name,
-      phone_number: address.phone_number,
-      address: address.address,
-      additional_info: address.additional_info || '',
-      region: address.region,
-      city: address.city,
-      is_default: address.is_default
-    });
-    setEditingAddress(address);
-    setShowForm(true);
-    setError(null);
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this address?')) {
-      try {
-        setError(null);
-        await deleteAddress(id);
-      } catch (err) {
-        setError(err.message);
-      }
-    }
-  };
-
-  const setDefault = async (id) => {
-    const addressToUpdate = addresses.find(addr => addr.id === id);
-    if (addressToUpdate) {
-      try {
-        setError(null);
-        await updateAddress(id, { ...addressToUpdate, is_default: true });
-      } catch (err) {
-        setError(err.message);
-      }
-    }
-  };
-
-  // Format address display
-  const formatAddress = (address) => {
-    const parts = [address.address];
-    if (address.additional_info) parts.push(address.additional_info);
-    parts.push(`${address.city}, ${address.region}`);
-    return parts;
-  };
-
-  if (loading) {
+  const renderStars = (rating: number): JSX.Element => {
     return (
-      <div className="bg-white h-full">
-        <div className="p-6">
-          <div className="animate-pulse">
-            <div className="h-6 bg-gray-300 rounded w-1/3 mb-6"></div>
-            <div className="space-y-4">
-              <div className="h-24 bg-gray-300 rounded"></div>
-              <div className="h-24 bg-gray-300 rounded"></div>
-            </div>
-          </div>
-        </div>
+      <div className="flex items-center">
+        {[...Array(5)].map((_, i) => (
+          <Star
+            key={i}
+            className={`w-4 h-4 ${
+              i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+            }`}
+          />
+        ))}
       </div>
     );
-  }
+  };
+
+  const renderNotification = (): JSX.Element | null => {
+    if (!notification.show) return null;
+
+    const bgColor = {
+      success: 'bg-green-500',
+      error: 'bg-red-500',
+      info: 'bg-blue-500'
+    }[notification.type];
+
+    return (
+      <div className={`fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2`}>
+        {notification.type === 'success' && <CheckCircle className="w-5 h-5" />}
+        {notification.type === 'error' && <X className="w-5 h-5" />}
+        {notification.type === 'info' && <Eye className="w-5 h-5" />}
+        <span>{notification.message}</span>
+        <button onClick={() => setNotification(prev => ({ ...prev, show: false }))} className="ml-2">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  };
 
   return (
-    <div className="bg-white h-full flex flex-col">
-      {/* Compact Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4 flex-shrink-0">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-white mb-1">Address Book</h1>
-            <p className="text-blue-100 text-sm">Manage your delivery addresses</p>
-            {selectedAddress && (
-              <p className="text-blue-200 text-xs mt-1">
-                Current default: {selectedAddress.first_name} {selectedAddress.last_name}
-              </p>
-            )}
-          </div>
-          <button
-            onClick={() => setShowForm(true)}
-            className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-300 hover:scale-105 backdrop-blur-sm text-sm font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            Add Address
+    <div className="min-h-screen bg-gray-50">
+      {renderNotification()}
+      
+      {/* Header */}
+      <div className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <button className="flex items-center text-gray-600 hover:text-gray-900 transition-colors">
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Back to Products
           </button>
         </div>
       </div>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-6">
-        {/* Error Display */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 flex items-center gap-3">
-            <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-            <span className="text-red-700 text-sm">{error}</span>
-            <button 
-              onClick={() => setError(null)}
-              className="ml-auto text-red-600 hover:text-red-800 text-lg leading-none"
-            >
-              ×
-            </button>
-          </div>
-        )}
+      {/* Product Details */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Product Images */}
+          <div className="space-y-4">
+            <div className="relative bg-white rounded-lg overflow-hidden shadow-lg">
+              <img
+                src={staticProduct.images[selectedImageIndex]}
+                alt={staticProduct.name}
+                className="w-full h-96 object-cover cursor-pointer"
+                onClick={() => setShowImageModal(true)}
+              />
+              
+              {staticProduct.images.length > 1 && (
+                <>
+                  <button
+                    onClick={() => handleImageNavigation('prev')}
+                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-md transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleImageNavigation('next')}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-md transition-colors"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </>
+              )}
 
-        {/* Address Form */}
-        {showForm && (
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-6 border border-blue-200 animate-in slide-in-from-top duration-300">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              {editingAddress ? 'Edit Address' : 'Add New Address'}
-            </h3>
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    First Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="first_name"
-                    value={formData.first_name}
-                    onChange={handleInputChange}
-                    className="text-gray-500 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Last Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="last_name"
-                    value={formData.last_name}
-                    onChange={handleInputChange}
-                    className="text-gray-500 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Phone Number <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  name="phone_number"
-                  value={formData.phone_number}
-                  onChange={handleInputChange}
-                  className="text-gray-500 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Address <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  className="text-gray-500 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Additional Info</label>
-                <input
-                  type="text"
-                  name="additional_info"
-                  value={formData.additional_info}
-                  onChange={handleInputChange}
-                  placeholder="Apartment, suite, unit, building, floor, etc."
-                  className="text-gray-500 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Region <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="region"
-                    value={formData.region}
-                    onChange={handleInputChange}
-                    className="text-gray-500 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    City <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    className="text-gray-500 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  name="is_default"
-                  id="is_default"
-                  checked={formData.is_default}
-                  onChange={handleInputChange}
-                  className="text-blue-500 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                />
-                <label htmlFor="is_default" className="ml-2 text-xs font-medium text-gray-700">
-                  Set as default address
-                </label>
-              </div>
-
-              <div className="flex gap-3 pt-3">
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:scale-105 font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  {submitting 
-                    ? (editingAddress ? 'Updating...' : 'Saving...') 
-                    : (editingAddress ? 'Update Address' : 'Save Address')
-                  }
-                </button>
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  disabled={submitting}
-                  className="bg-gray-100 text-gray-600 px-6 py-2 rounded-lg hover:bg-gray-200 transition-all duration-300 font-medium disabled:opacity-50 text-sm"
-                >
-                  Cancel
-                </button>
+              {/* Badges */}
+              <div className="absolute top-4 left-4 flex flex-col gap-2">
+                {staticProduct.isNew && (
+                  <span className="bg-green-500 text-white px-2 py-1 rounded text-xs font-medium">
+                    NEW
+                  </span>
+                )}
+                {staticProduct.discount > 0 && (
+                  <span className="bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
+                    -{staticProduct.discount}%
+                  </span>
+                )}
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Address List */}
-        <div className="space-y-3">
-          {addresses.length === 0 ? (
-            <div className="text-center py-8">
-              <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <h3 className="text-lg font-medium text-gray-500 mb-2">No addresses yet</h3>
-              <p className="text-gray-400 text-sm">Add your first address to get started</p>
+            {/* Thumbnail Images */}
+            {staticProduct.images.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto">
+                {staticProduct.images.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedImageIndex(index)}
+                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
+                      selectedImageIndex === index ? 'border-blue-500' : 'border-gray-200'
+                    }`}
+                  >
+                    <img
+                      src={image}
+                      alt={`${staticProduct.name} ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Product Info */}
+          <div className="space-y-6">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-500">{staticProduct.category}</span>
+                <button
+                  onClick={handleShare}
+                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <Share2 className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{staticProduct.name}</h1>
+              <p className="text-gray-600 mb-4">{staticProduct.brand}</p>
+
+              {/* Rating */}
+              <div className="flex items-center gap-2 mb-4">
+                {renderStars(staticProduct.rating)}
+                <span className="text-gray-600">({staticProduct.reviews} reviews)</span>
+              </div>
+
+              {/* Price */}
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-3xl font-bold text-gray-900">
+                  {formatCurrency(staticProduct.price)}
+                </span>
+                {staticProduct.originalPrice > staticProduct.price && (
+                  <span className="text-xl text-gray-500 line-through">
+                    {formatCurrency(staticProduct.originalPrice)}
+                  </span>
+                )}
+              </div>
             </div>
-          ) : (
-            addresses.map((address) => (
-              <div
-                key={address.id}
-                className={`bg-white border-2 rounded-lg p-4 transition-all duration-300 hover:shadow-md ${
-                  address.is_default 
-                    ? 'border-blue-300 bg-gradient-to-r from-blue-50 to-purple-50' 
-                    : 'border-gray-200 hover:border-blue-200'
+
+            {/* Stock Status */}
+            <div className="flex items-center gap-2">
+              {staticProduct.inStock ? (
+                <>
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <span className="text-green-600 font-medium">
+                    In Stock ({staticProduct.stockQuantity} available)
+                  </span>
+                </>
+              ) : (
+                <>
+                  <X className="w-5 h-5 text-red-500" />
+                  <span className="text-red-600 font-medium">Out of Stock</span>
+                </>
+              )}
+            </div>
+
+            {/* Quantity Selector */}
+            {staticProduct.inStock && (
+              <div className="flex items-center gap-4">
+                <span className="text-gray-700 font-medium">Quantity:</span>
+                <div className="flex items-center border border-gray-300 rounded-lg">
+                  <button
+                    onClick={() => handleQuantityChange(quantity - 1)}
+                    disabled={quantity <= 1}
+                    className="p-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="px-4 py-2 font-medium">{quantity}</span>
+                  <button
+                    onClick={() => handleQuantityChange(quantity + 1)}
+                    disabled={quantity >= staticProduct.stockQuantity}
+                    className="p-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-4">
+              <button
+                onClick={handleAddToCart}
+                disabled={!staticProduct.inStock}
+                className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                Add to Cart
+              </button>
+              
+              <button
+                onClick={toggleFavorite}
+                className={`p-3 rounded-lg border transition-colors ${
+                  isFavorite
+                    ? 'bg-red-50 border-red-200 text-red-600'
+                    : 'bg-white border-gray-300 text-gray-600 hover:text-red-600'
                 }`}
               >
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Home className="w-4 h-4 text-blue-600" />
-                      <h3 className="text-base font-semibold text-gray-800">
-                        {address.first_name} {address.last_name}
-                      </h3>
-                      {address.is_default && (
-                        <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1">
-                          <Star className="w-2.5 h-2.5" />
-                          Default
-                        </span>
-                      )}
-                      {selectedAddress && selectedAddress.id === address.id && !address.is_default && (
-                        <span className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-2 py-0.5 rounded-full text-xs font-medium">
-                          Selected
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-gray-600 space-y-0.5 text-sm">
-                      {formatAddress(address).map((line, index) => (
-                        <p key={index}>{line}</p>
-                      ))}
-                      <p className="text-blue-600 font-medium">{address.phone_number}</p>
-                    </div>
-                    
-                    {/* Set Default Button */}
-                    {!address.is_default && (
-                      <div className="mt-3">
-                        <button
-                          onClick={() => setDefault(address.id)}
-                          className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-3 py-1.5 rounded-lg hover:from-yellow-500 hover:to-orange-500 transition-all duration-300 hover:scale-105 font-medium text-xs flex items-center gap-1"
-                        >
-                          <Star className="w-3 h-3" />
-                          Set as Default
-                        </button>
-                      </div>
-                    )}
+                <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+              </button>
+            </div>
+
+            {/* Features */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Truck className="w-5 h-5" />
+                <span>Free Shipping</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Shield className="w-5 h-5" />
+                <span>Secure Payment</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <RotateCcw className="w-5 h-5" />
+                <span>30-Day Return</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Product Information Tabs */}
+        <div className="mt-12">
+          <div className="border-b border-gray-200">
+            <nav className="flex space-x-8">
+              {(['description', 'specifications', 'reviews'] as TabType[]).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm capitalize transition-colors ${
+                    activeTab === tab
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </nav>
+          </div>
+
+          <div className="mt-8">
+            {activeTab === 'description' && (
+              <div className="prose max-w-none">
+                <p className="text-gray-700 leading-relaxed">{staticProduct.description}</p>
+              </div>
+            )}
+
+            {activeTab === 'specifications' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Object.entries(staticProduct.specifications).map(([key, value]) => (
+                  <div key={key} className="flex justify-between py-2 border-b border-gray-100">
+                    <span className="font-medium text-gray-900">{key}:</span>
+                    <span className="text-gray-600">{value}</span>
                   </div>
-                  <div className="flex flex-col gap-1 ml-3">
-                    <button
-                      onClick={() => handleEdit(address)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 hover:scale-105"
-                      title="Edit address"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(address.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-105"
-                      title="Delete address"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                ))}
+              </div>
+            )}
+
+            {activeTab === 'reviews' && (
+              <div className="space-y-6">
+                {staticReviews.map((review) => (
+                  <div key={review.id} className="bg-white p-6 rounded-lg shadow-sm border">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium text-gray-900">{review.user}</span>
+                        {review.verified && (
+                          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
+                            Verified Purchase
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-sm text-gray-500">{review.date}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mb-3">
+                      {renderStars(review.rating)}
+                    </div>
+                    <p className="text-gray-700">{review.comment}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Related Products */}
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Related Products</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {relatedProducts.map((relatedProduct) => (
+              <div
+                key={relatedProduct.id}
+                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+              >
+                <img
+                  src={relatedProduct.images[0]}
+                  alt={relatedProduct.name}
+                  className="w-full h-48 object-cover"
+                />
+                <div className="p-4">
+                  <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
+                    {relatedProduct.name}
+                  </h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    {renderStars(relatedProduct.rating)}
+                    <span className="text-sm text-gray-500">({relatedProduct.reviews})</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-gray-900">
+                      {formatCurrency(relatedProduct.price)}
+                    </span>
+                    {relatedProduct.originalPrice > relatedProduct.price && (
+                      <span className="text-sm text-gray-500 line-through">
+                        {formatCurrency(relatedProduct.originalPrice)}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
-            ))
-          )}
+            ))}
+          </div>
         </div>
       </div>
+
+      {/* Image Modal */}
+      {showImageModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="relative max-w-4xl max-h-full">
+            <button
+              onClick={() => setShowImageModal(false)}
+              className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
+            >
+              <X className="w-8 h-8" />
+            </button>
+            <img
+              src={staticProduct.images[selectedImageIndex]}
+              alt={staticProduct.name}
+              className="max-w-full max-h-full object-contain"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default AddressBook;
+export default ProductDetail;

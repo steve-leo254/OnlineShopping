@@ -21,11 +21,12 @@ import AdminOrderTable from "./components/TestProductTable";
 import OrdersManagement from "./pages/OrderManagement";
 import NotFound from "./pages/NotFound";
 import Payment from "./pages/Payment";
+import CategoryForm from "./components/AddCategory";
 import AboutPage from "./pages/AboutUs";
 import AccountProfile from "./pages/MyProfile";
 import SuperAdminDashboard from "./pages/AdminPage";
 import SuperAdminRegister from "./pages/SuperAdmin";
-import AddressBook from "./components/AddressBook";
+import ProductDetail from "./components/TestProductTable";
 
 
 
@@ -69,11 +70,12 @@ function App() {
               <Route path="/test-products" element={<AdminOrderTable />} />
               <Route path="/orders-management" element={<OrdersManagement />} />
               <Route path="/payment" element={<Payment />} />
+              <Route path="/category" element={<CategoryForm />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="*" element={<NotFound />} />
+              <Route path="/Productdetail" element={<ProductDetail />} />
               <Route path="/SuperAdmin" element={<SuperAdminRegister />} />
               <Route path="/MyProfile" element={<AccountProfile />} />
-              <Route path="/address-book" element={<AddressBook />} />
             </Route>
             {/* </Route> */}
           </Routes>
