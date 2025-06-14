@@ -1,497 +1,363 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, MapPin, Home, Building, Star, AlertCircle } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight, User, Calendar, ThumbsUp, ShoppingBag, Filter, Search, MoreHorizontal, Check } from 'lucide-react';
 
-const AddressBook = () => {
-  const [addresses, setAddresses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [editingAddress, setEditingAddress] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    phone_number: '',
-    address: '',
-    additional_info: '',
-    region: '',
-    city: '',
-    is_default: false
-  });
+const EcommerceReviewsPage = () => {
+  const [currentPage, setCurrentPage] = useState(0);
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [likedReviews, setLikedReviews] = useState(new Set());
+  const [sortBy, setSortBy] = useState('recent');
+  const [showFilters, setShowFilters] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
-  // You'll need to replace this with your actual API base URL
-  const API_BASE_URL = 'http://localhost:8000'; // Adjust this to your FastAPI server
+  const reviews = [
+    {
+      id: 1,
+      name: "Sarah Mitchell",
+      rating: 5,
+      date: "3 days ago",
+      verified: true,
+      title: "Perfect quality, fast shipping!",
+      content: "This product exceeded my expectations. The quality is outstanding and it arrived faster than promised. The packaging was beautiful too. Definitely ordering again!",
+      productVariant: "Black, Size M",
+      helpful: 24,
+      images: 3
+    },
+    {
+      id: 2,
+      name: "David Rodriguez",
+      rating: 4,
+      date: "1 week ago", 
+      verified: true,
+      title: "Great value for money",
+      content: "Really happy with this purchase. The product works exactly as described and the customer service was excellent when I had questions.",
+      productVariant: "Blue, Large",
+      helpful: 18,
+      images: 1
+    },
+    {
+      id: 3,
+      name: "Emma Thompson",
+      rating: 5,
+      date: "2 weeks ago",
+      verified: true,
+      title: "Love it! Will buy again",
+      content: "Amazing product! The design is sleek and modern. It fits perfectly and the material feels premium. Highly recommended to anyone considering this.",
+      productVariant: "White, Small",
+      helpful: 31,
+      images: 2
+    },
+    {
+      id: 4,
+      name: "Michael Chang",
+      rating: 4,
+      date: "3 weeks ago",
+      verified: true,
+      title: "Good product, minor issues",
+      content: "Overall satisfied with the purchase. The product quality is good but delivery took a bit longer than expected. Still worth buying though.",
+      productVariant: "Gray, XL",
+      helpful: 12,
+      images: 0
+    },
+    {
+      id: 5,
+      name: "Lisa Parker",
+      rating: 5,
+      date: "1 month ago",
+      verified: true,
+      title: "Exceptional customer experience",
+      content: "Not only is the product fantastic, but the entire shopping experience was seamless. From browsing to delivery, everything was perfect!",
+      productVariant: "Pink, Medium",
+      helpful: 28,
+      images: 4
+    },
+    {
+      id: 6,
+      name: "James Wilson",
+      rating: 3,
+      date: "1 month ago",
+      verified: false,
+      title: "It's okay, nothing special",
+      content: "The product is decent but I expected more based on the reviews. It does what it's supposed to do but doesn't feel particularly premium.",
+      productVariant: "Green, Large",
+      helpful: 8,
+      images: 1
+    }
+  ];
 
-  // Function to get auth headers (adjust based on your auth implementation)
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('token'); // Adjust based on how you store auth token
-    return {
-      'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` })
-    };
-  };
-
-  // Fetch addresses from API
-  const fetchAddresses = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/addresses`, {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setAddresses(data);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching addresses:', err);
-      setError('Failed to load addresses. Please try again.');
-    } finally {
-      setLoading(false);
+  const productStats = {
+    averageRating: 4.5,
+    totalReviews: 1247,
+    ratingDistribution: {
+      5: 68,
+      4: 22,
+      3: 7,
+      2: 2,
+      1: 1
     }
   };
 
-  // Create new address
-  const createAddress = async (addressData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/addresses`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(addressData)
-      });
+  const filterOptions = [
+    { value: 'all', label: 'All Reviews', count: reviews.length },
+    { value: '5', label: '5 Stars', count: reviews.filter(r => r.rating === 5).length },
+    { value: '4', label: '4 Stars', count: reviews.filter(r => r.rating === 4).length },
+    { value: 'verified', label: 'Verified Only', count: reviews.filter(r => r.verified).length },
+    { value: 'photos', label: 'With Photos', count: reviews.filter(r => r.images > 0).length }
+  ];
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+  const filteredReviews = reviews.filter(review => {
+    if (selectedFilter === 'all') return true;
+    if (selectedFilter === 'verified') return review.verified;
+    if (selectedFilter === 'photos') return review.images > 0;
+    if (selectedFilter === '5' || selectedFilter === '4') return review.rating === parseInt(selectedFilter);
+    return true;
+  }).filter(review => 
+    review.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    review.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    review.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-      const newAddress = await response.json();
-      setAddresses(prev => [...prev, newAddress]);
-      return newAddress;
-    } catch (err) {
-      console.error('Error creating address:', err);
-      throw new Error('Failed to create address. Please try again.');
+  const toggleLike = (reviewId) => {
+    const newLiked = new Set(likedReviews);
+    if (newLiked.has(reviewId)) {
+      newLiked.delete(reviewId);
+    } else {
+      newLiked.add(reviewId);
     }
+    setLikedReviews(newLiked);
   };
 
-  // Update address
-  const updateAddress = async (addressId, addressData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/addresses/${addressId}`, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(addressData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const updatedAddress = await response.json();
-      setAddresses(prev => prev.map(addr => 
-        addr.id === addressId ? updatedAddress : addr
-      ));
-      return updatedAddress;
-    } catch (err) {
-      console.error('Error updating address:', err);
-      throw new Error('Failed to update address. Please try again.');
-    }
+  const renderStars = (rating, size = 'w-4 h-4') => {
+    return [...Array(5)].map((_, i) => (
+      <Star
+        key={i}
+        className={`${size} ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'} transition-colors duration-200`}
+      />
+    ));
   };
 
-  // Delete address
-  const deleteAddress = async (addressId) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/addresses/${addressId}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders()
-      });
-
-      if (!response.ok) {
-        if (response.status === 400) {
-          throw new Error('Cannot delete address used in orders');
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      setAddresses(prev => prev.filter(addr => addr.id !== addressId));
-    } catch (err) {
-      console.error('Error deleting address:', err);
-      throw new Error(err.message || 'Failed to delete address. Please try again.');
-    }
+  const formatRating = (rating) => {
+    return rating % 1 === 0 ? rating.toString() : rating.toFixed(1);
   };
 
-  // Load addresses on component mount
   useEffect(() => {
-    fetchAddresses();
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
   }, []);
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value
-    });
-  };
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      {/* Animated Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-pink-600/20 animate-pulse"></div>
+        {[...Array(6)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full bg-white/5 animate-bounce"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              width: `${Math.random() * 100 + 50}px`,
+              height: `${Math.random() * 100 + 50}px`,
+              animationDelay: `${Math.random() * 5}s`,
+              animationDuration: `${Math.random() * 10 + 10}s`
+            }}
+          />
+        ))}
+      </div>
 
-  const handleSubmit = async () => {
-    // Validate required fields
-    if (!formData.first_name || !formData.last_name || !formData.phone_number || 
-        !formData.address || !formData.city || !formData.region) {
-      setError('Please fill in all required fields');
-      return;
-    }
+      <div className={`relative z-10 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+        {/* Header */}
+        <div className="container mx-auto px-6 pt-12 pb-8">
+          <div className="text-center mb-12">
+            <h1 className="text-5xl font-bold text-white mb-4 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              Customer Reviews
+            </h1>
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+              See what our customers are saying about their shopping experience
+            </p>
+          </div>
 
-    try {
-      setSubmitting(true);
-      setError(null);
-
-      if (editingAddress) {
-        await updateAddress(editingAddress.id, formData);
-      } else {
-        await createAddress(formData);
-      }
-      
-      resetForm();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      first_name: '',
-      last_name: '',
-      phone_number: '',
-      address: '',
-      additional_info: '',
-      region: '',
-      city: '',
-      is_default: false
-    });
-    setShowForm(false);
-    setEditingAddress(null);
-    setError(null);
-  };
-
-  const handleEdit = (address) => {
-    setFormData({
-      first_name: address.first_name,
-      last_name: address.last_name,
-      phone_number: address.phone_number,
-      address: address.address,
-      additional_info: address.additional_info || '',
-      region: address.region,
-      city: address.city,
-      is_default: address.is_default
-    });
-    setEditingAddress(address);
-    setShowForm(true);
-    setError(null);
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this address?')) {
-      try {
-        setError(null);
-        await deleteAddress(id);
-      } catch (err) {
-        setError(err.message);
-      }
-    }
-  };
-
-  const setDefault = async (id) => {
-    const addressToUpdate = addresses.find(addr => addr.id === id);
-    if (addressToUpdate) {
-      try {
-        setError(null);
-        await updateAddress(id, { ...addressToUpdate, is_default: true });
-      } catch (err) {
-        setError(err.message);
-      }
-    }
-  };
-
-  // Format address display
-  const formatAddress = (address) => {
-    const parts = [address.address];
-    if (address.additional_info) parts.push(address.additional_info);
-    parts.push(`${address.city}, ${address.region}`);
-    return parts;
-  };
-
-  if (loading) {
-    return (
-      <div className="max-w-4xl mx-auto p-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/3 mb-4"></div>
-            <div className="space-y-4">
-              <div className="h-32 bg-gray-300 rounded"></div>
-              <div className="h-32 bg-gray-300 rounded"></div>
+          {/* Product Rating Overview */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 mb-8 border border-white/20 shadow-2xl">
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div className="text-center md:text-left">
+                <div className="flex items-center justify-center md:justify-start gap-4 mb-4">
+                  <span className="text-6xl font-bold text-white">{formatRating(productStats.averageRating)}</span>
+                  <div>
+                    <div className="flex gap-1 mb-2">
+                      {renderStars(Math.floor(productStats.averageRating), 'w-6 h-6')}
+                    </div>
+                    <p className="text-gray-300">Based on {productStats.totalReviews.toLocaleString()} reviews</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                {[5, 4, 3, 2, 1].map(rating => (
+                  <div key={rating} className="flex items-center gap-3">
+                    <span className="text-gray-300 w-8">{rating}★</span>
+                    <div className="flex-1 bg-white/20 rounded-full h-3 overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full transition-all duration-1000 ease-out"
+                        style={{ width: `${productStats.ratingDistribution[rating]}%` }}
+                      />
+                    </div>
+                    <span className="text-gray-300 text-sm w-12">{productStats.ratingDistribution[rating]}%</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="max-w-4xl mx-auto p-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Address Book</h1>
-              <p className="text-blue-100">Manage your delivery addresses</p>
+          {/* Filters and Search */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-8 border border-white/20">
+            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+              <div className="flex flex-wrap gap-2">
+                {filterOptions.map(option => (
+                  <button
+                    key={option.value}
+                    onClick={() => setSelectedFilter(option.value)}
+                    className={`px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 ${
+                      selectedFilter === option.value 
+                        ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg scale-105' 
+                        : 'bg-white/20 text-gray-300 hover:bg-white/30 hover:scale-105'
+                    }`}
+                  >
+                    {option.label}
+                    <span className="bg-white/20 px-2 py-1 rounded-full text-xs">{option.count}</span>
+                  </button>
+                ))}
+              </div>
+              
+              <div className="flex gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Search reviews..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="bg-white/20 border border-white/30 rounded-xl pl-10 pr-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                  />
+                </div>
+                
+                <select 
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="bg-white/20 border border-white/30 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+                >
+                  <option className="bg-gray-800 text-white" value="recent">Most Recent</option>
+                  <option className="bg-gray-800 text-white" value="helpful">Most Helpful</option>
+                  <option className="bg-gray-800 text-white" value="highest">Highest Rated</option>
+                  <option className="bg-gray-800 text-white" value="lowest">Lowest Rated</option>
+                </select>
+              </div>
             </div>
-            <button
-              onClick={() => setShowForm(true)}
-              className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-xl flex items-center gap-2 transition-all duration-300 hover:scale-105 backdrop-blur-sm"
-            >
-              <Plus className="w-5 h-5" />
-              Add Address
+          </div>
+
+          {/* Reviews Grid */}
+          <div className="grid gap-6">
+            {filteredReviews.map((review, index) => (
+              <div 
+                key={review.id}
+                className={`bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:bg-white/15 ${
+                  isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <div className="flex flex-col lg:flex-row gap-6">
+                  <div className="lg:w-1/4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                        {review.name.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-white font-semibold">{review.name}</h4>
+                          {review.verified && (
+                            <div className="flex items-center gap-1 bg-green-500/20 px-2 py-1 rounded-full">
+                              <Check className="w-3 h-3 text-green-400" />
+                              <span className="text-xs text-green-400">Verified</span>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-gray-400 text-sm flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {review.date}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="mb-3">
+                      <div className="flex gap-1 mb-2">
+                        {renderStars(review.rating)}
+                      </div>
+                      <p className="text-gray-400 text-sm">{review.productVariant}</p>
+                    </div>
+                  </div>
+
+                  <div className="lg:w-3/4">
+                    <h3 className="text-xl font-bold text-white mb-3">{review.title}</h3>
+                    <p className="text-gray-300 leading-relaxed mb-4">{review.content}</p>
+                    
+                    {review.images > 0 && (
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="flex gap-2">
+                          {[...Array(Math.min(review.images, 3))].map((_, i) => (
+                            <div key={i} className="w-16 h-16 bg-gradient-to-br from-gray-600 to-gray-800 rounded-lg flex items-center justify-center">
+                              <span className="text-xs text-gray-400">IMG</span>
+                            </div>
+                          ))}
+                          {review.images > 3 && (
+                            <div className="w-16 h-16 bg-white/20 rounded-lg flex items-center justify-center">
+                              <span className="text-xs text-gray-300">+{review.images - 3}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between">
+                      <button
+                        onClick={() => toggleLike(review.id)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 ${
+                          likedReviews.has(review.id)
+                            ? 'bg-blue-500/20 text-blue-400 scale-105'
+                            : 'bg-white/10 text-gray-400 hover:bg-white/20 hover:text-white'
+                        }`}
+                      >
+                        <ThumbsUp className={`w-4 h-4 ${likedReviews.has(review.id) ? 'fill-current' : ''}`} />
+                        <span>Helpful ({review.helpful + (likedReviews.has(review.id) ? 1 : 0)})</span>
+                      </button>
+                      
+                      <button className="text-gray-400 hover:text-white transition-colors duration-300">
+                        <MoreHorizontal className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Load More Button */}
+          <div className="text-center mt-12">
+            <button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-2xl font-semibold text-lg shadow-2xl hover:shadow-blue-500/25 transition-all duration-300 hover:scale-105 transform">
+              Load More Reviews
             </button>
           </div>
-        </div>
 
-        <div className="p-8">
-          {/* Error Display */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-              <span className="text-red-700">{error}</span>
-              <button 
-                onClick={() => setError(null)}
-                className="ml-auto text-red-600 hover:text-red-800"
-              >
-                ×
-              </button>
-            </div>
-          )}
-
-          {/* Address Form */}
-          {showForm && (
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 mb-8 border border-blue-200 animate-in slide-in-from-top duration-300">
-              <h3 className="text-xl font-semibold text-gray-800 mb-6">
-                {editingAddress ? 'Edit Address' : 'Add New Address'}
-              </h3>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      First Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="first_name"
-                      value={formData.first_name}
-                      onChange={handleInputChange}
-                      className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Last Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="last_name"
-                      value={formData.last_name}
-                      onChange={handleInputChange}
-                      className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone_number"
-                    value={formData.phone_number}
-                    onChange={handleInputChange}
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Address <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Additional Info</label>
-                  <input
-                    type="text"
-                    name="additional_info"
-                    value={formData.additional_info}
-                    onChange={handleInputChange}
-                    placeholder="Apartment, suite, unit, building, floor, etc."
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Region <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="region"
-                      value={formData.region}
-                      onChange={handleInputChange}
-                      className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      City <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="is_default"
-                    id="is_default"
-                    checked={formData.is_default}
-                    onChange={handleInputChange}
-                    className="text-blue-500 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                  />
-                  <label htmlFor="is_default" className="ml-2 text-sm font-medium text-gray-700">
-                    Set as default address
-                  </label>
-                </div>
-
-                <div className="flex gap-4 pt-4">
-                  <button
-                    type="button"
-                    onClick={handleSubmit}
-                    disabled={submitting}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:scale-105 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {submitting 
-                      ? (editingAddress ? 'Updating...' : 'Saving...') 
-                      : (editingAddress ? 'Update Address' : 'Save Address')
-                    }
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    disabled={submitting}
-                    className="bg-gray-100 text-gray-600 px-8 py-3 rounded-xl hover:bg-gray-200 transition-all duration-300 font-medium disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Address List */}
-          <div className="space-y-4">
-            {addresses.length === 0 ? (
-              <div className="text-center py-12">
-                <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-medium text-gray-500 mb-2">No addresses yet</h3>
-                <p className="text-gray-400">Add your first address to get started</p>
-              </div>
-            ) : (
-              addresses.map((address) => (
-                <div
-                  key={address.id}
-                  className={`bg-white border-2 rounded-2xl p-6 transition-all duration-300 hover:shadow-lg ${
-                    address.is_default 
-                      ? 'border-blue-300 bg-gradient-to-r from-blue-50 to-purple-50' 
-                      : 'border-gray-200 hover:border-blue-200'
-                  }`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <Home className="w-5 h-5 text-blue-600" />
-                        <h3 className="text-lg font-semibold text-gray-800">
-                          {address.first_name} {address.last_name}
-                        </h3>
-                        {address.is_default && (
-                          <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                            <Star className="w-3 h-3" />
-                            Default
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-gray-600 space-y-1">
-                        {formatAddress(address).map((line, index) => (
-                          <p key={index}>{line}</p>
-                        ))}
-                        <p className="text-blue-600 font-medium">{address.phone_number}</p>
-                      </div>
-                      
-                      {/* Set Default Button */}
-                      {!address.is_default && (
-                        <div className="mt-4">
-                          <button
-                            onClick={() => setDefault(address.id)}
-                            className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-4 py-2 rounded-xl hover:from-yellow-500 hover:to-orange-500 transition-all duration-300 hover:scale-105 font-medium text-sm flex items-center gap-2"
-                          >
-                            <Star className="w-4 h-4" />
-                            Set as Default
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-2 ml-4">
-                      <button
-                        onClick={() => handleEdit(address)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 hover:scale-105"
-                        title="Edit address"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(address.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 hover:scale-105"
-                        title="Delete address"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
+          {/* Write Review CTA */}
+          <div className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 backdrop-blur-lg rounded-3xl p-8 mt-12 border border-white/20 text-center">
+            <h3 className="text-2xl font-bold text-white mb-4">Share Your Experience</h3>
+            <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
+              Help other customers by sharing your honest review. Your feedback helps us improve and helps others make informed decisions.
+            </p>
+            <button className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-8 py-4 rounded-2xl font-semibold text-lg shadow-2xl hover:shadow-pink-500/25 transition-all duration-300 hover:scale-105 transform flex items-center gap-2 mx-auto">
+              <Star className="w-5 h-5" />
+              Write a Review
+            </button>
           </div>
         </div>
       </div>
@@ -499,4 +365,4 @@ const AddressBook = () => {
   );
 };
 
-export default AddressBook;
+export default EcommerceReviewsPage;
