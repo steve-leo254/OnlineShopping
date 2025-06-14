@@ -278,3 +278,15 @@ async def delete_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete user"
         )
+
+
+
+
+# Registration endpoints
+@router.post("/register/customer", status_code=status.HTTP_201_CREATED)
+async def register_customer(db: db_dependency, create_user_request: CreateUserRequest):
+    """Register a new customer - Public endpoint"""
+    logger.info(f"Customer registration attempt for: {create_user_request.username}")
+    user = create_user_model(create_user_request, Role.CUSTOMER, db)
+    logger.info(f"Customer {create_user_request.username} registered successfully")
+    return {"message": "Customer created successfully", "user_id": user.id}

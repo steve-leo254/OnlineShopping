@@ -241,7 +241,7 @@ const Bar: React.FC = () => {
                 data-collapse-toggle="ecommerce-navbar-menu-1"
                 aria-controls="ecommerce-navbar-menu-1"
                 aria-expanded="false"
-                className="inline-flex lg:hidden items-center justify-center hover:bg-gray-100 rounded-md p-2 text-gray-900"
+                className="inline-flex lg:hidden items-center justify-center hover:bg-gray-100 rounded-md p-2 text-white"
               >
                 <span className="sr-only">Open Menu</span>
                 <svg

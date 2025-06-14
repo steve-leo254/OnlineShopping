@@ -799,15 +799,6 @@ async def get_admin_stats(
 
 
 
-# Registration endpoints
-@app.post("/register/customer", status_code=status.HTTP_201_CREATED)
-async def register_customer(db: db_dependency, create_user_request: CreateUserRequest):
-    """Register a new customer - Public endpoint"""
-    logger.info(f"Customer registration attempt for: {create_user_request.username}")
-    user = create_user_model(create_user_request, Role.CUSTOMER, db)
-    logger.info(f"Customer {create_user_request.username} registered successfully")
-    return {"message": "Customer created successfully", "user_id": user.id}
-
 
 @app.get("/me", status_code=status.HTTP_200_OK)
 async def get_current_user(db: db_dependency, user: dict = Depends(get_active_user)):
