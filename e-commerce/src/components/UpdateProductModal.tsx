@@ -87,14 +87,11 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Function to calculate selling price based on original price and discount
-  const calculateSellingPrice = (
-    originalPrice: number,
-    discount: number
-  ): number => {
+  const calculateSellingPrice = (originalPrice: number, discount: number): number => {
     if (originalPrice <= 0) return 0;
     if (discount < 0) discount = 0;
     if (discount > 100) discount = 100;
-
+    
     const discountAmount = (originalPrice * discount) / 100;
     return Number((originalPrice - discountAmount).toFixed(2));
   };
@@ -148,13 +145,12 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
     >
   ) => {
     const { name, value, type } = e.target;
-
+    
     let newFormData = { ...formData };
-
+    
     // Update the changed field
     if (type === "checkbox") {
-      newFormData[name as keyof ProductForm] = (e.target as HTMLInputElement)
-        .checked as any;
+      newFormData[name as keyof ProductForm] = (e.target as HTMLInputElement).checked as any;
     } else if (
       name === "cost" ||
       name === "price" ||
@@ -174,12 +170,8 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
 
     // Auto-calculate selling price when original_price or discount changes
     if (name === "original_price" || name === "discount") {
-      const originalPrice =
-        name === "original_price"
-          ? Number(value) || 0
-          : newFormData.original_price;
-      const discount =
-        name === "discount" ? Number(value) || 0 : newFormData.discount;
+      const originalPrice = name === "original_price" ? (Number(value) || 0) : newFormData.original_price;
+      const discount = name === "discount" ? (Number(value) || 0) : newFormData.discount;
       newFormData.price = calculateSellingPrice(originalPrice, discount);
     }
 
@@ -215,7 +207,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!token || !["admin", "SUPERADMIN"].includes(role)) {
+    if (!token || role !== "admin") {
       toast.error("Admin access required");
       return;
     }
@@ -524,8 +516,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     readOnly
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Calculated as: Original Price - (Original Price × Discount ÷
-                    100)
+                    Calculated as: Original Price - (Original Price × Discount ÷ 100)
                   </p>
                 </div>
                 <div>

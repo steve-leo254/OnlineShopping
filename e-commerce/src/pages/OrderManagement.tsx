@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrency } from "../cart/formatCurrency";
-import { createPortal } from 'react-dom';
 import {
   Search,
   Filter,
@@ -684,7 +683,7 @@ const OrdersManagement: React.FC = () => {
                                 ref={(el) =>
                                   (dropdownRefs.current[order.order_id] = el)
                                 }
-                                className={`absolute right-1 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-50 animate-in slide-in-from-top-2 duration-200 ${
+                                className={`absolute right-0 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-50 animate-in slide-in-from-top-2 duration-200 ${
                                   orders.indexOf(order) >= orders.length - 2
                                     ? "bottom-full mb-2"
                                     : "top-full mt-2"

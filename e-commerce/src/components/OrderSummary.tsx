@@ -1,7 +1,4 @@
-import React, { useState } from "react";
-import axios from "axios";
-import { toast } from "react-toastify";
-import { useAuth } from "../context/AuthContext";
+import React from "react";
 import OrderSummary from "../pages/Order-Summary";
 
 const OrderSummaryPop: React.FC = () => {

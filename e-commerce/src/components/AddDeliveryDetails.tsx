@@ -8,7 +8,7 @@ import { MapPin } from "lucide-react";
 
 const AddDeliveryDetails: React.FC = () => {
   const { token } = useAuth();
-  const { setSelectedAddress } = useShoppingCart(); // Get setSelectedAddress from context
+  const { setSelectedAddress } = useShoppingCart(); 
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
