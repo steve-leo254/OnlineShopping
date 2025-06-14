@@ -302,7 +302,7 @@ const OrdersManagement: React.FC = () => {
         formattedPhone = "254" + mpesaPhone.substring(1);
       }
 
-      const checkoutRequestID = await initiateTransaction(
+      await initiateTransaction(
         orderId,
         formattedPhone,
         total
@@ -393,7 +393,7 @@ const OrdersManagement: React.FC = () => {
   };
 
   // Handle pagination
-  const handlePageChange = ( serpentPage: number) => {
+  const handlePageChange = (newPage: number) => {
     if (newPage > 0 && newPage <= Math.ceil(total / limit)) {
       setPage(newPage);
     }
@@ -680,9 +680,9 @@ const OrdersManagement: React.FC = () => {
                             </button>
                             {openDropdown === order.order_id && (
                               <div
-                                ref={(el) =>
-                                  (dropdownRefs.current[order.order_id] = el)
-                                }
+                                ref={(el) => {
+                                  dropdownRefs.current[order.order_id] = el;
+                                }}
                                 className={`absolute right-0 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-50 animate-in slide-in-from-top-2 duration-200 ${
                                   orders.indexOf(order) >= orders.length - 2
                                     ? "bottom-full mb-2"

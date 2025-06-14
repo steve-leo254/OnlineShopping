@@ -268,7 +268,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ onClose, onCategoryAdded })
       </div>
 
       {/* CSS Animations for Blob */}
-      <style jsx>{`
+      <style>{`
         @keyframes blob {
           0% {
             transform: translate(0px, 0px) scale(1);

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
-import { X, Upload, Save, Loader2, Tag, DollarSign, Package, Star, Image as ImageIcon, PlusCircle } from 'lucide-react';
+import { X, Save, Loader2, Tag, DollarSign, Package, Star, Image as ImageIcon, PlusCircle } from 'lucide-react';
 import CategoryForm from './AddCategory'; // Import the CategoryForm component
 
 // Define types based on your Pydantic models
@@ -527,7 +527,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                   name="is_new"
                   checked={formData.is_new}
                   onChange={handleChange}
-                  className="text-gray-500 w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                  className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                 />
                 <span className="text-sm font-medium text-gray-700">New Product</span>
               </label>
@@ -537,7 +537,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                   name="is_favorite"
                   checked={formData.is_favorite}
                   onChange={handleChange}
-                  className="text-gray-500 w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                  className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                 />
                 <span className="text-sm font-medium text-gray-700">Featured Product</span>
               </label>

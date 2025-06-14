@@ -8,15 +8,17 @@ import {
   Award,
   Zap,
   Heart,
-  Globe,
   Mail,
   Phone,
-  MapPin,
 } from "lucide-react";
+
+interface VisibilityState {
+  [key: string]: boolean;
+}
 
 const AboutPage: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isVisible, setIsVisible] = useState({});
+  const [isVisible, setIsVisible] = useState<VisibilityState>({});
 
   // Gallery images
   const galleryImages = [
