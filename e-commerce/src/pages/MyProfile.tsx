@@ -48,7 +48,7 @@ const AccountProfile: React.FC = () => {
 
       try {
         // Fetch user data
-        const userResponse = await axios.get("http://127.0.0.1:8000/auth/me", {
+        const userResponse = await axios.get("http://127.0.0.1:8000/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUser(userResponse.data);
@@ -331,18 +331,20 @@ const AccountProfile: React.FC = () => {
                 </div>
                 <div className="absolute -bottom-2 -right-2 w-5 h-5 sm:w-6 sm:h-6 bg-emerald-500 rounded-full border-2 border-white shadow-lg"></div>
               </div>
-              <div className="flex-1 text-center sm:text-left">
-                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
+              <div className="flex-1 text-center sm:text-left ml-4 sm:ml-0">
+                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-3">
                   <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs sm:text-sm font-medium inline-block">
                     Premium Customer
                   </span>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-3">
-                  {user?.username}
-                </h2>
-                <p className="text-slate-600 text-sm sm:text-base break-all sm:break-normal">
-                  {user?.email}
-                </p>
+                <div className="flex flex-col space-y-2">
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900 left-1">
+                    {user?.username}
+                  </h2>
+                  <p className="text-slate-600 text-sm sm:text-base break-all sm:break-normal">
+                    {user?.email}
+                  </p>
+                </div>
               </div>
             </div>
 

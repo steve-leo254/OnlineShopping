@@ -1,19 +1,20 @@
 from fastapi import FastAPI, HTTPException, Depends, status, UploadFile, File, Query
 from pydantic_models import (
-    ProductsBase, CartPayload, CartItem, UpdateProduct, CategoryBase, CategoryResponse,
-    ProductResponse, OrderResponse, OrderDetailResponse, Role, PaginatedProductResponse,
+    ProductsBase, CartPayload,  UpdateProduct, CategoryBase, CategoryResponse,
+    ProductResponse, OrderResponse, Role, PaginatedProductResponse,
      ImageResponse, AddressCreate, AddressResponse, PaginatedOrderResponse, OrderStatus,
-       PaginatedOrderWithUserResponse, UpdateOrderStatusRequest)
+       PaginatedOrderWithUserResponse, UpdateOrderStatusRequest,CreateUserRequest,
+       )
 from typing import Annotated, List, Optional
 import models
 from database import engine, db_dependency
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError
 import auth
-from auth import get_active_user
+from auth import get_active_user,bcrypt_context, create_user_model,require_superadmin,get_user_role
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import func
-from datetime import datetime
+from sqlalchemy import func ,or_
+from datetime import datetime,timedelta
 import logging
 from dotenv import load_dotenv
 import os
@@ -23,6 +24,7 @@ import uuid
 from pathlib import Path
 from fastapi.staticfiles import StaticFiles
 import lnmo
+from models import Users
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
@@ -45,6 +47,16 @@ app.add_middleware(
 user_dependency = Annotated[dict, Depends(get_active_user)]
 
 
+
+
+def require_customer_only(current_user: dict = Depends(get_active_user)):
+    """Dependency to ensure only customers can access"""
+    if current_user["role"] != Role.CUSTOMER.value:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only customers can access this resource"
+        )
+    return current_user
 
 
 def require_admin(user: user_dependency):
@@ -567,11 +579,7 @@ async def delete_address(address_id: int, user: user_dependency, db: db_dependen
 
 
 
-from typing import Optional
-from sqlalchemy import or_
-from sqlalchemy.orm import joinedload
-from fastapi import Query, HTTPException, status
-from math import ceil
+
 
 @app.get("/admin/orders", response_model=PaginatedOrderWithUserResponse, status_code=status.HTTP_200_OK)
 async def fetch_all_orders(
@@ -635,7 +643,230 @@ async def fetch_all_orders(
     except SQLAlchemyError as e:
         logger.error(f"Error fetching all orders: {str(e)}")
         raise HTTPException(status_code=500, detail="Error fetching orders")        
-                
+
+
+# Superadmin-only endpoints 1
+@app.get("/superadmin/users", status_code=status.HTTP_200_OK)
+async def get_all_users(
+    db: db_dependency,
+    current_user: dict = Depends(require_superadmin),
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=100),
+    search: Optional[str] = Query(None),
+    role_filter: Optional[str] = Query("all", description="Filter by role: admin, customer, superadmin, all")
+):
+    """Get all users with pagination and search - accessible by superadmin only"""
+    try:
+        query = db.query(Users)
+        
+        # Apply role filter
+        if role_filter == "admin":
+            query = query.filter(Users.role == Role.ADMIN.value)
+        elif role_filter == "customer":
+            query = query.filter(Users.role == Role.CUSTOMER.value)
+        elif role_filter == "superadmin":
+            query = query.filter(Users.role == Role.SUPERADMIN.value)
+        
+        result = get_paginated_users(db, query, page, limit, search)
+        logger.info(f"Superadmin {current_user['username']} retrieved {len(result['items'])} users (page {page}/{result['pages']})")
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error fetching users: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch users"
+        )
+
+
+
+
+# Helper function for user queries with pagination
+def get_paginated_users(db: Session, query, page: int, limit: int, search: Optional[str] = None):
+    """Helper function to handle user pagination and search"""
+    if search:
+        search_term = f"%{search.lower()}%"
+        query = query.filter(
+            (func.lower(Users.username).like(search_term)) |
+            (func.lower(Users.email).like(search_term))
+        )
+    
+    total = query.count()
+    offset = (page - 1) * limit
+    users = query.offset(offset).limit(limit).all()
+    
+    user_list = []
+    for user in users:
+        user_role = get_user_role(user.role)
+        user_dict = {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "role": user_role,
+            "created_at": user.created_at.isoformat() if hasattr(user, 'created_at') and user.created_at else None,
+            "status": "active"
+        }
+        user_list.append(user_dict)
+    
+    pages = (total + limit - 1) // limit
+    return {
+        "items": user_list,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "pages": pages
+    }
+
+
+
+
+
+@app.get("/superadmin/users/{user_id}", status_code=status.HTTP_200_OK)
+async def get_user_by_id(
+    user_id: int,
+    db: db_dependency,
+    current_user: dict = Depends(require_superadmin)
+):
+    """Get specific user by ID - accessible by superadmin only"""
+    try:
+        user = db.query(Users).filter(Users.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        
+        user_role = get_user_role(user.role)
+        return {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "role": user_role,
+            "created_at": user.created_at.isoformat() if hasattr(user, 'created_at') and user.created_at else None,
+            "status": "active"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching user {user_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch user"
+        )
+
+
+
+
+@app.get("/superadmin/stats", status_code=status.HTTP_200_OK)
+async def get_admin_stats(
+    db: db_dependency,
+    current_user: dict = Depends(require_superadmin)
+):
+    """Get user statistics for dashboard - accessible by superadmin only"""
+    try:
+        # Count users by role
+        total_superadmins = db.query(Users).filter(Users.role == Role.SUPERADMIN.value).count()
+        total_admins = db.query(Users).filter(Users.role == Role.ADMIN.value).count()
+        total_customers = db.query(Users).filter(Users.role == Role.CUSTOMER.value).count()
+        
+        # Count users created this month (if created_at field exists)
+        current_month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        monthly_counts = {"admins": 0, "customers": 0, "superadmins": 0}
+        
+        if hasattr(Users, 'created_at'):
+            for role, key in [(Role.ADMIN.value, "admins"), (Role.CUSTOMER.value, "customers"), (Role.SUPERADMIN.value, "superadmins")]:
+                monthly_counts[key] = db.query(Users).filter(
+                    Users.role == role,
+                    Users.created_at >= current_month_start
+                ).count()
+        
+        logger.info(f"User statistics retrieved by superadmin {current_user['username']}")
+        return {
+            "total_superadmins": total_superadmins,
+            "total_admins": total_admins,
+            "total_customers": total_customers,
+            "superadmins_this_month": monthly_counts["superadmins"],
+            "admins_this_month": monthly_counts["admins"],
+            "customers_this_month": monthly_counts["customers"],
+            "total_users": total_superadmins + total_admins + total_customers
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching user stats: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch user statistics"
+        )
+
+
+
+
+# Registration endpoints
+@app.post("/register/customer", status_code=status.HTTP_201_CREATED)
+async def register_customer(db: db_dependency, create_user_request: CreateUserRequest):
+    """Register a new customer - Public endpoint"""
+    logger.info(f"Customer registration attempt for: {create_user_request.username}")
+    user = create_user_model(create_user_request, Role.CUSTOMER, db)
+    logger.info(f"Customer {create_user_request.username} registered successfully")
+    return {"message": "Customer created successfully", "user_id": user.id}
+
+
+@app.get("/me", status_code=status.HTTP_200_OK)
+async def get_current_user(db: db_dependency, user: dict = Depends(get_active_user)):
+    """Get current authenticated user information"""
+    try:
+        current_user = db.query(Users).filter(Users.id == user["id"]).first()
+        if not current_user:
+            logger.warning(f"User not found in database: {user['id']}")
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_role = get_user_role(current_user.role)
+        logger.info(f"Retrieved user info for: {current_user.username}")
+        return {
+            "id": current_user.id,
+            "username": current_user.username,
+            "email": current_user.email,
+            "role": user_role
+        }
+    except Exception as e:
+        logger.error(f"Error retrieving user info: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+# @app.post("/reset-password/{token}", status_code=status.HTTP_200_OK)
+# async def reset_password(token: str, reset_password_request: ResetPasswordRequest, db: db_dependency):
+#     """Reset user password using token"""
+#     try:
+#         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+#         user_id: int = payload.get("id")
+#         if user_id is None:
+#             logger.warning("Invalid reset token")
+#             raise HTTPException(status_code=401, detail="Invalid token")
+        
+#         user = db.query(Users).filter(Users.id == user_id).first()
+#         if not user:
+#             logger.warning(f"Password reset attempted for non-existent user ID: {user_id}")
+#             raise HTTPException(status_code=404, detail="User does not exist")
+        
+#         user.hashed_password = bcrypt_context.hash(reset_password_request.new_password)
+#         db.add(user)
+#         db.commit()
+#         db.refresh(user)
+#         logger.info(f"Password reset successfully for user: {user.username}")
+#         return {"message": "Password has been reset successfully"}
+#     except jwt.ExpiredSignatureError:
+#         logger.warning("Expired reset token")
+#         raise HTTPException(status_code=401, detail="Token has expired")
+#     except jwt.DecodeError:
+#         logger.warning("Invalid reset token")
+#         raise HTTPException(status_code=401, detail="Invalid token")
+#     except Exception as e:
+#         db.rollback()
+#         logger.error(f"Error resetting password: {str(e)}")
+#         raise HTTPException(status_code=500, detail="Failed to reset password")
+
+
+
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

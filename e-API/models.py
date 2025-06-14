@@ -67,6 +67,12 @@ class Products(Base):
     category = relationship("Categories", back_populates="products")
     order_details = relationship("OrderDetails", back_populates="product")
 
+# class ProductSpecs(Base):
+
+
+
+
+
 class Orders(Base):
     __tablename__ = "orders"
     order_id = Column(Integer, primary_key=True, index=True)

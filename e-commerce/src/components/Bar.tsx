@@ -74,7 +74,7 @@ const Bar: React.FC = () => {
                 id="myCartDropdownButton1"
                 data-dropdown-toggle="myCartDropdown1"
                 type="button"
-                className="cursor-pointer relative inline-flex items-center rounded-lg justify-center p-2 hover:bg-gray-200 text-sm font-medium leading-none text-gray-900"
+                className="cursor-pointer relative inline-flex items-center rounded-lg justify-center p-2 hover:bg-gray-200 text-sm font-medium leading-none text-white"
               >
                 <span className="sr-only">Cart</span>
                 <svg
@@ -96,7 +96,7 @@ const Bar: React.FC = () => {
                 </svg>
                 <span className="hidden sm:flex">My Cart</span>
                 <svg
-                  className="hidden sm:flex w-4 h-4 text-gray-900 ms-1"
+                  className="hidden sm:flex w-4 h-4 text-white ms-1"
                   aria-hidden="true"
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
@@ -126,7 +126,7 @@ const Bar: React.FC = () => {
                     id="userDropdownButton1"
                     data-dropdown-toggle="userDropdown1"
                     type="button"
-                    className="inline-flex items-center rounded-lg justify-center p-2 cursor-pointer text-sm font-medium leading-none text-gray-900"
+                    className="inline-flex items-center rounded-lg justify-center p-2 cursor-pointer text-sm font-medium leading-none text-white"
                   >
                     <svg
                       className="w-5 h-5 me-1"
@@ -145,7 +145,7 @@ const Bar: React.FC = () => {
                     </svg>
                     Account
                     <svg
-                      className="w-4 h-4 text-gray-900 ms-1"
+                      className="w-4 h-4 text-white ms-1"
                       aria-hidden="true"
                       xmlns="http://www.w3.org/2000/svg"
                       width="24"

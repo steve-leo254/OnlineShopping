@@ -163,7 +163,7 @@ const SuperAdminDashboard: React.FC = () => {
         setLoading(true);
         try {
           const userData = await makeApiCall<{ username: string }>(
-            "http://localhost:8000/auth/me",
+            "http://localhost:8000/me",
             { headers: { Authorization: `Bearer ${token}` } }
           );
           setCurrentUser(userData);
@@ -230,7 +230,7 @@ const SuperAdminDashboard: React.FC = () => {
         limit: number;
         pages: number;
       }>(
-        `http://localhost:8000/auth/superadmin/users?page=${pagination.page}&limit=${pagination.limit}${searchParam}${roleParam}`,
+        `http://localhost:8000/superadmin/users?page=${pagination.page}&limit=${pagination.limit}${searchParam}${roleParam}`,
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
       setUsers(data.items || []);
@@ -249,7 +249,7 @@ const SuperAdminDashboard: React.FC = () => {
   const fetchStats = async (authToken: string): Promise<void> => {
     try {
       const data = await makeApiCall<Stats>(
-        "http://localhost:8000/auth/superadmin/stats",
+        "http://localhost:8000/superadmin/stats",
         {
           headers: { Authorization: `Bearer ${authToken}` },
         }
