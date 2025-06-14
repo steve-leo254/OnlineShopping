@@ -150,7 +150,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
     
     // Update the changed field
     if (type === "checkbox") {
-      newFormData[name as keyof ProductForm] = (e.target as HTMLInputElement).checked as any;
+      (newFormData[name as keyof ProductForm] as boolean) = (e.target as HTMLInputElement).checked;
     } else if (
       name === "cost" ||
       name === "price" ||
@@ -161,11 +161,11 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
       name === "reviews" ||
       name === "discount"
     ) {
-      newFormData[name as keyof ProductForm] = (Number(value) || 0) as any;
+      (newFormData[name as keyof ProductForm] as number) = Number(value) || 0;
     } else if (name === "category_id") {
       newFormData[name] = value ? Number(value) : null;
     } else {
-      newFormData[name as keyof ProductForm] = value as any;
+      (newFormData[name as keyof ProductForm] as string) = value;
     }
 
     // Auto-calculate selling price when original_price or discount changes

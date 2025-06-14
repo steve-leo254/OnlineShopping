@@ -14,6 +14,15 @@ import { formatCurrency } from "../cart/formatCurrency";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+interface CartItem {
+  id: number;
+  name: string;
+  price: number;
+  img_url: string | null;
+  quantity: number;
+  stockQuantity: number;
+}
+
 // Modify CartItem to accept stockQuantity
 interface CartItemProps {
   id: number;
