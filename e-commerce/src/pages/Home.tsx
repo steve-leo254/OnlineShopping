@@ -7,7 +7,6 @@ import {
   Star,
   ChevronLeft,
   ChevronRight,
-  Plus,
   Sparkles,
   Zap,
   Shield,
@@ -35,7 +34,7 @@ const Home: React.FC = () => {
   });
 
   // Notification timeout ref
-  const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const notificationTimeoutRef = useRef<number | null>(null);
 
   // Fetch products when component mounts
   useEffect(() => {
@@ -114,6 +113,7 @@ const Home: React.FC = () => {
         name: product.name,
         price: product.price,
         img_url: imgEndPoint + product.img_url,
+        stockQuantity: product.stock_quantity
       });
       showNotification(`${product.name} added to cart!`, "success");
     } catch (error) {
@@ -134,7 +134,7 @@ const Home: React.FC = () => {
   //  =================================
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<number | null>(null);
 
   // Helper function to clear interval safely
   const clearHeroInterval = () => {
@@ -266,7 +266,7 @@ const Home: React.FC = () => {
       </div>
 
       {/* Add CSS animation for progress bar */}
-      <style jsx>{`
+      <style>{`
         @keyframes shrink {
           from { width: 100%; }
           to { width: 0%; }

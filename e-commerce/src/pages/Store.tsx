@@ -291,7 +291,7 @@ const Store = () => {
               .map((p: ApiProduct) => [
                 p.category!.id,
                 { id: p.category!.id, name: p.category!.name },
-              ])
+              ] as [string, { id: string; name: string }])
           ).values()
         ),
       ];
