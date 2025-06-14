@@ -62,7 +62,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
   // Fetch categories on mount and when a new category is added
   const fetchCategories = async () => {
     try {
-      const response = await axios.get<Category[]>('http://localhost:8000/public/categories');
+      const response = await axios.get<Category[]>(`${import.meta.env.VITE_API_BASE_URL}/public/categories`);
       setCategories(response.data);
     } catch (err) {
       toast.error('Failed to fetch categories');
@@ -185,7 +185,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
         // Upload image
         const formDataImage = new FormData();
         formDataImage.append('file', imageFile);
-        const imageResponse = await axios.post('http://localhost:8000/upload-image', formDataImage, {
+        const imageResponse = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/upload-image`, formDataImage, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data',
@@ -196,7 +196,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
 
       // Create product
       const productData = { ...formData, img_url };
-      await axios.post('http://localhost:8000/products', productData, {
+      await axios.post(`${import.meta.env.VITE_API_BASE_URL}/products`, productData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

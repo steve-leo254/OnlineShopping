@@ -5,6 +5,7 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
 
+
 interface LoginFormData {
   email: string;
   password: string;
@@ -20,6 +21,7 @@ interface Alert {
 }
 
 const Login: React.FC = () => {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
   const location = useLocation();
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -59,7 +61,7 @@ const Login: React.FC = () => {
     }
 
     try {
-      const apiUrl = "http://localhost:8000/auth/login";
+      const apiUrl = `${API_BASE_URL}/auth/login`;
       const response = await axios.post<ApiResponse>(apiUrl, formData, {
         headers: {
           "Content-Type": "application/json",

@@ -63,7 +63,7 @@ const OrderDetails: React.FC = () => {
   const DELIVERY_FEE = 150; // Fixed delivery fee
 
   // image endpoint
-  const imgEndPoint = "http://localhost:8000";
+  const imgEndPoint = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -81,7 +81,7 @@ const OrderDetails: React.FC = () => {
         }
 
         const response = await fetch(
-          `http://localhost:8000/orders/${orderId}`,
+          `${import.meta.env.VITE_API_BASE_URL}/orders/${orderId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

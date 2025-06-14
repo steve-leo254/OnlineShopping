@@ -42,7 +42,7 @@ export const useFetchAddresses = (): FetchAddressesResult => {
 
     try {
       const response = await axios.get<AddressResponse[]>(
-        'http://localhost:8000/addresses/',
+        `${import.meta.env.VITE_API_BASE_URL}/addresses/`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
