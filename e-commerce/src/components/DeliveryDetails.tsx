@@ -53,8 +53,7 @@ const DeliveryDetails: React.FC = () => {
       }
     } catch (err) {
       toast.error('Failed to fetch addresses', {
-        style: { border: '1px solid #ef4444', color: '#111827' },
-        progressStyle: { background: '#ef4444' },
+        style: { border: '1px solid #ef4444', color: '#111827' }
       });
       console.error('Error fetching addresses:', err);
     } finally {
@@ -162,7 +161,7 @@ const DeliveryDetails: React.FC = () => {
                       <div className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
                         {address.first_name} {address.last_name}
                       </div>
-                      <span className="inline-flex items-center rounded-full bg-gradient-to-r from-blue-100 to-purple-100 px-3 py-1 text-xs font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent border border-blue-200">
+                      <span className="inline-flex items-center rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1 text-xs font-bold bg-clip-text text-transparent border border-blue-200">
                         Default
                       </span>
                     </div>

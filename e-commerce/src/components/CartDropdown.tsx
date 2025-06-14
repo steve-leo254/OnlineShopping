@@ -57,7 +57,7 @@ const CartDropdown: React.FC = () => {
             <div>
               <a
                 href="#"
-                className="truncate text-sm font-semibold leading-none hover:underline font-bold text-gray-900 transition-colors"
+                className="truncate text-sm leading-none hover:underline font-bold text-gray-900 transition-colors"
               >
                 {cartProduct.product.name}
               </a>

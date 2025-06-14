@@ -13,22 +13,22 @@ const PaymentOptions: React.FC = () => {
         {/* Pay Now Option */}
         <div 
           className={`group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border transform hover:-translate-y-1 cursor-pointer ${
-            paymentMethod === "pay-now"
+            paymentMethod === "pay-online"
               ? 'border-blue-200 ring-2 ring-blue-100'
               : 'border-gray-100 hover:border-blue-200'
           }`}
-          onClick={() => setPaymentMethod("pay-now")}
+          onClick={() => setPaymentMethod("pay-online")}
         >
           <div className="p-6">
             <div className="flex items-start space-x-4">
               <div className="flex items-center mt-1">
                 <input
-                  id="pay-now"
+                  id="pay-online"
                   type="radio"
                   name="payment-method"
-                  value="pay-now"
-                  checked={paymentMethod === "pay-now"}
-                  onChange={(e) => setPaymentMethod(e.target.value as "pay-now" | "pay-later")}
+                  value="pay-online"
+                  checked={paymentMethod === "pay-online"}
+                  onChange={(e) => setPaymentMethod(e.target.value as "pay-online" | "pay-later")}
                   className="h-5 w-5 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-2"
                 />
               </div>
@@ -40,7 +40,7 @@ const PaymentOptions: React.FC = () => {
                     </svg>
                   </div>
                   <label 
-                    htmlFor="pay-now" 
+                    htmlFor="pay-online" 
                     className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors cursor-pointer"
                   >
                     Pay Now with M-Pesa
@@ -63,22 +63,22 @@ const PaymentOptions: React.FC = () => {
         {/* Pay Later Option */}
         <div 
           className={`group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border transform hover:-translate-y-1 cursor-pointer ${
-            paymentMethod === "pay-later"
+            paymentMethod === "pay-online"
               ? 'border-blue-200 ring-2 ring-blue-100'
               : 'border-gray-100 hover:border-blue-200'
           }`}
-          onClick={() => setPaymentMethod("pay-later")}
+          onClick={() => setPaymentMethod("pay-online")}
         >
           <div className="p-6">
             <div className="flex items-start space-x-4">
               <div className="flex items-center mt-1">
                 <input
-                  id="pay-later"
+                  id="pay-online"
                   type="radio"
                   name="payment-method"
-                  value="pay-later"
-                  checked={paymentMethod === "pay-later"}
-                  onChange={(e) => setPaymentMethod(e.target.value as "pay-now" | "pay-later")}
+                  value="pay-online"
+                  checked={paymentMethod === "pay-online"}
+                  onChange={(e) => setPaymentMethod(e.target.value as "pay-online" | "pay-later")}
                   className="h-5 w-5 text-blue-600 border-gray-300 focus:ring-blue-500 focus:ring-2"
                 />
               </div>
@@ -90,7 +90,7 @@ const PaymentOptions: React.FC = () => {
                     </svg>
                   </div>
                   <label 
-                    htmlFor="pay-later" 
+                    htmlFor="pay-online" 
                     className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors cursor-pointer"
                   >
                     Pay on Delivery/Pickup
@@ -100,7 +100,7 @@ const PaymentOptions: React.FC = () => {
                   Pay when you receive or pick up your order. Cash or mobile money accepted upon delivery.
                 </p>
                 <div className="flex items-center">
-                  <span className="inline-flex items-center rounded-full bg-gradient-to-r from-orange-100 to-yellow-100 px-3 py-1 text-sm font-bold bg-gradient-to-r from-orange-600 to-yellow-600 bg-clip-text text-transparent border border-orange-200">
+                  <span className="inline-flex items-center rounded-full bg-gradient-to-r from-orange-600 to-yellow-600 px-3 py-1 text-sm font-bold bg-clip-text text-transparent border border-orange-200">
                     FLEXIBLE
                   </span>
                   <span className="ml-2 text-sm text-gray-500">• Cash or M-Pesa</span>

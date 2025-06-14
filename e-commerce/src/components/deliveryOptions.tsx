@@ -100,7 +100,7 @@ const DeliveryOptions: React.FC = () => {
                   Have your order delivered directly to your address. Convenient and reliable delivery service.
                 </p>
                 <div className="flex items-center">
-                  <span className="inline-flex items-center rounded-full bg-gradient-to-r from-blue-100 to-purple-100 px-3 py-1 text-sm font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent border border-blue-200">
+                  <span className="inline-flex items-center rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1 text-sm font-bold bg-clip-text text-transparent border border-blue-200">
                     Fee applies
                   </span>
                   <span className="ml-2 text-sm text-gray-500">• 1-3 business days</span>
