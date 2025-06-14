@@ -1,10 +1,4 @@
-import {
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-  useRef,
-} from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Search,
   Grid,
@@ -25,6 +19,11 @@ import { useFetchProducts } from "../components/UseFetchProducts";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
 
+interface Category {
+  id: string | null;
+  name: string;
+}
+
 interface ApiProduct {
   id: string;
   name: string;
@@ -41,7 +40,6 @@ interface ApiProduct {
   is_new?: boolean;
   is_favorite?: boolean;
   description?: string;
-  barcode?: string;
   created_at: string;
 }
 
@@ -65,7 +63,7 @@ interface Product {
 }
 
 // Transform API product to match component's expected format
-const transformProduct = (apiProduct: ApiProduct) => {
+const transformProduct = (apiProduct: ApiProduct): Product => {
   const discount =
     apiProduct.original_price && apiProduct.original_price > apiProduct.price
       ? Math.round(
@@ -87,7 +85,9 @@ const transformProduct = (apiProduct: ApiProduct) => {
     price: apiProduct.price,
     originalPrice:
       apiProduct.original_price ||
-      (apiProduct.price > (apiProduct.cost ?? 0) ? apiProduct.price : (apiProduct.cost ?? 0)),
+      (apiProduct.price > (apiProduct.cost ?? 0)
+        ? apiProduct.price
+        : apiProduct.cost ?? 0),
     rating: apiProduct.rating || 4.5,
     reviews: apiProduct.reviews || 100,
     img_url: apiProduct.img_url
@@ -101,7 +101,6 @@ const transformProduct = (apiProduct: ApiProduct) => {
     isFavorite: apiProduct.is_favorite || false,
     stockQuantity: apiProduct.stock_quantity,
     description: apiProduct.description || "",
-    barcode: apiProduct.barcode,
     createdAt: apiProduct.created_at,
   };
 };
@@ -124,8 +123,8 @@ const useDebounce = <T,>(value: T, delay: number) => {
 };
 
 const Store = () => {
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-  const { addToCart, getItemQuantity } = useShoppingCart(); // Destructure getItemQuantity
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const { addToCart, getItemQuantity } = useShoppingCart();
   const {
     isLoading,
     products: apiProducts,
@@ -134,50 +133,56 @@ const Store = () => {
     fetchProducts,
   } = useFetchProducts();
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("featured");
-  const [viewMode, setViewMode] = useState("grid");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [priceRange, setPriceRange] = useState([0, 500000]); // Updated default to 500,000
-  const [showFilters, setShowFilters] = useState(false);
-  const [favorites, setFavorites] = useState(new Set());
-  const [allCategories, setAllCategories] = useState<{ id: string | null; name: string }[]>([]);
-  const [isFiltering, setIsFiltering] = useState(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("featured");
+  const [viewMode, setViewMode] = useState<string>("grid");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
+    null
+  );
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 500000]);
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isFiltering, setIsFiltering] = useState<boolean>(false);
 
-  // Enhanced notification state (matching Home page)
-  const [notification, setNotification] = useState({
+  // Enhanced notification state
+  const [notification, setNotification] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error" | "info";
+  }>({
     show: false,
     message: "",
-    type: "success" as "success" | "error" | "info",
+    type: "success",
   });
 
   // Notification timeout ref
-  const notificationTimeoutRef = useRef<number | null>(null);
+  const notificationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
   const productsPerPage = 8;
 
-  // Debounce search term to prevent excessive API calls
+  // Debounce search term
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  const products = useMemo(
+  const transformedProducts: Product[] = useMemo(
     () => apiProducts.map(transformProduct),
     [apiProducts]
   );
 
-  // Enhanced notification function (matching Home page)
+  // Enhanced notification function
   const showNotification = (
     message: string,
     type: "success" | "error" | "info" = "success"
   ) => {
-    // Clear existing timeout
     if (notificationTimeoutRef.current) {
       clearTimeout(notificationTimeoutRef.current);
     }
 
     setNotification({ show: true, message, type });
 
-    // Auto-hide after 4 seconds
     notificationTimeoutRef.current = setTimeout(() => {
       hideNotification();
     }, 4000);
@@ -193,7 +198,6 @@ const Store = () => {
 
   const getFilteredAndSortedProducts = useCallback(
     (productsToFilter: Product[]) => {
-      // Apply local search filter if search term exists
       let filtered = productsToFilter;
 
       if (searchTerm.trim()) {
@@ -208,13 +212,11 @@ const Store = () => {
         );
       }
 
-      // Apply price range filter
       const priceFiltered = filtered.filter(
         (product) =>
           product.price >= priceRange[0] && product.price <= priceRange[1]
       );
 
-      // Apply sorting
       const sorted = [...priceFiltered].sort((a, b) => {
         switch (sortBy) {
           case "price-low":
@@ -238,8 +240,8 @@ const Store = () => {
   );
 
   const displayedProducts = useMemo(
-    () => getFilteredAndSortedProducts(products),
-    [products, getFilteredAndSortedProducts]
+    () => getFilteredAndSortedProducts(transformedProducts),
+    [transformedProducts, getFilteredAndSortedProducts]
   );
 
   const handleCategoryChange = async (categoryId: string | null) => {
@@ -247,7 +249,7 @@ const Store = () => {
     setCurrentPage(1);
     setIsFiltering(true);
     try {
-      await fetchProducts(1, productsPerPage, searchTerm, categoryId);
+      await fetchProducts(1, productsPerPage, debouncedSearchTerm, categoryId);
     } catch (error) {
       console.error("Error filtering by category:", error);
       showNotification("Failed to filter products. Please try again.", "error");
@@ -268,39 +270,68 @@ const Store = () => {
     setFavorites(newFavorites);
   };
 
-  const fetchAllCategories = useCallback(async () => {
+  const fetchCategories = useCallback(async () => {
     try {
-      const response = await axios.get(
+      const response = await axios.get<Category[]>(
         `${API_BASE_URL}/public/categories`
       );
-      if (response.data) {
-        const categories = [
-          { id: null, name: "all" },
-          ...response.data.map((cat: { id: string; name: string }) => ({ id: cat.id, name: cat.name })),
+
+      if (
+        response.data &&
+        Array.isArray(response.data) &&
+        response.data.length > 0
+      ) {
+        const allCategory = { id: null, name: "All" };
+        const categories = [allCategory, ...response.data];
+        setCategories(categories);
+      } else {
+        const uniqueCategories = [
+          { id: null, name: "All" },
+          ...Array.from(
+            new Map(
+              apiProducts
+                .filter((p: ApiProduct) => p.category?.id && p.category?.name)
+                .map(
+                  (p: ApiProduct) =>
+                    [
+                      p.category!.id,
+                      { id: p.category!.id, name: p.category!.name },
+                    ] as [string, Category]
+                )
+            ).values()
+          ),
         ];
-        setAllCategories(categories);
+        setCategories(uniqueCategories);
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
-      const uniqueCategories = [
-        { id: null, name: "all" },
-        ...Array.from(
-          new Map(
-            apiProducts
-              .filter((p: ApiProduct) => p.category?.id && p.category?.name)
-              .map((p: ApiProduct) => [
-                p.category!.id,
-                { id: p.category!.id, name: p.category!.name },
-              ] as [string, { id: string; name: string }])
-          ).values()
-        ),
-      ];
-      setAllCategories(uniqueCategories);
+      if (categories.length === 0) {
+        showNotification("Failed to load product categories.", "error");
+        const uniqueCategories = [
+          { id: null, name: "All" },
+          ...Array.from(
+            new Map(
+              apiProducts
+                .filter((p: ApiProduct) => p.category?.id && p.category?.name)
+                .map(
+                  (p: ApiProduct) =>
+                    [
+                      p.category!.id,
+                      { id: p.category!.id, name: p.category!.name },
+                    ] as [string, Category]
+                )
+            ).values()
+          ),
+        ];
+        setCategories(uniqueCategories);
+      }
     }
-  }, [apiProducts]);
+  }, [apiProducts, categories.length]);
 
   const getCurrentCategoryName = () => {
-    const category = allCategories.find((cat) => cat.id === selectedCategoryId);
+    const category = categories.find(
+      (cat: Category) => cat.id === selectedCategoryId
+    );
     return category ? category.name : "All";
   };
 
@@ -311,7 +342,7 @@ const Store = () => {
         `Cannot add more than available stock (${product.stockQuantity}) for ${product.name}`,
         "error"
       );
-      return; // Prevent adding to cart
+      return;
     }
 
     try {
@@ -320,7 +351,7 @@ const Store = () => {
         name: product.name,
         price: product.price,
         img_url: product.img_url,
-        stockQuantity: product.stockQuantity
+        stockQuantity: product.stockQuantity,
       });
       showNotification(`${product.name} added to cart!`, "success");
     } catch (error) {
@@ -331,15 +362,6 @@ const Store = () => {
     }
   };
 
-  // Clean up timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (notificationTimeoutRef.current) {
-        clearTimeout(notificationTimeoutRef.current);
-      }
-    };
-  }, []);
-
   useEffect(() => {
     fetchProducts(
       currentPage,
@@ -349,25 +371,33 @@ const Store = () => {
     );
   }, [currentPage, debouncedSearchTerm, selectedCategoryId, fetchProducts]);
 
-  // Handle debounced search - only refetch if we have a search term
   useEffect(() => {
     if (debouncedSearchTerm.trim()) {
-      // For search, we'll rely on local filtering rather than API search
-      // This gives better user experience and shows all products
       setCurrentPage(1);
     }
   }, [debouncedSearchTerm]);
 
   useEffect(() => {
-    fetchAllCategories();
-  }, [fetchAllCategories]);
+    fetchCategories();
+  }, [fetchCategories]);
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (notificationTimeoutRef.current) {
+        clearTimeout(notificationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Enhanced Notification Component with Animations (matching Home page) */}
       <div
         className={`fixed top-4 left-4 z-50 transition-all duration-500 ease-in-out transform ${
-          notification.show ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
+          notification.show
+            ? "translate-y-0 opacity-100"
+            : "-translate-y-2 opacity-0"
         }`}
       >
         <div
@@ -561,12 +591,10 @@ const Store = () => {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                {allCategories.map((category) => (
+                {categories.map((category: Category) => (
                   <button
                     key={category.id || "all"}
-                    onClick={() =>
-                      handleCategoryChange(category.id)
-                    }
+                    onClick={() => handleCategoryChange(category.id)}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                       selectedCategoryId === category.id
                         ? "bg-blue-600 text-white shadow-lg transform scale-105"
@@ -778,9 +806,15 @@ const Store = () => {
                           </div>
                           <button
                             onClick={() => handleAddToCart(product)}
-                            disabled={!product.inStock || (getItemQuantity(parseInt(product.id)) >= product.stockQuantity)} // Disable if already at max stock
+                            disabled={
+                              !product.inStock ||
+                              getItemQuantity(parseInt(product.id)) >=
+                                product.stockQuantity
+                            } // Disable if already at max stock
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                              product.inStock && (getItemQuantity(parseInt(product.id)) < product.stockQuantity)
+                              product.inStock &&
+                              getItemQuantity(parseInt(product.id)) <
+                                product.stockQuantity
                                 ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
                                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
                             }`}
@@ -851,9 +885,15 @@ const Store = () => {
                             </div>
                             <button
                               onClick={() => handleAddToCart(product)}
-                              disabled={!product.inStock || (getItemQuantity(parseInt(product.id)) >= product.stockQuantity)} // Disable if already at max stock
+                              disabled={
+                                !product.inStock ||
+                                getItemQuantity(parseInt(product.id)) >=
+                                  product.stockQuantity
+                              } // Disable if already at max stock
                               className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
-                                product.inStock && (getItemQuantity(parseInt(product.id)) < product.stockQuantity)
+                                product.inStock &&
+                                getItemQuantity(parseInt(product.id)) <
+                                  product.stockQuantity
                                   ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
                                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
                               }`}
