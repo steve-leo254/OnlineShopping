@@ -91,7 +91,7 @@ const Footer: React.FC = () => {
             </span>
             <div className="flex mt-4 space-x-6 sm:justify-center sm:mt-0">
               <a
-                href="#"
+                href="https://www.tiktok.com/@flowtech_solutions"
                 className="text-gray-500 hover:text-gray-900 dark:hover:text-white"
               >
                 <svg
@@ -108,7 +108,7 @@ const Footer: React.FC = () => {
                 </svg>
               </a>
               <a
-                href="#"
+                href="https://www.tiktok.com/@flowtech_solutions"
                 className="text-gray-500 hover:text-gray-900 dark:hover:text-white"
               >
                 <svg
