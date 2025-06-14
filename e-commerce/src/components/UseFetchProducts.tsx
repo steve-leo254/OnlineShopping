@@ -72,3 +72,50 @@ export const useFetchAddresses = (): FetchAddressesResult => {
 
   return { addresses, loading, error, refetch: fetchAddresses };
 };
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  original_price?: number;
+  cost?: number;
+  rating?: number;
+  reviews?: number;
+  img_url?: string;
+  category?: { id: string; name: string };
+  brand?: string;
+  stock_quantity: number;
+  discount?: number;
+  is_new?: boolean;
+  is_favorite?: boolean;
+  description?: string;
+  barcode?: string;
+  created_at: string;
+}
+
+export const useFetchProducts = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const fetchProducts = async (page: number = 1, limit: number = 10, search?: string, categoryId?: string | null) => {
+    setIsLoading(true);
+    try {
+      let url = `${import.meta.env.VITE_API_BASE_URL}/products?page=${page}&limit=${limit}`;
+      if (search) url += `&search=${search}`;
+      if (categoryId) url += `&category_id=${categoryId}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch products");
+      const data = await response.json();
+      setProducts(data.items || []);
+      setTotalPages(data.pages || 0);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch products");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return { products, isLoading, error, totalPages, fetchProducts };
+};
