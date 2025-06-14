@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, MapPin, Home, Building, Star, AlertCircle } from 'lucide-react';
+import { useShoppingCart } from '../context/ShoppingCartContext';
+import { useAuth } from '../context/AuthContext';
 
-const AddressBook = () => {
+interface AddressBookProps {
+  onAddressChange?: () => void; // Optional callback for when addresses change
+}
+
+const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -19,12 +25,15 @@ const AddressBook = () => {
     is_default: false
   });
 
+  // Get context functions and auth
+  const { selectedAddress, setSelectedAddress } = useShoppingCart();
+  const { token } = useAuth();
+
   // You'll need to replace this with your actual API base URL
   const API_BASE_URL = 'http://localhost:8000'; // Adjust this to your FastAPI server
 
-  // Function to get auth headers (adjust based on your auth implementation)
+  // Function to get auth headers
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('token'); // Adjust based on how you store auth token
     return {
       'Content-Type': 'application/json',
       ...(token && { 'Authorization': `Bearer ${token}` })
@@ -46,6 +55,13 @@ const AddressBook = () => {
 
       const data = await response.json();
       setAddresses(data);
+      
+      // Update context with the current default address
+      const defaultAddress = data.find(addr => addr.is_default);
+      if (defaultAddress && (!selectedAddress || selectedAddress.id !== defaultAddress.id)) {
+        setSelectedAddress(defaultAddress);
+      }
+      
       setError(null);
     } catch (err) {
       console.error('Error fetching addresses:', err);
@@ -69,7 +85,31 @@ const AddressBook = () => {
       }
 
       const newAddress = await response.json();
-      setAddresses(prev => [...prev, newAddress]);
+      
+      // Update local state
+      setAddresses(prev => {
+        let updatedAddresses = [...prev, newAddress];
+        
+        // If the new address is default, unset other defaults
+        if (newAddress.is_default) {
+          updatedAddresses = updatedAddresses.map(addr => 
+            addr.id !== newAddress.id ? { ...addr, is_default: false } : addr
+          );
+        }
+        
+        return updatedAddresses;
+      });
+      
+      // Update context if this is now the default address
+      if (newAddress.is_default) {
+        setSelectedAddress(newAddress);
+      }
+      
+      // Notify parent component of address change
+      if (onAddressChange) {
+        onAddressChange();
+      }
+      
       return newAddress;
     } catch (err) {
       console.error('Error creating address:', err);
@@ -91,9 +131,34 @@ const AddressBook = () => {
       }
 
       const updatedAddress = await response.json();
-      setAddresses(prev => prev.map(addr => 
-        addr.id === addressId ? updatedAddress : addr
-      ));
+      
+      // Update local state
+      setAddresses(prev => {
+        let updatedAddresses = prev.map(addr => 
+          addr.id === addressId ? updatedAddress : addr
+        );
+        
+        // If this address is now default, unset other defaults
+        if (updatedAddress.is_default) {
+          updatedAddresses = updatedAddresses.map(addr => 
+            addr.id !== updatedAddress.id ? { ...addr, is_default: false } : addr
+          );
+        }
+        
+        return updatedAddresses;
+      });
+      
+      // Update context if this is now the default address or if we're updating the currently selected address
+      if (updatedAddress.is_default || (selectedAddress && selectedAddress.id === addressId)) {
+        setSelectedAddress(updatedAddress.is_default ? updatedAddress : 
+          (selectedAddress && selectedAddress.id === addressId ? updatedAddress : selectedAddress));
+      }
+      
+      // Notify parent component of address change
+      if (onAddressChange) {
+        onAddressChange();
+      }
+      
       return updatedAddress;
     } catch (err) {
       console.error('Error updating address:', err);
@@ -116,7 +181,24 @@ const AddressBook = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      setAddresses(prev => prev.filter(addr => addr.id !== addressId));
+      // Update local state
+      setAddresses(prev => {
+        const updatedAddresses = prev.filter(addr => addr.id !== addressId);
+        
+        // If we deleted the selected address, update context
+        if (selectedAddress && selectedAddress.id === addressId) {
+          const newDefaultAddress = updatedAddresses.find(addr => addr.is_default);
+          setSelectedAddress(newDefaultAddress || null);
+        }
+        
+        return updatedAddresses;
+      });
+      
+      // Notify parent component of address change
+      if (onAddressChange) {
+        onAddressChange();
+      }
+      
     } catch (err) {
       console.error('Error deleting address:', err);
       throw new Error(err.message || 'Failed to delete address. Please try again.');
@@ -249,6 +331,11 @@ const AddressBook = () => {
           <div>
             <h1 className="text-2xl font-bold text-white mb-1">Address Book</h1>
             <p className="text-blue-100 text-sm">Manage your delivery addresses</p>
+            {selectedAddress && (
+              <p className="text-blue-200 text-xs mt-1">
+                Current default: {selectedAddress.first_name} {selectedAddress.last_name}
+              </p>
+            )}
           </div>
           <button
             onClick={() => setShowForm(true)}
@@ -449,6 +536,11 @@ const AddressBook = () => {
                         <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1">
                           <Star className="w-2.5 h-2.5" />
                           Default
+                        </span>
+                      )}
+                      {selectedAddress && selectedAddress.id === address.id && !address.is_default && (
+                        <span className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-2 py-0.5 rounded-full text-xs font-medium">
+                          Selected
                         </span>
                       )}
                     </div>
