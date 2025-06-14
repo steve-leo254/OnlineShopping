@@ -138,7 +138,7 @@ const SuperAdminDashboard: React.FC = () => {
   const makeApiCall = async <T,>(
     url: string,
     options: RequestInit = {}
-  ): Promise<T> => {
+  ): Promise<ApiResponse<T>> => {
     try {
       const response = await fetch(url, {
         headers: { "Content-Type": "application/json", ...options.headers },
@@ -162,11 +162,11 @@ const SuperAdminDashboard: React.FC = () => {
       const fetchInitialData = async () => {
         setLoading(true);
         try {
-          const userData = await makeApiCall<{ username: string }>(
+          const response = await makeApiCall<{ username: string }>(
             `${import.meta.env.VITE_API_BASE_URL}/me`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
-          setCurrentUser(userData);
+          setCurrentUser(response.items?.[0] || null);
           await Promise.all([fetchUsers(token), fetchStats(token)]);
         } catch (error) {
           console.error("Failed to fetch initial data", error);
@@ -188,7 +188,7 @@ const SuperAdminDashboard: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const data = await makeApiCall<{ access_token: string }>(
+      const response = await makeApiCall<{ access_token: string }>(
         `${import.meta.env.VITE_API_BASE_URL}/auth/login`,
         {
           method: "POST",
@@ -198,8 +198,10 @@ const SuperAdminDashboard: React.FC = () => {
           }),
         }
       );
-      login(data.access_token);
-      showNotification("success", "Login successful!");
+      if (response.access_token) {
+        login(response.access_token);
+        showNotification("success", "Login successful!");
+      }
     } catch (error: any) {
       showNotification(
         "error",
@@ -223,21 +225,15 @@ const SuperAdminDashboard: React.FC = () => {
         : "";
       const roleParam =
         roleFilter !== "all" ? `&role_filter=${roleFilter}` : "";
-      const data = await makeApiCall<{
-        items: User[];
-        total: number;
-        page: number;
-        limit: number;
-        pages: number;
-      }>(
+      const response = await makeApiCall<User>(
         `${import.meta.env.VITE_API_BASE_URL}/superadmin/users?page=${pagination.page}&limit=${pagination.limit}${searchParam}${roleParam}`,
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
-      setUsers(data.items || []);
+      setUsers(response.items || []);
       setPagination((prev) => ({
         ...prev,
-        total: data.total || 0,
-        pages: data.pages || 0,
+        total: response.total || 0,
+        pages: response.pages || 0,
       }));
     } catch (error: any) {
       handleApiError(error);
@@ -248,13 +244,20 @@ const SuperAdminDashboard: React.FC = () => {
 
   const fetchStats = async (authToken: string): Promise<void> => {
     try {
-      const data = await makeApiCall<Stats>(
+      const response = await makeApiCall<Stats>(
         `${import.meta.env.VITE_API_BASE_URL}/superadmin/stats`,
         {
           headers: { Authorization: `Bearer ${authToken}` },
         }
       );
-      setStats(data);
+      setStats(response.items?.[0] || {
+        total_superadmins: 0,
+        total_admins: 0,
+        total_customers: 0,
+        admins_this_month: 0,
+        customers_this_month: 0,
+        total_users: 0,
+      });
     } catch (error: any) {
       handleApiError(error);
     }
@@ -275,7 +278,7 @@ const SuperAdminDashboard: React.FC = () => {
     }
   };
 
-  const handleAddAdmin = async (e) => {
+  const handleAddAdmin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validateForm() || !token) return;
     setLoading(true);

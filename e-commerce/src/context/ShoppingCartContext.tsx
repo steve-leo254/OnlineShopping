@@ -13,6 +13,7 @@ type CartItem = {
   price: number;
   img_url: string | null;
   quantity: number;
+  stockQuantity: number;
 };
 
 type Address = {
@@ -35,6 +36,7 @@ type ShoppingCartContext = {
     name: string;
     price: number;
     img_url: string | null;
+    stockQuantity: number;
   }) => void;
   increaseCartQuantity: (id: number) => void;
   decreaseCartQuantity: (id: number) => void;
@@ -84,7 +86,7 @@ export function ShoppingCartProvider({ children }: ShoppingCartProviderProps) {
     return cartItems.find((item) => item.id === id)?.quantity || 0;
   }
 
-  function addToCart(product: { id: number; name: string; price: number; img_url: string | null }) {
+  function addToCart(product: { id: number; name: string; price: number; img_url: string | null; stockQuantity: number }) {
     setCartItems((currItems) => {
       if (currItems.find((item) => item.id === product.id) == null) {
         return [...currItems, { ...product, quantity: 1 }];

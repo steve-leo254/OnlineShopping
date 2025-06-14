@@ -799,6 +799,7 @@ async def get_admin_stats(
 
 
 
+
 @app.get("/me", status_code=status.HTTP_200_OK)
 async def get_current_user(db: db_dependency, user: dict = Depends(get_active_user)):
     """Get current authenticated user information"""
@@ -820,6 +821,38 @@ async def get_current_user(db: db_dependency, user: dict = Depends(get_active_us
         logger.error(f"Error retrieving user info: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+
+# @app.post("/reset-password/{token}", status_code=status.HTTP_200_OK)
+# async def reset_password(token: str, reset_password_request: ResetPasswordRequest, db: db_dependency):
+#     """Reset user password using token"""
+#     try:
+#         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+#         user_id: int = payload.get("id")
+#         if user_id is None:
+#             logger.warning("Invalid reset token")
+#             raise HTTPException(status_code=401, detail="Invalid token")
+        
+#         user = db.query(Users).filter(Users.id == user_id).first()
+#         if not user:
+#             logger.warning(f"Password reset attempted for non-existent user ID: {user_id}")
+#             raise HTTPException(status_code=404, detail="User does not exist")
+        
+#         user.hashed_password = bcrypt_context.hash(reset_password_request.new_password)
+#         db.add(user)
+#         db.commit()
+#         db.refresh(user)
+#         logger.info(f"Password reset successfully for user: {user.username}")
+#         return {"message": "Password has been reset successfully"}
+#     except jwt.ExpiredSignatureError:
+#         logger.warning("Expired reset token")
+#         raise HTTPException(status_code=401, detail="Token has expired")
+#     except jwt.DecodeError:
+#         logger.warning("Invalid reset token")
+#         raise HTTPException(status_code=401, detail="Invalid token")
+#     except Exception as e:
+#         db.rollback()
+#         logger.error(f"Error resetting password: {str(e)}")
+#         raise HTTPException(status_code=500, detail="Failed to reset password")
 
 
 

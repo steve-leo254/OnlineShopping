@@ -10,25 +10,32 @@ import Products from "./pages/Product";
 import Store from "./pages/Store";
 import ShoppingCart from "./pages/ShoppingCart";
 import Checkout from "./pages/Checkout";
+// import OrderSummary from "./pages/Order-Summary";
+// import OrderConfirmation from "./pages/OrderConfirmation";
 import OrderDetails from "./pages/OrderDetails";
 import OrdersOverview from "./pages/OrdersOverview";
 import "react-toastify/dist/ReactToastify.css";
-import { ToastContainer } from "react-toastify";
+// import { ToastContainer } from "react-toastify";
 import { ShoppingCartProvider } from "./context/ShoppingCartContext";
 import OrdersManagement from "./pages/OrderManagement";
 import NotFound from "./pages/NotFound";
+
+
 import AboutPage from "./pages/AboutUs";
 import AccountProfile from "./pages/MyProfile";
 import SuperAdminDashboard from "./pages/AdminPage";
 import SuperAdminRegister from "./pages/SuperAdmin";
 import AddressBook from "./components/AddressBook";
 
+
+
+
 function App() {
   return (
     <AuthProvider>
       <ShoppingCartProvider>
         <Router>
-          <ToastContainer
+          {/* <ToastContainer
             position="top-left"
             autoClose={1000}
             hideProgressBar={true}
@@ -38,7 +45,7 @@ function App() {
             pauseOnFocusLoss
             draggable
             progressClassName="toast-progress-bar"
-          />
+          /> */}
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -50,7 +57,11 @@ function App() {
               <Route path="/AdminPage" element={<SuperAdminDashboard />} />
               <Route path="/shopping-cart" element={<ShoppingCart />} />
               <Route path="/checkout" element={<Checkout />} />
-
+              {/* <Route path="/order-summary" element={<OrderSummary />} /> */}
+              {/* <Route
+                path="/order-confirmation"
+                element={<OrderConfirmation />}
+              /> */}
               <Route
                 path="/order-details/:orderId"
                 element={<OrderDetails />}

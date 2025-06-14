@@ -7,11 +7,11 @@ const Footer: React.FC = () => {
         <div className="mx-auto max-w-screen-xl">
           <div className="md:flex md:justify-between">
             {/* <!-- Benefits Section --> */}
-            <div class="container mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
-              <div class="flex flex-col items-center space-y-4">
+            <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+              <div className="flex flex-col items-center space-y-4">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  class="h-16 w-16 text-white"
+                  className="h-16 w-16 text-white"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"

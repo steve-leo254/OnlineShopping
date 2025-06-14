@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import type { ChangeEvent, MouseEvent } from "react";
 import {
   CreditCard,
   Truck,
@@ -8,16 +9,76 @@ import {
   CheckCircle,
 } from "lucide-react";
 import DeliveryDetails from "../components/DeliveryDetails";
+
 import DeliveryOptions from "../components/deliveryOptions";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrency } from "../cart/formatCurrency";
 
+// Define types
+type CartItem = {
+  id: number;
+  name: string;
+  price: number;
+  img_url: string | null;
+  quantity: number;
+};
+
+type Address = {
+  id: number;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  address: string;
+  city: string;
+  region: string;
+  is_default: boolean;
+};
+
+type OrderConfirmationData = {
+  orderId: number;
+  orderDate: string;
+  name: string;
+  address: string;
+  phoneNumber: string;
+  deliveryFee: number;
+  subtotal: number;
+  total: number;
+  deliveryMethod: string;
+  paymentMethod: string;
+};
+
+type SavedOrderDetails = {
+  items: CartItem[];
+  subtotal: number;
+  deliveryFee: number;
+  total: number;
+  address: Address | null;
+};
+
+type FormData = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+  additionalInfo: string;
+  city: string;
+  county: string;
+  isDefault: boolean;
+  cardNumber: string;
+  expiryDate: string;
+  cvv: string;
+  nameOnCard: string;
+  paymentMethod: string;
+  mpesaPhone: string;
+};
+
 const Checkout = () => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
-  const [orderConfirmationData, setOrderConfirmationData] = useState<any>(null);
+  const [orderConfirmationData, setOrderConfirmationData] = useState<OrderConfirmationData | null>(null);
   const { token } = useAuth();
   const navigate = useNavigate();
   const {
@@ -31,7 +92,7 @@ const Checkout = () => {
   } = useShoppingCart();
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     firstName: "",
     lastName: "",
     email: "",
@@ -45,15 +106,15 @@ const Checkout = () => {
     expiryDate: "",
     cvv: "",
     nameOnCard: "",
-    paymentMethod: "mpesa", // Default to mpesa for this task
+    paymentMethod: "mpesa",
     mpesaPhone: "",
   });
-  const [orderId, setOrderId] = useState(null);
+  const [orderId, setOrderId] = useState<number | null>(null);
   const [paymentStatus, setPaymentStatus] = useState("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
   // Add state to preserve order details after cart is cleared
-  const [savedOrderDetails, setSavedOrderDetails] = useState({
+  const [savedOrderDetails, setSavedOrderDetails] = useState<SavedOrderDetails>({
     items: [],
     subtotal: 0,
     deliveryFee: 0,
@@ -61,9 +122,7 @@ const Checkout = () => {
     address: null,
   });
 
-
-
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -71,7 +130,7 @@ const Checkout = () => {
     }));
   };
 
-  const handleStepChange = (step) => {
+  const handleStepChange = (step: number) => {
     setCurrentStep(step);
   };
 
@@ -90,7 +149,7 @@ const Checkout = () => {
       address_id: selectedAddress?.id,
       delivery_fee: deliveryFee,
     };
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/create_order`, {
+    const response = await fetch("http://localhost:8000/create_order", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -110,7 +169,7 @@ const Checkout = () => {
         const error = new Error(
           "Insufficient stock for some items in your cart"
         );
-        error.details = errorData.detail;
+        (error as any).details = errorData.detail;
         throw error;
       } else if (response.status === 401) {
         throw new Error("Authentication failed. Please log in again.");
@@ -129,14 +188,14 @@ const Checkout = () => {
     return data.order_id;
   };
 
-  const initiateTransaction = async (orderId, phoneNumber, amount) => {
+  const initiateTransaction = async (orderId: number, phoneNumber: string, amount: number) => {
     const transactionData = {
       order_id: orderId,
       phone_number: phoneNumber,
       amount: amount,
     };
     const response = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL}/payments/lnmo/transact`,
+      "http://localhost:8000/payments/lnmo/transact",
       {
         method: "POST",
         headers: {
@@ -153,9 +212,9 @@ const Checkout = () => {
     return data.CheckoutRequestID;
   };
 
-  const checkTransactionStatus = async (orderId) => {
+  const checkTransactionStatus = async (orderId: number) => {
     const response = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL}/payments/transactions`,
+      "http://localhost:8000/payments/transactions",
       {
         method: "POST",
         headers: {
@@ -190,10 +249,10 @@ const Checkout = () => {
       const orderId = await createOrder();
       setOrderId(orderId);
 
-      const checkoutRequestID = await initiateTransaction(
+      await initiateTransaction(
         orderId,
         formattedPhone,
-        total // Use saved total instead
+        total
       );
       let attempts = 0;
       const maxAttempts = 24; // 2 minutes with 5-second intervals
@@ -206,7 +265,7 @@ const Checkout = () => {
           clearInterval(interval);
           // Update order status to "processing" after payment confirmation
           const response = await fetch(
-            `${import.meta.env.VITE_API_BASE_URL}/update-order-status/${orderId}`,
+            `http://localhost:8000/update-order-status/${orderId}`,
             {
               method: "PUT",
               headers: {
@@ -232,18 +291,18 @@ const Checkout = () => {
           setErrorMessage("Payment confirmation timed out");
         }
       }, 5000);
-    } catch (err) {
+    } catch (err: unknown) {
       setPaymentStatus("error");
-      setErrorMessage(err.message || "Failed to initiate payment");
+      setErrorMessage(err instanceof Error ? err.message : "Failed to initiate payment");
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
 
     if (formData.paymentMethod === "mpesa" && orderId) {
       // For M-Pesa, show order confirmation modal with complete information
-      const confirmationData = {
+      const confirmationData: OrderConfirmationData = {
         orderId,
         orderDate: new Date().toLocaleDateString("en-US", {
           year: "numeric",
@@ -263,7 +322,7 @@ const Checkout = () => {
         deliveryFee: deliveryFee || 0,
         subtotal: savedOrderDetails.subtotal || subtotal || 0,
         total: savedOrderDetails.total || total || 0,
-        deliveryMethod,
+        deliveryMethod: deliveryMethod || "delivery",
         paymentMethod: formData.paymentMethod,
       };
 
@@ -275,7 +334,7 @@ const Checkout = () => {
 
         if (newOrderId) {
           // For COD, show order confirmation modal with complete information
-          const confirmationData = {
+          const confirmationData: OrderConfirmationData = {
             orderId: newOrderId,
             orderDate: new Date().toLocaleDateString("en-US", {
               year: "numeric",
@@ -296,19 +355,15 @@ const Checkout = () => {
             deliveryFee: deliveryFee || 0,
             subtotal: subtotal || 0,
             total: total || 0,
-            deliveryMethod,
+            deliveryMethod: deliveryMethod || "delivery",
             paymentMethod: formData.paymentMethod,
           };
 
           setOrderConfirmationData(confirmationData);
           setShowOrderConfirmation(true);
-
-          // Optional: Show success toast if you have toast implemented
-          // toast.success(`Order #${newOrderId} created successfully!`);
         }
       } catch (err) {
         setErrorMessage("Failed to place order");
-        // toast.error("Failed to place order. Please try again.");
       }
     }
   };
@@ -820,7 +875,7 @@ const Checkout = () => {
                     className="flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 bg-gray-50 rounded-lg"
                   >
                     <img
-                      src={item.img_url}
+                      src={item.img_url || undefined}
                       alt={item.name}
                       className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg flex-shrink-0"
                     />
