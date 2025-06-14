@@ -180,7 +180,6 @@ const OrderDetails: React.FC = () => {
 
   // Calculate subtotal (total from database minus tax and delivery)
   const subtotal = order.total - DELIVERY_FEE;
-  const grandTotal = subtotal + DELIVERY_FEE;
 
   // Format the address
   const formatAddress = (address: Address | undefined) => {
