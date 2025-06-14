@@ -525,7 +525,7 @@ const Checkout = () => {
                 </div>
                 <div className="grid grid-cols-1 gap-4">
                   <DeliveryDetails />
-                  <AddDeliveryDetails />
+                  {/* <AddDeliveryDetails /> */}
 
                   <DeliveryOptions />
                 </div>
