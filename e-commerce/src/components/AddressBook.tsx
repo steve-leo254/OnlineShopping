@@ -72,7 +72,7 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
   // Create new address
   const createAddress = async (addressData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/addresses`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/addresses`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify(addressData)
@@ -118,7 +118,7 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
   // Update address
   const updateAddress = async (addressId, addressData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/addresses/${addressId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/addresses/${addressId}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify(addressData)
@@ -167,7 +167,7 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
   // Delete address
   const deleteAddress = async (addressId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/addresses/${addressId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/addresses/${addressId}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
       });
