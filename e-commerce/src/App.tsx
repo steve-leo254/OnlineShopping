@@ -10,25 +10,17 @@ import Products from "./pages/Product";
 import Store from "./pages/Store";
 import ShoppingCart from "./pages/ShoppingCart";
 import Checkout from "./pages/Checkout";
-import OrderSummary from "./pages/Order-Summary";
-import OrderConfirmation from "./pages/OrderConfirmation";
 import OrderDetails from "./pages/OrderDetails";
 import OrdersOverview from "./pages/OrdersOverview";
 import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
 import { ShoppingCartProvider } from "./context/ShoppingCartContext";
-import AdminOrderTable from "./components/TestProductTable";
 import OrdersManagement from "./pages/OrderManagement";
 import NotFound from "./pages/NotFound";
-import Payment from "./pages/Payment";
-import CategoryForm from "./components/AddCategory";
 import AboutPage from "./pages/AboutUs";
 import AccountProfile from "./pages/MyProfile";
 import SuperAdminDashboard from "./pages/AdminPage";
 import SuperAdminRegister from "./pages/SuperAdmin";
-import ProductDetail from "./components/TestProductTable";
-
-
 
 function App() {
   return (
@@ -57,23 +49,15 @@ function App() {
               <Route path="/AdminPage" element={<SuperAdminDashboard />} />
               <Route path="/shopping-cart" element={<ShoppingCart />} />
               <Route path="/checkout" element={<Checkout />} />
-              <Route path="/order-summary" element={<OrderSummary />} />
-              <Route
-                path="/order-confirmation"
-                element={<OrderConfirmation />}
-              />
+
               <Route
                 path="/order-details/:orderId"
                 element={<OrderDetails />}
               />
               <Route path="/orders-overview" element={<OrdersOverview />} />
-              <Route path="/test-products" element={<AdminOrderTable />} />
               <Route path="/orders-management" element={<OrdersManagement />} />
-              <Route path="/payment" element={<Payment />} />
-              <Route path="/category" element={<CategoryForm />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="*" element={<NotFound />} />
-              <Route path="/Productdetail" element={<ProductDetail />} />
               <Route path="/SuperAdmin" element={<SuperAdminRegister />} />
               <Route path="/MyProfile" element={<AccountProfile />} />
             </Route>
