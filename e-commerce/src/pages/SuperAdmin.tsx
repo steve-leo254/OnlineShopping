@@ -107,7 +107,7 @@ const SuperAdminRegister: React.FC = () => {
           const responseData = error.response.data as ApiResponse;
           
           if (error.response.status === 400) {
-            setError(responseData.detail || "Username or email already exists");
+            setError(typeof responseData.detail === 'string' ? responseData.detail : "Username or email already exists");
           } else if (error.response.status === 422) {
             // Validation error
             if (Array.isArray(responseData.detail)) {
@@ -116,12 +116,12 @@ const SuperAdminRegister: React.FC = () => {
               ).join(', ');
               setError(errorMessages);
             } else {
-              setError(responseData.detail || "Validation error");
+              setError(typeof responseData.detail === 'string' ? responseData.detail : "Validation error");
             }
           } else if (error.response.status >= 500) {
             setError("Server error. Please try again later.");
           } else {
-            setError(responseData.detail || `HTTP error! status: ${error.response.status}`);
+            setError(typeof responseData.detail === 'string' ? responseData.detail : `HTTP error! status: ${error.response.status}`);
           }
         } else if (error.request) {
           // Network error

@@ -5,6 +5,13 @@ import { formatCurrency } from "../cart/formatCurrency";
 import { toast } from "react-toastify";
 import axios from "axios";
 
+interface Order {
+  order_id: number;
+  status: "pending" | "delivered" | "cancelled" | "processing";
+  datetime: string;
+  total: number;
+}
+
 // Confirmation Modal Component
 const ConfirmationModal: React.FC<{
   isOpen: boolean;
@@ -62,16 +69,16 @@ const ConfirmationModal: React.FC<{
 const OrdersOverview: React.FC = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-  const [selectedStatus, setSelectedStatus] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [cancellingOrderId, setCancellingOrderId] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [cancellingOrderId, setCancellingOrderId] = useState<number | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [orderToCancel, setOrderToCancel] = useState(null);
+  const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
 
   // Mapping frontend dropdown values to API status values
   const statusMapping = {
@@ -163,11 +170,11 @@ const OrdersOverview: React.FC = () => {
       setShowConfirmModal(false);
       setOrderToCancel(null);
       await fetchOrders();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error cancelling order:", error);
       const errorMessage = axios.isAxiosError(error) 
         ? error.response?.data?.detail || error.message
-        : error.message || "Failed to cancel order. Please try again.";
+        : error instanceof Error ? error.message : "Failed to cancel order. Please try again.";
       
       setError(errorMessage);
       toast.error("Failed to cancel order. Please try again.");
@@ -184,12 +191,12 @@ const OrdersOverview: React.FC = () => {
   // Handle dropdown change
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    setSelectedStatus(value === "all" ? null : statusMapping[value]);
+    setSelectedStatus(value === "all" ? null : statusMapping[value as keyof typeof statusMapping]);
     setPage(1);
   };
 
   // Map API status to frontend display
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status: "pending" | "delivered" | "cancelled" | "processing") => {
     switch (status) {
       case "processing":
         return {
@@ -293,7 +300,7 @@ const OrdersOverview: React.FC = () => {
                   id="order-type"
                   className="appearance-none bg-white border-2 border-gray-200 rounded-xl px-4 py-3 pr-10 text-gray-700 focus:border-blue-500 focus:ring-0 transition-colors min-w-[160px]"
                   onChange={handleStatusChange}
-                  value={selectedStatus === null ? "all" : Object.keys(statusMapping).find(key => statusMapping[key] === selectedStatus) || "all"}
+                  value={selectedStatus === null ? "all" : Object.keys(statusMapping).find(key => statusMapping[key as keyof typeof statusMapping] === selectedStatus) || "all"}
                   disabled={loading}
                 >
                   <option value="all">All Orders</option>

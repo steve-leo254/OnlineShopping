@@ -6,9 +6,8 @@ import {
   Gift,
   Lock,
   CreditCard,
-  Truck, // Added for delivery icon
-  Package, // Added for stock/item icon
-  Star, // For ratings if applicable, though not directly used in cart for rating
+  Truck,
+  Package,
 } from "lucide-react";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
@@ -16,7 +15,16 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 // Modify CartItem to accept stockQuantity
-const CartItem = ({ id, name, price, img_url, quantity, stockQuantity }) => {
+interface CartItemProps {
+  id: number;
+  name: string;
+  price: number;
+  img_url: string | null;
+  quantity: number;
+  stockQuantity: number;
+}
+
+const CartItem = ({ id, name, price, img_url, quantity, stockQuantity }: CartItemProps) => {
   const { increaseCartQuantity, decreaseCartQuantity } = useShoppingCart();
   const [notification, setNotification] = useState({
     show: false,
@@ -25,7 +33,7 @@ const CartItem = ({ id, name, price, img_url, quantity, stockQuantity }) => {
   });
 
   // Function to show notification
-  const showNotification = (message, type = "success") => {
+  const showNotification = (message: string, type: "success" | "warning" | "info" = "success") => {
     setNotification({
       show: true,
       message,
@@ -90,7 +98,7 @@ const CartItem = ({ id, name, price, img_url, quantity, stockQuantity }) => {
           <div className="relative flex-shrink-0">
             <div className="w-full sm:w-40 h-40 rounded-2xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 shadow-inner"> {/* Larger, rounded image */}
               <img
-                src={img_url}
+                src={img_url ?? ""}
                 alt={name}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
               />
@@ -218,7 +226,7 @@ const ShoppingCart: React.FC = () => {
   };
 
   // Function to show global notification
-  const showGlobalNotification = (message, type = "success") => {
+  const showGlobalNotification = (message: string, type: "success" | "warning" | "info" = "success") => {
     setGlobalNotification({
       show: true,
       message,
@@ -413,69 +421,14 @@ const ShoppingCart: React.FC = () => {
         </div>
       </section>
 
-      <style jsx>{`
+      <style>{`
         @keyframes slide-in-left {
           from {
             transform: translateX(-100%);
-            opacity: 0;
           }
           to {
             transform: translateX(0);
-            opacity: 1;
           }
-        }
-        .animate-slide-in-left {
-          animation: slide-in-left 0.3s ease-out;
-        }
-
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.6s ease-out forwards;
-        }
-
-        @keyframes fade-in-up {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fade-in-up {
-          animation: fade-in-up 0.5s ease-out forwards;
-        }
-
-        @keyframes fade-in-right {
-          from {
-            opacity: 0;
-            transform: translateX(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        .animate-fade-in-right {
-          animation: fade-in-right 0.6s ease-out forwards;
-        }
-
-        @keyframes bounce-subtle {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-3px); }
-        }
-        .animate-bounce-subtle {
-            animation: bounce-subtle 1.5s infinite ease-in-out;
         }
       `}</style>
     </div>

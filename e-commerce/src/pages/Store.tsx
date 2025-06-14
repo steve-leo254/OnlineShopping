@@ -1,4 +1,4 @@
-import React, {
+import {
   useState,
   useEffect,
   useCallback,
@@ -7,7 +7,6 @@ import React, {
 } from "react";
 import {
   Search,
-  Filter,
   Grid,
   List,
   Star,
@@ -26,8 +25,47 @@ import { useFetchProducts } from "../components/UseFetchProducts";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
 
+interface ApiProduct {
+  id: string;
+  name: string;
+  price: number;
+  original_price?: number;
+  cost?: number;
+  rating?: number;
+  reviews?: number;
+  img_url?: string;
+  category?: { id: string; name: string };
+  brand?: string;
+  stock_quantity: number;
+  discount?: number;
+  is_new?: boolean;
+  is_favorite?: boolean;
+  description?: string;
+  barcode?: string;
+  created_at: string;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice: number;
+  rating: number;
+  reviews: number;
+  img_url: string;
+  category: string;
+  brand: string;
+  inStock: boolean;
+  discount: number;
+  isNew: boolean;
+  isFavorite: boolean;
+  description: string;
+  stockQuantity: number;
+  createdAt: string;
+}
+
 // Transform API product to match component's expected format
-const transformProduct = (apiProduct) => {
+const transformProduct = (apiProduct: ApiProduct) => {
   const discount =
     apiProduct.original_price && apiProduct.original_price > apiProduct.price
       ? Math.round(
@@ -49,7 +87,7 @@ const transformProduct = (apiProduct) => {
     price: apiProduct.price,
     originalPrice:
       apiProduct.original_price ||
-      (apiProduct.price > apiProduct.cost ? apiProduct.price : apiProduct.cost),
+      (apiProduct.price > (apiProduct.cost ?? 0) ? apiProduct.price : (apiProduct.cost ?? 0)),
     rating: apiProduct.rating || 4.5,
     reviews: apiProduct.reviews || 100,
     img_url: apiProduct.img_url
@@ -62,15 +100,15 @@ const transformProduct = (apiProduct) => {
     isNew: isNew,
     isFavorite: apiProduct.is_favorite || false,
     stockQuantity: apiProduct.stock_quantity,
-    description: apiProduct.description,
+    description: apiProduct.description || "",
     barcode: apiProduct.barcode,
     createdAt: apiProduct.created_at,
   };
 };
 
 // Custom hook for debounced search
-const useDebounce = (value, delay) => {
-  const [debouncedValue, setDebouncedValue] = useState(value);
+const useDebounce = <T,>(value: T, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -92,7 +130,6 @@ const Store = () => {
     isLoading,
     products: apiProducts,
     totalPages: apiTotalPages,
-    totalItems,
     error,
     fetchProducts,
   } = useFetchProducts();
@@ -101,13 +138,11 @@ const Store = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("featured");
   const [viewMode, setViewMode] = useState("grid");
-  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [priceRange, setPriceRange] = useState([0, 500000]); // Updated default to 500,000
   const [showFilters, setShowFilters] = useState(false);
   const [favorites, setFavorites] = useState(new Set());
-  const [allCategories, setAllCategories] = useState([
-    { id: null, name: "all" },
-  ]);
+  const [allCategories, setAllCategories] = useState<{ id: string | null; name: string }[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
 
   // Enhanced notification state (matching Home page)
@@ -118,7 +153,7 @@ const Store = () => {
   });
 
   // Notification timeout ref
-  const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const notificationTimeoutRef = useRef<number | null>(null);
 
   const productsPerPage = 8;
 
@@ -128,11 +163,6 @@ const Store = () => {
   const products = useMemo(
     () => apiProducts.map(transformProduct),
     [apiProducts]
-  );
-
-  const brands = useMemo(
-    () => ["All", ...new Set(products.map((p) => p.brand).filter(Boolean))],
-    [products]
   );
 
   // Enhanced notification function (matching Home page)
@@ -162,7 +192,7 @@ const Store = () => {
   };
 
   const getFilteredAndSortedProducts = useCallback(
-    (productsToFilter) => {
+    (productsToFilter: Product[]) => {
       // Apply local search filter if search term exists
       let filtered = productsToFilter;
 
@@ -212,7 +242,7 @@ const Store = () => {
     [products, getFilteredAndSortedProducts]
   );
 
-  const handleCategoryChange = async (categoryId, categoryName) => {
+  const handleCategoryChange = async (categoryId: string | null) => {
     setSelectedCategoryId(categoryId);
     setCurrentPage(1);
     setIsFiltering(true);
@@ -226,7 +256,7 @@ const Store = () => {
     }
   };
 
-  const toggleFavorite = (productId) => {
+  const toggleFavorite = (productId: string) => {
     const newFavorites = new Set(favorites);
     if (newFavorites.has(productId)) {
       newFavorites.delete(productId);
@@ -246,7 +276,7 @@ const Store = () => {
       if (response.data) {
         const categories = [
           { id: null, name: "all" },
-          ...response.data.map((cat) => ({ id: cat.id, name: cat.name })),
+          ...response.data.map((cat: { id: string; name: string }) => ({ id: cat.id, name: cat.name })),
         ];
         setAllCategories(categories);
       }
@@ -257,10 +287,10 @@ const Store = () => {
         ...Array.from(
           new Map(
             apiProducts
-              .filter((p) => p.category?.id && p.category?.name)
-              .map((p) => [
-                p.category.id,
-                { id: p.category.id, name: p.category.name },
+              .filter((p: ApiProduct) => p.category?.id && p.category?.name)
+              .map((p: ApiProduct) => [
+                p.category!.id,
+                { id: p.category!.id, name: p.category!.name },
               ])
           ).values()
         ),
@@ -269,18 +299,13 @@ const Store = () => {
     }
   }, [apiProducts]);
 
-  const clearAllFilters = () => {
-    setSearchTerm("");
-    setSelectedCategoryId(null);
-    setPriceRange([0, 500000]); // Updated to match new default
-    setCurrentPage(1);
-    // Fetch all products without any filters
-    fetchProducts(1, productsPerPage, "", null);
-    showNotification("All filters cleared", "info");
+  const getCurrentCategoryName = () => {
+    const category = allCategories.find((cat) => cat.id === selectedCategoryId);
+    return category ? category.name : "All";
   };
 
-  const handleAddToCart = (product) => {
-    const currentQuantityInCart = getItemQuantity(product.id);
+  const handleAddToCart = (product: Product) => {
+    const currentQuantityInCart = getItemQuantity(parseInt(product.id));
     if (currentQuantityInCart >= product.stockQuantity) {
       showNotification(
         `Cannot add more than available stock (${product.stockQuantity}) for ${product.name}`,
@@ -290,7 +315,13 @@ const Store = () => {
     }
 
     try {
-      addToCart(product);
+      addToCart({
+        id: parseInt(product.id),
+        name: product.name,
+        price: product.price,
+        img_url: product.img_url,
+        stockQuantity: product.stockQuantity
+      });
       showNotification(`${product.name} added to cart!`, "success");
     } catch (error) {
       showNotification(
@@ -331,23 +362,12 @@ const Store = () => {
     fetchAllCategories();
   }, [fetchAllCategories]);
 
-  const getCurrentCategoryName = () => {
-    const category = allCategories.find((cat) => cat.id === selectedCategoryId);
-    return category ? category.name : "all";
-  };
-
-  const totalPagesForFiltered = Math.ceil(
-    displayedProducts.length / productsPerPage
-  );
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Enhanced Notification Component with Animations (matching Home page) */}
       <div
         className={`fixed top-4 left-4 z-50 transition-all duration-500 ease-in-out transform ${
-          notification.show
-            ? "translate-x-0 opacity-100 scale-100"
-            : "translate-x-full opacity-0 scale-95 pointer-events-none"
+          notification.show ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
         }`}
       >
         <div
@@ -418,7 +438,7 @@ const Store = () => {
       </div>
 
       {/* Add CSS animation for progress bar */}
-      <style jsx>{`
+      <style>{`
         @keyframes shrink {
           from {
             width: 100%;
@@ -545,7 +565,7 @@ const Store = () => {
                   <button
                     key={category.id || "all"}
                     onClick={() =>
-                      handleCategoryChange(category.id, category.name)
+                      handleCategoryChange(category.id)
                     }
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                       selectedCategoryId === category.id
@@ -758,9 +778,9 @@ const Store = () => {
                           </div>
                           <button
                             onClick={() => handleAddToCart(product)}
-                            disabled={!product.inStock || (getItemQuantity(product.id) >= product.stockQuantity)} // Disable if already at max stock
+                            disabled={!product.inStock || (getItemQuantity(parseInt(product.id)) >= product.stockQuantity)} // Disable if already at max stock
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                              product.inStock && (getItemQuantity(product.id) < product.stockQuantity)
+                              product.inStock && (getItemQuantity(parseInt(product.id)) < product.stockQuantity)
                                 ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
                                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
                             }`}
@@ -831,9 +851,9 @@ const Store = () => {
                             </div>
                             <button
                               onClick={() => handleAddToCart(product)}
-                              disabled={!product.inStock || (getItemQuantity(product.id) >= product.stockQuantity)} // Disable if already at max stock
+                              disabled={!product.inStock || (getItemQuantity(parseInt(product.id)) >= product.stockQuantity)} // Disable if already at max stock
                               className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
-                                product.inStock && (getItemQuantity(product.id) < product.stockQuantity)
+                                product.inStock && (getItemQuantity(parseInt(product.id)) < product.stockQuantity)
                                   ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
                                   : "bg-gray-300 text-gray-500 cursor-not-allowed"
                               }`}
@@ -899,29 +919,23 @@ const Store = () => {
                 </button>
               </div>
             )}
-
-            {displayedProducts.length === 0 && !isLoading && !isFiltering && (
-              <div className="text-center py-16">
-                <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                  <Search className="w-12 h-12 text-gray-400" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  No products found
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  {selectedCategoryId
-                    ? `No products found in ${getCurrentCategoryName()} category`
-                    : "Try adjusting your search or filter criteria"}
-                </p>
-                <button
-                  onClick={clearAllFilters}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Clear all filters
-                </button>
-              </div>
-            )}
           </>
+        )}
+
+        {displayedProducts.length === 0 && !isLoading && !isFiltering && (
+          <div className="text-center py-16">
+            <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+              <Search className="w-12 h-12 text-gray-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              No products found
+            </h3>
+            <p className="text-gray-600 mb-4">
+              {selectedCategoryId
+                ? `No products found in ${getCurrentCategoryName()} category`
+                : "Try adjusting your search or filters"}
+            </p>
+          </div>
         )}
       </div>
     </div>

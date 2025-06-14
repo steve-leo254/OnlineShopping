@@ -10,7 +10,7 @@ export const useFetchProducts = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [error, setError] = useState(null);
 
-  const fetchProducts = useCallback(async (page = 1, limit = 8, search = "", categoryId = null) => {
+  const fetchProducts = useCallback(async (page = 1, limit = 8, search = "", categoryId: string | null | undefined = null) => {
     setIsLoading(true);
     setError(null);
     
