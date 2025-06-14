@@ -1,20 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, MapPin, Home, Building, Star, AlertCircle } from 'lucide-react';
+import { Plus, Edit2, Trash2, MapPin, Home, Star, AlertCircle } from 'lucide-react';
 import { useShoppingCart } from '../context/ShoppingCartContext';
 import { useAuth } from '../context/AuthContext';
 
+interface Address {
+  id: number;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  address: string;
+  additional_info: string;
+  region: string;
+  city: string;
+  is_default: boolean;
+}
+
+type AddressFormData = Omit<Address, 'id'>;
+
 interface AddressBookProps {
-  onAddressChange?: () => void; // Optional callback for when addresses change
+  onAddressChange?: () => void; 
 }
 
 const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
-  const [addresses, setAddresses] = useState([]);
+  const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [editingAddress, setEditingAddress] = useState(null);
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<AddressFormData>({
     first_name: '',
     last_name: '',
     phone_number: '',
@@ -25,12 +39,9 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
     is_default: false
   });
 
-  // Get context functions and auth
   const { selectedAddress, setSelectedAddress } = useShoppingCart();
   const { token } = useAuth();
 
-
-  // Function to get auth headers
   const getAuthHeaders = () => {
     return {
       'Content-Type': 'application/json',
@@ -38,7 +49,6 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
     };
   };
 
-  // Fetch addresses from API
   const fetchAddresses = async () => {
     try {
       setLoading(true);
@@ -51,17 +61,16 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data: Address[] = await response.json();
       setAddresses(data);
       
-      // Update context with the current default address
       const defaultAddress = data.find(addr => addr.is_default);
       if (defaultAddress && (!selectedAddress || selectedAddress.id !== defaultAddress.id)) {
         setSelectedAddress(defaultAddress);
       }
       
       setError(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching addresses:', err);
       setError('Failed to load addresses. Please try again.');
     } finally {
@@ -69,8 +78,7 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
     }
   };
 
-  // Create new address
-  const createAddress = async (addressData) => {
+  const createAddress = async (addressData: AddressFormData) => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/addresses`, {
         method: 'POST',
@@ -82,13 +90,11 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const newAddress = await response.json();
+      const newAddress: Address = await response.json();
       
-      // Update local state
       setAddresses(prev => {
         let updatedAddresses = [...prev, newAddress];
         
-        // If the new address is default, unset other defaults
         if (newAddress.is_default) {
           updatedAddresses = updatedAddresses.map(addr => 
             addr.id !== newAddress.id ? { ...addr, is_default: false } : addr
@@ -98,25 +104,22 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
         return updatedAddresses;
       });
       
-      // Update context if this is now the default address
       if (newAddress.is_default) {
         setSelectedAddress(newAddress);
       }
       
-      // Notify parent component of address change
       if (onAddressChange) {
         onAddressChange();
       }
       
       return newAddress;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating address:', err);
       throw new Error('Failed to create address. Please try again.');
     }
   };
 
-  // Update address
-  const updateAddress = async (addressId, addressData) => {
+  const updateAddress = async (addressId: number, addressData: AddressFormData) => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/addresses/${addressId}`, {
         method: 'PUT',
@@ -136,7 +139,6 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
           addr.id === addressId ? updatedAddress : addr
         );
         
-        // If this address is now default, unset other defaults
         if (updatedAddress.is_default) {
           updatedAddresses = updatedAddresses.map(addr => 
             addr.id !== updatedAddress.id ? { ...addr, is_default: false } : addr
@@ -146,13 +148,11 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
         return updatedAddresses;
       });
       
-      // Update context if this is now the default address or if we're updating the currently selected address
       if (updatedAddress.is_default || (selectedAddress && selectedAddress.id === addressId)) {
         setSelectedAddress(updatedAddress.is_default ? updatedAddress : 
           (selectedAddress && selectedAddress.id === addressId ? updatedAddress : selectedAddress));
       }
       
-      // Notify parent component of address change
       if (onAddressChange) {
         onAddressChange();
       }
@@ -164,8 +164,7 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
     }
   };
 
-  // Delete address
-  const deleteAddress = async (addressId) => {
+  const deleteAddress = async (addressId: number) => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/addresses/${addressId}`, {
         method: 'DELETE',
@@ -179,11 +178,9 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Update local state
       setAddresses(prev => {
         const updatedAddresses = prev.filter(addr => addr.id !== addressId);
         
-        // If we deleted the selected address, update context
         if (selectedAddress && selectedAddress.id === addressId) {
           const newDefaultAddress = updatedAddresses.find(addr => addr.is_default);
           setSelectedAddress(newDefaultAddress || null);
@@ -192,32 +189,29 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
         return updatedAddresses;
       });
       
-      // Notify parent component of address change
       if (onAddressChange) {
         onAddressChange();
       }
       
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting address:', err);
-      throw new Error(err.message || 'Failed to delete address. Please try again.');
+      throw new Error((err as Error).message || 'Failed to delete address. Please try again.');
     }
   };
 
-  // Load addresses on component mount
   useEffect(() => {
     fetchAddresses();
   }, []);
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
     setFormData({
       ...formData,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
     });
   };
 
   const handleSubmit = async () => {
-    // Validate required fields
     if (!formData.first_name || !formData.last_name || !formData.phone_number || 
         !formData.address || !formData.city || !formData.region) {
       setError('Please fill in all required fields');
@@ -235,8 +229,8 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
       }
       
       resetForm();
-    } catch (err) {
-      setError(err.message);
+    } catch (err: any) {
+      setError((err as Error).message);
     } finally {
       setSubmitting(false);
     }
@@ -258,7 +252,7 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
     setError(null);
   };
 
-  const handleEdit = (address) => {
+  const handleEdit = (address: Address) => {
     setFormData({
       first_name: address.first_name,
       last_name: address.last_name,
@@ -274,31 +268,30 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
     setError(null);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: number) => {
     if (window.confirm('Are you sure you want to delete this address?')) {
       try {
         setError(null);
         await deleteAddress(id);
-      } catch (err) {
-        setError(err.message);
+      } catch (err: any) {
+        setError((err as Error).message);
       }
     }
   };
 
-  const setDefault = async (id) => {
+  const setDefault = async (id: number) => {
     const addressToUpdate = addresses.find(addr => addr.id === id);
     if (addressToUpdate) {
       try {
         setError(null);
         await updateAddress(id, { ...addressToUpdate, is_default: true });
-      } catch (err) {
-        setError(err.message);
+      } catch (err: any) {
+        setError((err as Error).message);
       }
     }
   };
 
-  // Format address display
-  const formatAddress = (address) => {
+  const formatAddress = (address: Address) => {
     const parts = [address.address];
     if (address.additional_info) parts.push(address.additional_info);
     parts.push(`${address.city}, ${address.region}`);
