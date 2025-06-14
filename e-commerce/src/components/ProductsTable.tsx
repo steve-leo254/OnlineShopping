@@ -49,7 +49,6 @@ const ProductsTable: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<string>("");
@@ -446,7 +445,7 @@ const ProductsTable: React.FC = () => {
               <tbody className="divide-y divide-gray-100">
                 {isLoading ? (
                   <tr>
-                    <td colSpan="9" className="py-12 text-center">
+                    <td colSpan={9} className="py-12 text-center">
                       <div className="flex items-center justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                         <span className="ml-3 text-gray-600">
@@ -457,7 +456,7 @@ const ProductsTable: React.FC = () => {
                   </tr>
                 ) : filteredProducts.length === 0 ? (
                   <tr>
-                    <td colSpan="9" className="py-12 text-center text-gray-500">
+                    <td colSpan={9} className="py-12 text-center text-gray-500">
                       No products found
                     </td>
                   </tr>
@@ -494,11 +493,12 @@ const ProductsTable: React.FC = () => {
                           <span className="font-semibold text-gray-900">
                             Ksh {product.price?.toLocaleString() || 0}
                           </span>
-                          {product.discount > 0 && (
-                            <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                              -{product.discount}%
-                            </span>
-                          )}
+                          {product.discount !== undefined &&
+                            product.discount > 0 && (
+                              <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                -{product.discount}%
+                              </span>
+                            )}
                         </td>
                         <td className="py-4 px-6">
                           <span className="text-gray-500 line-through">
