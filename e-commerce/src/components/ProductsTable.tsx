@@ -50,7 +50,7 @@ const ProductsTable = () => {
   };
   const fetchCategories = async () => {
     try {
-      const response = await fetch("http://localhost:8000/public/categories"); // Replace with your actual endpoint
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/public/categories`); // Replace with your actual endpoint
       const data = await response.json();
       setCategories(data);
     } catch (error) {
@@ -441,7 +441,7 @@ const ProductsTable = () => {
                           <div className="flex items-center gap-3">
                             {product.img_url && (
                               <img
-                                src={`http://localhost:8000${product.img_url}`}
+                                src={`${import.meta.env.VITE_API_BASE_URL}${product.img_url}`}
                                 alt={product.name}
                                 className="w-12 h-12 rounded-lg object-cover bg-gray-100"
                                 onError={(e) => {

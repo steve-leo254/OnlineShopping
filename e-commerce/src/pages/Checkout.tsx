@@ -1,22 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   CreditCard,
   Truck,
   MapPin,
-  User,
   Phone,
-  Mail,
   Lock,
   CheckCircle,
 } from "lucide-react";
 import DeliveryDetails from "../components/DeliveryDetails";
-import AddDeliveryDetails from "../components/AddDeliveryDetails";
 import DeliveryOptions from "../components/deliveryOptions";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { formatCurrency } from "../cart/formatCurrency";
-import AddressBook from "../components/TestProductTable";
 
 const Checkout = () => {
   const [showTooltip, setShowTooltip] = useState(false);
@@ -32,7 +28,6 @@ const Checkout = () => {
     total,
     clearCart,
     deliveryMethod,
-    paymentMethod,
   } = useShoppingCart();
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -66,14 +61,7 @@ const Checkout = () => {
     address: null,
   });
 
-  // Function to open the modal
-  const openAddressModal = () => {
-    const modal = document.getElementById("addBillingInformationModal");
-    if (modal) {
-      modal.classList.remove("hidden");
-      modal.classList.add("flex");
-    }
-  };
+
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -102,7 +90,7 @@ const Checkout = () => {
       address_id: selectedAddress?.id,
       delivery_fee: deliveryFee,
     };
-    const response = await fetch("http://localhost:8000/create_order", {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/create_order`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -148,7 +136,7 @@ const Checkout = () => {
       amount: amount,
     };
     const response = await fetch(
-      "http://localhost:8000/payments/lnmo/transact",
+      `${import.meta.env.VITE_API_BASE_URL}/payments/lnmo/transact`,
       {
         method: "POST",
         headers: {
@@ -167,7 +155,7 @@ const Checkout = () => {
 
   const checkTransactionStatus = async (orderId) => {
     const response = await fetch(
-      "http://localhost:8000/payments/transactions",
+      `${import.meta.env.VITE_API_BASE_URL}/payments/transactions`,
       {
         method: "POST",
         headers: {
@@ -218,7 +206,7 @@ const Checkout = () => {
           clearInterval(interval);
           // Update order status to "processing" after payment confirmation
           const response = await fetch(
-            `http://localhost:8000/update-order-status/${orderId}`,
+            `${import.meta.env.VITE_API_BASE_URL}/update-order-status/${orderId}`,
             {
               method: "PUT",
               headers: {

@@ -29,8 +29,6 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
   const { selectedAddress, setSelectedAddress } = useShoppingCart();
   const { token } = useAuth();
 
-  // You'll need to replace this with your actual API base URL
-  const API_BASE_URL = 'http://localhost:8000'; // Adjust this to your FastAPI server
 
   // Function to get auth headers
   const getAuthHeaders = () => {
@@ -44,7 +42,7 @@ const AddressBook: React.FC<AddressBookProps> = ({ onAddressChange }) => {
   const fetchAddresses = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/addresses`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/addresses`, {
         method: 'GET',
         headers: getAuthHeaders()
       });

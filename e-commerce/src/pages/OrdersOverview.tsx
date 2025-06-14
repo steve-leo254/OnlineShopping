@@ -102,7 +102,7 @@ const OrdersOverview: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/orders?${params.toString()}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/orders?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -145,7 +145,7 @@ const OrdersOverview: React.FC = () => {
 
     try {
       const response = await axios.put(
-        `http://127.0.0.1:8000/update-order-status/${orderToCancel}`,
+        `${import.meta.env.VITE_API_BASE_URL}/update-order-status/${orderToCancel}`,
         { status: "cancelled" },
         {
           headers: {

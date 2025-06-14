@@ -17,6 +17,7 @@ interface ApiResponse {
 }
 
 const Register: React.FC = () => {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
   const navigate = useNavigate();
   const [formData, setFormData] = useState<FormData>({
     username: "",
@@ -50,7 +51,7 @@ const Register: React.FC = () => {
     }
 
     try {
-      const apiUrl = "http://localhost:8000/auth/register/customer";
+      const apiUrl = `${API_BASE_URL}/auth/register/customer`;
       const response = await axios.post<ApiResponse>(
         apiUrl,
         {

@@ -18,7 +18,7 @@ const DeleteProducts: React.FC<DeleteProductsProps> = ({ productId }) => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.delete(
-        `http://localhost:8000/delete-product/${productId}`,
+        `${import.meta.env.VITE_API_BASE_URL}/delete-product/${productId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

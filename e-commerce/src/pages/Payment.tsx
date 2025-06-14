@@ -65,7 +65,7 @@ const Payment = () => {
     };
 
     try {
-      const response = await fetch("http://localhost:8000/payments/lnmo/transact", {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/payments/lnmo/transact`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -108,7 +108,7 @@ const Payment = () => {
       interval = setInterval(async () => {
         console.log("Polling payment status for order:", orderId);
         try {
-          const response = await fetch("http://localhost:8000/payments/transactions", {
+          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/payments/transactions`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -141,7 +141,7 @@ const Payment = () => {
 
               try {
                 // Update order status to processing
-                const updateStatusResponse = await fetch(`http://localhost:8000/update-order-status/${orderId}`, {
+                const updateStatusResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/update-order-status/${orderId}`, {
                   method: "PUT",
                   headers: {
                     "Content-Type": "application/json",

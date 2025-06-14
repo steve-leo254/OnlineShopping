@@ -60,7 +60,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
   onClose,
   productToEdit,
 }) => {
-  const imgEndpoint = "http://localhost:8000";
+  const imgEndpoint = import.meta.env.VITE_API_BASE_URL;
   const { token, role } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState<ProductForm>({
@@ -101,7 +101,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
     const fetchCategories = async () => {
       try {
         const response = await axios.get<Category[]>(
-          "http://localhost:8000/public/categories"
+          `${import.meta.env.VITE_API_BASE_URL}/public/categories`
         );
         setCategories(response.data);
       } catch (err) {
@@ -265,7 +265,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
         const formDataImage = new FormData();
         formDataImage.append("file", imageFile);
         const imageResponse = await axios.post(
-          "http://localhost:8000/upload-image",
+          `${import.meta.env.VITE_API_BASE_URL}/upload-image`,
           formDataImage,
           {
             headers: {
@@ -280,7 +280,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
       // Update product
       const productData = { ...formData, img_url };
       await axios.put(
-        `http://localhost:8000/update-product/${productToEdit.id}`,
+        `${import.meta.env.VITE_API_BASE_URL}/update-product/${productToEdit.id}`,
         productData,
         {
           headers: {
@@ -326,7 +326,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
 
     try {
       await axios.delete(
-        `http://localhost:8000/delete-product/${productToEdit.id}`,
+        `${import.meta.env.VITE_API_BASE_URL}/delete-product/${productToEdit.id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

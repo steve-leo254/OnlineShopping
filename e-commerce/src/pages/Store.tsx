@@ -53,7 +53,7 @@ const transformProduct = (apiProduct) => {
     rating: apiProduct.rating || 4.5,
     reviews: apiProduct.reviews || 100,
     img_url: apiProduct.img_url
-      ? `http://localhost:8000${apiProduct.img_url}`
+      ? `${import.meta.env.VITE_API_BASE_URL}${apiProduct.img_url}`
       : "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop",
     category: apiProduct.category?.name || "Uncategorized",
     brand: apiProduct.brand || "Unknown",
@@ -86,6 +86,7 @@ const useDebounce = (value, delay) => {
 };
 
 const Store = () => {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
   const { addToCart, getItemQuantity } = useShoppingCart(); // Destructure getItemQuantity
   const {
     isLoading,
@@ -240,7 +241,7 @@ const Store = () => {
   const fetchAllCategories = useCallback(async () => {
     try {
       const response = await axios.get(
-        "http://localhost:8000/public/categories"
+        `${API_BASE_URL}/public/categories`
       );
       if (response.data) {
         const categories = [

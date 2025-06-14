@@ -163,7 +163,7 @@ const SuperAdminDashboard: React.FC = () => {
         setLoading(true);
         try {
           const userData = await makeApiCall<{ username: string }>(
-            "http://localhost:8000/me",
+            `${import.meta.env.VITE_API_BASE_URL}/me`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           setCurrentUser(userData);
@@ -189,7 +189,7 @@ const SuperAdminDashboard: React.FC = () => {
     setLoading(true);
     try {
       const data = await makeApiCall<{ access_token: string }>(
-        "http://localhost:8000/auth/login",
+        `${import.meta.env.VITE_API_BASE_URL}/auth/login`,
         {
           method: "POST",
           body: JSON.stringify({
@@ -230,7 +230,7 @@ const SuperAdminDashboard: React.FC = () => {
         limit: number;
         pages: number;
       }>(
-        `http://localhost:8000/superadmin/users?page=${pagination.page}&limit=${pagination.limit}${searchParam}${roleParam}`,
+        `${import.meta.env.VITE_API_BASE_URL}/superadmin/users?page=${pagination.page}&limit=${pagination.limit}${searchParam}${roleParam}`,
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
       setUsers(data.items || []);
@@ -249,7 +249,7 @@ const SuperAdminDashboard: React.FC = () => {
   const fetchStats = async (authToken: string): Promise<void> => {
     try {
       const data = await makeApiCall<Stats>(
-        "http://localhost:8000/superadmin/stats",
+        `${import.meta.env.VITE_API_BASE_URL}/superadmin/stats`,
         {
           headers: { Authorization: `Bearer ${authToken}` },
         }
@@ -290,7 +290,7 @@ const SuperAdminDashboard: React.FC = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:8000/auth/superadmin/create-admin",
+        `${import.meta.env.VITE_API_BASE_URL}/auth/superadmin/create-admin`,
         {
           method: "POST",
           headers: {
@@ -322,7 +322,7 @@ const SuperAdminDashboard: React.FC = () => {
       return;
     try {
       await makeApiCall(
-        `http://localhost:8000/auth/superadmin/users/${userId}`,
+        `${import.meta.env.VITE_API_BASE_URL}/auth/superadmin/users/${userId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },

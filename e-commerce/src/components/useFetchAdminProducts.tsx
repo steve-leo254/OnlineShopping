@@ -53,7 +53,7 @@ export const useFetchAdminProducts = () => {
       setError(null);
       try {
         const response = await axios.get<PaginatedProductResponse>(
-          'http://localhost:8000/products',
+          `${import.meta.env.VITE_API_BASE_URL}/products`,
           {
             params: { page, limit, search },
             headers: {

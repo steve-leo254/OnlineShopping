@@ -76,7 +76,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ onClose, onCategoryAdded })
     try {
       // Send category data to API - following the same pattern as AddProduct
       const categoryData = { ...formData };
-      await axios.post('http://localhost:8000/categories', categoryData, {
+      await axios.post(`${import.meta.env.VITE_API_BASE_URL}/categories`, categoryData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

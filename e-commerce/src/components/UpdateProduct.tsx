@@ -50,7 +50,7 @@ type ProductForm = {
 };
 
 const UpdateProductModal: React.FC = () => {
-  const imgEndpoint = "http://localhost:8000";
+  const imgEndpoint = import.meta.env.VITE_API_BASE_URL;
   const { token, role } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -87,12 +87,12 @@ const UpdateProductModal: React.FC = () => {
       try {
         const [productsResponse, categoriesResponse] = await Promise.all([
           axios.get<{ items: Product[] }>(
-            "http://localhost:8000/public/products",
+            `${import.meta.env.VITE_API_BASE_URL}/public/products`,
             {
               params: { page: 1, limit: 100 },
             }
           ),
-          axios.get<Category[]>("http://localhost:8000/public/categories"),
+          axios.get<Category[]>(`${import.meta.env.VITE_API_BASE_URL}/public/categories`),
         ]);
         setProducts(productsResponse.data.items);
         setCategories(categoriesResponse.data);
@@ -272,7 +272,7 @@ const UpdateProductModal: React.FC = () => {
         const formDataImage = new FormData();
         formDataImage.append("file", imageFile);
         const imageResponse = await axios.post(
-          "http://localhost:8000/upload-image",
+          `${import.meta.env.VITE_API_BASE_URL}/upload-image`,
           formDataImage,
           {
             headers: {
@@ -287,7 +287,7 @@ const UpdateProductModal: React.FC = () => {
       // Update product
       const productData = { ...formData, img_url };
       await axios.put(
-        `http://localhost:8000/update-product/${selectedProductId}`,
+        `${import.meta.env.VITE_API_BASE_URL}/update-product/${selectedProductId}`,
         productData,
         {
           headers: {
@@ -344,7 +344,7 @@ const UpdateProductModal: React.FC = () => {
 
     try {
       await axios.delete(
-        `http://localhost:8000/delete-product/${selectedProductId}`,
+        `${import.meta.env.VITE_API_BASE_URL}/delete-product/${selectedProductId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

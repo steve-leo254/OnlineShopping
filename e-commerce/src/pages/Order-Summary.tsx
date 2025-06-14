@@ -61,7 +61,7 @@ const OrderSummary: React.FC = () => {
       };
 
       // Make the API request
-      const response = await fetch("http://localhost:8000/create_order", {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/create_order`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

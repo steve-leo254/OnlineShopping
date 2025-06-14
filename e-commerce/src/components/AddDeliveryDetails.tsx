@@ -104,7 +104,7 @@ const AddDeliveryDetails: React.FC = () => {
     try {
       // Submit the address to the backend
       const response = await axios.post(
-        "http://localhost:8000/addresses",
+        `${import.meta.env.VITE_API_BASE_URL}/addresses`,
         formData,
         {
           headers: { Authorization: `Bearer ${token}` },

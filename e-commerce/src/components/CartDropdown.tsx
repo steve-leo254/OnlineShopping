@@ -23,9 +23,8 @@ const CartDropdown: React.FC = () => {
     const fetchCartProducts = async () => {
       const promises = cartItems.map(async (item) => {
         try {
-          // Replace with your actual API endpoint, e.g., http://localhost:8000/public/products/${item.id}
           const res = await axios.get<Product>(
-            `http://localhost:8000/public/products/${item.id}`
+            `${import.meta.env.VITE_API_BASE_URL}/public/products/${item.id}`
           );
           return { product: res.data, quantity: item.quantity };
         } catch (error) {

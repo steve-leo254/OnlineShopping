@@ -22,7 +22,7 @@ export const useFetchProducts = () => {
         ...(categoryId && { category_id: categoryId })
       };
 
-      const response = await axios.get('http://localhost:8000/public/products', { params });
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/public/products`, { params });
       
       if (response.data) {
         setProducts(response.data.items || []);

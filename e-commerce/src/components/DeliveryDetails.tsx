@@ -39,7 +39,7 @@ const DeliveryDetails: React.FC = () => {
   const fetchAddresses = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8000/addresses', {
+      const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/addresses`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
