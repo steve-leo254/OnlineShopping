@@ -23,16 +23,16 @@ const Footer: React.FC = () => {
                     d="M3 10h18M3 6h18M3 14h18M3 18h18"
                   />
                 </svg>
-                <h3 class="text-2xl font-bold">Wide Selection</h3>
-                <p class="max-w-xs">
+                <h3 className="text-2xl font-bold">Wide Selection</h3>
+                <p className="max-w-xs">
                   Thousands of products from top brands and newest arrivals, all
                   in one place.
                 </p>
               </div>
-              <div class="flex flex-col items-center space-y-4">
+              <div className="flex flex-col items-center space-y-4">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  class="h-16 w-16 text-white"
+                  className="h-16 w-16 text-white"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -44,16 +44,16 @@ const Footer: React.FC = () => {
                     d="M12 8v4l3 3M8 21h8a2 2 0 002-2v-7H6v7a2 2 0 002 2z"
                   />
                 </svg>
-                <h3 class="text-2xl font-bold">Fast Shipping</h3>
-                <p class="max-w-xs">
+                <h3 className="text-2xl font-bold">Fast Shipping</h3>
+                <p className="max-w-xs">
                   Get your products delivered quickly with our reliable shipping
                   partners.
                 </p>
               </div>
-              <div class="flex flex-col items-center space-y-4">
+              <div className="flex flex-col items-center space-y-4">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  class="h-16 w-16 text-white"
+                  className="h-16 w-16 text-white"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -73,8 +73,8 @@ const Footer: React.FC = () => {
                     d="M12 6v6l4 2"
                   />
                 </svg>
-                <h3 class="text-2xl font-bold">24/7 Support</h3>
-                <p class="max-w-xs">
+                <h3 className="text-2xl font-bold">24/7 Support</h3>
+                <p className="max-w-xs">
                   Our friendly support team is here to help you anytime.
                 </p>
               </div>
