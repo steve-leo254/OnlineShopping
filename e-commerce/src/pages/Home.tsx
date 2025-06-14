@@ -34,7 +34,7 @@ const Home: React.FC = () => {
   });
 
   // Notification timeout ref
-  const notificationTimeoutRef = useRef<number | null>(null);
+  const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch products when component mounts
   useEffect(() => {
@@ -83,14 +83,17 @@ const Home: React.FC = () => {
   }, [products]); // Restart effect when products change
 
   // Enhanced notification function
-  const showNotification = (message: string, type: "success" | "error" | "info" = "success") => {
+  const showNotification = (
+    message: string,
+    type: "success" | "error" | "info" = "success"
+  ) => {
     // Clear existing timeout
     if (notificationTimeoutRef.current) {
       clearTimeout(notificationTimeoutRef.current);
     }
 
     setNotification({ show: true, message, type });
-    
+
     // Auto-hide after 4 seconds
     notificationTimeoutRef.current = setTimeout(() => {
       hideNotification();
@@ -98,7 +101,7 @@ const Home: React.FC = () => {
   };
 
   const hideNotification = () => {
-    setNotification(prev => ({ ...prev, show: false }));
+    setNotification((prev) => ({ ...prev, show: false }));
     if (notificationTimeoutRef.current) {
       clearTimeout(notificationTimeoutRef.current);
       notificationTimeoutRef.current = null;
@@ -113,11 +116,14 @@ const Home: React.FC = () => {
         name: product.name,
         price: product.price,
         img_url: imgEndPoint + product.img_url,
-        stockQuantity: product.stock_quantity
+        stockQuantity: product.stock_quantity,
       });
       showNotification(`${product.name} added to cart!`, "success");
     } catch (error) {
-      showNotification("Failed to add item to cart. Please try again.", "error");
+      showNotification(
+        "Failed to add item to cart. Please try again.",
+        "error"
+      );
     }
   };
 
@@ -129,12 +135,12 @@ const Home: React.FC = () => {
       }
     };
   }, []);
-  
+
   //  ============== HERO =============
   //  =================================
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const intervalRef = useRef<number | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Helper function to clear interval safely
   const clearHeroInterval = () => {
@@ -162,7 +168,7 @@ const Home: React.FC = () => {
       cta: "Explore Workspace",
     },
     {
-      src:"https://images.pexels.com/photos/17753940/pexels-photo-17753940/free-photo-of-an-iphone-lying-next-to-a-keyboard-on-a-desk.jpeg?auto=compress&cs=tinysrgb&w=400",
+      src: "https://images.pexels.com/photos/17753940/pexels-photo-17753940/free-photo-of-an-iphone-lying-next-to-a-keyboard-on-a-desk.jpeg?auto=compress&cs=tinysrgb&w=400",
       alt: "Latest Technology",
       title: "Latest Technology",
       subtitle: "Stay ahead with the newest innovations in tech",
@@ -203,44 +209,56 @@ const Home: React.FC = () => {
   return (
     <>
       {/* Enhanced Notification Component with Animations */}
-      <div className={`fixed top-4 left-4 z-50 transition-all duration-500 ease-in-out transform ${
-        notification.show 
-          ? 'translate-x-0 opacity-100 scale-100' 
-          : 'translate-x-full opacity-0 scale-95 pointer-events-none'
-      }`}>
-        <div className={`
+      <div
+        className={`fixed top-4 left-4 z-50 transition-all duration-500 ease-in-out transform ${
+          notification.show
+            ? "translate-x-0 opacity-100 scale-100"
+            : "translate-x-full opacity-0 scale-95 pointer-events-none"
+        }`}
+      >
+        <div
+          className={`
           max-w-sm px-6 py-4 rounded-xl shadow-2xl backdrop-blur-lg border border-white/20
-          ${notification.type === 'success' 
-            ? 'bg-gradient-to-r from-green-500/90 to-emerald-500/90 text-white' 
-            : notification.type === 'error'
-            ? 'bg-gradient-to-r from-red-500/90 to-rose-500/90 text-white'
-            : 'bg-gradient-to-r from-blue-500/90 to-indigo-500/90 text-white'
+          ${
+            notification.type === "success"
+              ? "bg-gradient-to-r from-green-500/90 to-emerald-500/90 text-white"
+              : notification.type === "error"
+              ? "bg-gradient-to-r from-red-500/90 to-rose-500/90 text-white"
+              : "bg-gradient-to-r from-blue-500/90 to-indigo-500/90 text-white"
           }
           animate-pulse
-        `}>
+        `}
+        >
           <div className="flex items-center justify-between space-x-3">
             <div className="flex items-center space-x-3">
-              <div className={`
+              <div
+                className={`
                 w-8 h-8 rounded-full flex items-center justify-center
-                ${notification.type === 'success' 
-                  ? 'bg-white/20' 
-                  : notification.type === 'error'
-                  ? 'bg-white/20'
-                  : 'bg-white/20'
+                ${
+                  notification.type === "success"
+                    ? "bg-white/20"
+                    : notification.type === "error"
+                    ? "bg-white/20"
+                    : "bg-white/20"
                 }
-              `}>
-                {notification.type === 'success' && <CheckCircle className="w-5 h-5" />}
-                {notification.type === 'error' && <X className="w-5 h-5" />}
-                {notification.type === 'info' && <Sparkles className="w-5 h-5" />}
+              `}
+              >
+                {notification.type === "success" && (
+                  <CheckCircle className="w-5 h-5" />
+                )}
+                {notification.type === "error" && <X className="w-5 h-5" />}
+                {notification.type === "info" && (
+                  <Sparkles className="w-5 h-5" />
+                )}
               </div>
               <div>
                 <p className="font-semibold text-sm leading-tight">
                   {notification.message}
                 </p>
                 <div className="text-xs opacity-75 mt-1">
-                  {notification.type === 'success' && 'Success!'}
-                  {notification.type === 'error' && 'Error occurred'}
-                  {notification.type === 'info' && 'Information'}
+                  {notification.type === "success" && "Success!"}
+                  {notification.type === "error" && "Error occurred"}
+                  {notification.type === "info" && "Information"}
                 </div>
               </div>
             </div>
@@ -252,13 +270,13 @@ const Home: React.FC = () => {
               <X className="w-4 h-4" />
             </button>
           </div>
-          
+
           {/* Progress bar */}
           <div className="mt-3 w-full bg-white/20 rounded-full h-1 overflow-hidden">
-            <div 
+            <div
               className="h-full bg-white/60 rounded-full animate-pulse"
               style={{
-                animation: 'shrink 4s linear forwards'
+                animation: "shrink 4s linear forwards",
               }}
             />
           </div>
@@ -428,7 +446,7 @@ const Home: React.FC = () => {
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md mx-auto">
                 <p className="font-medium">Error loading products</p>
                 <p className="text-sm mt-1">{error}</p>
-                <button 
+                <button
                   onClick={() => fetchProducts(1, 100, "")}
                   className="mt-3 text-red-600 hover:text-red-800 underline text-sm"
                 >
@@ -471,15 +489,13 @@ const Home: React.FC = () => {
                           className="h-4 w-4 text-yellow-400 fill-current"
                         />
                       ))}
-                      <span className="ml-2 text-sm text-gray-600">
-                        (4.5)
-                      </span>
+                      <span className="ml-2 text-sm text-gray-600">(4.5)</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                         {formatCurrency(product.price)}
                       </span>
-                      
+
                       <button
                         onClick={() => addToCartWithAlert(product)}
                         className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 hover:shadow-lg transform hover:scale-105"
@@ -495,7 +511,7 @@ const Home: React.FC = () => {
             </div>
           )}
           <div className="text-center mt-12">
-            <button 
+            <button
               onClick={() => navigate("/store")}
               className="group bg-gradient-to-r from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 mx-auto shadow-lg hover:shadow-xl"
             >

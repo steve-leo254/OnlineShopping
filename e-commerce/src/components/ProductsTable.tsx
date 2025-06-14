@@ -108,7 +108,7 @@ const ProductsTable: React.FC = () => {
   const endItem = Math.min(currentPage * limit, totalItems);
 
   const getPaginationItems = () => {
-    const items: JSX.Element[] = [];
+    const items: React.ReactNode[] = [];
     const maxPagesToShow = 5;
     let startPage = Math.max(1, currentPage - 2);
     let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
@@ -239,6 +239,34 @@ const ProductsTable: React.FC = () => {
   // Calculate stats based on all products
   const inStockCount = products.filter((p) => p.stock_quantity > 0).length;
   const lowStockCount = products.filter((p) => p.stock_quantity <= 5).length;
+
+  // Type mapping function to convert Product to UpdateProductModal's Product type
+  const mapToUpdateProduct = (product: Product) => {
+    const mappedProduct = {
+      ...product,
+      id: Number(product.id),
+      barcode: 0,
+      category_id: product.category ? Number(product.category.id) : null,
+      category: product.category
+        ? {
+            id: Number(product.category.id),
+            name: product.category.name,
+            description: null,
+          }
+        : null,
+      cost: product.cost ?? 0,
+      original_price: product.original_price ?? product.price,
+      rating: product.rating ?? 0,
+      reviews: product.reviews ?? 0,
+      discount: product.discount ?? 0,
+      is_new: product.is_new ?? false,
+      is_favorite: product.is_favorite ?? false,
+      description: product.description ?? null,
+      brand: product.brand ?? null,
+      img_url: product.img_url ?? null,
+    };
+    return mappedProduct;
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 sm:p-6">
@@ -478,7 +506,8 @@ const ProductsTable: React.FC = () => {
                                 alt={product.name}
                                 className="w-12 h-12 rounded-lg object-cover bg-gray-100"
                                 onError={(e) => {
-                                  e.target.style.display = "none";
+                                  (e.target as HTMLImageElement).style.display =
+                                    "none";
                                 }}
                               />
                             )}
@@ -640,7 +669,11 @@ const ProductsTable: React.FC = () => {
         <UpdateProductModal
           isOpen={showUpdateModal}
           onClose={handleModalClose}
-          productToEdit={selectedProductForEdit}
+          productToEdit={
+            selectedProductForEdit
+              ? mapToUpdateProduct(selectedProductForEdit)
+              : null
+          }
         />
       )}
 
