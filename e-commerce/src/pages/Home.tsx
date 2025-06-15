@@ -34,7 +34,7 @@ const Home: React.FC = () => {
   });
 
   // Notification timeout ref
-  const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const notificationTimeoutRef = useRef<number | null>(null);
 
   // Fetch products when component mounts
   useEffect(() => {
@@ -140,7 +140,7 @@ const Home: React.FC = () => {
   //  =================================
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<number | null>(null);
 
   // Helper function to clear interval safely
   const clearHeroInterval = () => {
