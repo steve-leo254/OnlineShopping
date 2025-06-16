@@ -13,7 +13,7 @@ import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { toast } from "react-toastify"; // Import toast
+import { toast } from "react-toastify"; 
 
 interface CartItem {
   id: number;
