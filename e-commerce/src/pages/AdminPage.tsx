@@ -64,7 +64,7 @@ interface Pagination {
   page: number;
   limit: number;
   total: number;
-  pages: number; // Fixed typo from "pages Humidity"
+  pages: number;
 }
 
 interface ApiResponse<T> {
@@ -74,7 +74,7 @@ interface ApiResponse<T> {
   limit?: number;
   pages?: number;
   detail?: string;
-  access_token?: string; // Made optional to reflect varying API responses
+  access_token?: string;
 }
 
 const SuperAdminDashboard: React.FC = () => {
@@ -226,7 +226,9 @@ const SuperAdminDashboard: React.FC = () => {
       const roleParam =
         roleFilter !== "all" ? `&role_filter=${roleFilter}` : "";
       const response = await makeApiCall<User>(
-        `${import.meta.env.VITE_API_BASE_URL}/superadmin/users?page=${pagination.page}&limit=${pagination.limit}${searchParam}${roleParam}`,
+        `${import.meta.env.VITE_API_BASE_URL}/superadmin/users?page=${
+          pagination.page
+        }&limit=${pagination.limit}${searchParam}${roleParam}`,
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
       setUsers(response.items || []);
@@ -244,20 +246,20 @@ const SuperAdminDashboard: React.FC = () => {
 
   const fetchStats = async (authToken: string): Promise<void> => {
     try {
-      const response = await makeApiCall<Stats>(
+      const response = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/superadmin/stats`,
         {
           headers: { Authorization: `Bearer ${authToken}` },
         }
       );
-      setStats(response.items?.[0] || {
-        total_superadmins: 0,
-        total_admins: 0,
-        total_customers: 0,
-        admins_this_month: 0,
-        customers_this_month: 0,
-        total_users: 0,
-      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.detail || `HTTP error! status: ${response.status}`
+        );
+      }
+      const statsData = await response.json();
+      setStats(statsData as Stats);
     } catch (error: any) {
       handleApiError(error);
     }
@@ -289,7 +291,7 @@ const SuperAdminDashboard: React.FC = () => {
       password: formData.password,
     };
 
-    console.log("Request Body:", JSON.stringify(requestBody)); // Debug log
+    console.log("Request Body:", JSON.stringify(requestBody));
 
     try {
       const response = await fetch(
@@ -557,7 +559,6 @@ const SuperAdminDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-
         {notification.show && (
           <div
             className={`mb-6 p-4 rounded-lg border-l-4 ${
@@ -585,82 +586,92 @@ const SuperAdminDashboard: React.FC = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 mb-8">
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="p-2 sm:p-3 bg-purple-600 rounded-lg">
-                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
+          {/* Total Superadmins */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 min-h-[100px] flex items-center">
+            <div className="flex items-center gap-3 w-full">
+              <div className="p-2 bg-purple-600 rounded-lg flex-shrink-0">
+                <Shield className="w-5 h-5 text-white" />
               </div>
-              <div>
-                <p className="text-gray-300 text-xs sm:text-sm">
+              <div className="min-w-0 flex-1">
+                <p className="text-gray-300 text-xs font-medium truncate">
                   Total Superadmins
                 </p>
-                <p className="text-xl sm:text-2xl font-bold text-white">
+                <p className="text-xl font-bold text-white">
                   {stats.total_superadmins}
                 </p>
               </div>
             </div>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="p-2 sm:p-3 bg-blue-600 rounded-lg">
-                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+
+          {/* Total Admins */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 min-h-[100px] flex items-center">
+            <div className="flex items-center gap-3 w-full">
+              <div className="p-2 bg-blue-600 rounded-lg flex-shrink-0">
+                <Users className="w-5 h-5 text-white" />
               </div>
-              <div>
-                <p className="text-gray-300 text-xs sm:text-sm">Total Admins</p>
-                <p className="text-xl sm:text-2xl font-bold text-white">
+              <div className="min-w-0 flex-1">
+                <p className="text-gray-300 text-xs font-medium truncate">
+                  Total Admins
+                </p>
+                <p className="text-xl font-bold text-white">
                   {stats.total_admins}
                 </p>
               </div>
             </div>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="p-2 sm:p-3 bg-orange-600 rounded-lg">
-                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+
+          {/* Total Customers */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 min-h-[100px] flex items-center">
+            <div className="flex items-center gap-3 w-full">
+              <div className="p-2 bg-orange-600 rounded-lg flex-shrink-0">
+                <Users className="w-5 h-5 text-white" />
               </div>
-              <div>
-                <p className="text-gray-300 text-xs sm:text-sm">
+              <div className="min-w-0 flex-1">
+                <p className="text-gray-300 text-xs font-medium truncate">
                   Total Customers
                 </p>
-                <p className="text-xl sm:text-2xl font-bold text-white">
+                <p className="text-xl font-bold text-white">
                   {stats.total_customers}
                 </p>
               </div>
             </div>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="p-2 sm:p-3 bg-green-600 rounded-lg">
-                <UserCheck className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+
+          {/* New Admins This Month */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 min-h-[100px] flex items-center sm:col-span-1 lg:col-span-1 xl:col-span-1">
+            <div className="flex items-center gap-3 w-full">
+              <div className="p-2 bg-green-600 rounded-lg flex-shrink-0">
+                <UserCheck className="w-5 h-5 text-white" />
               </div>
-              <div>
-                <p className="text-gray-300 text-xs sm:text-sm">
+              <div className="min-w-0 flex-1">
+                <p className="text-gray-300 text-xs font-medium truncate">
                   New Admins (Month)
                 </p>
-                <p className="text-xl sm:text-2xl font-bold text-white">
+                <p className="text-xl font-bold text-white">
                   {stats.admins_this_month}
                 </p>
               </div>
             </div>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="p-2 sm:p-3 bg-indigo-600 rounded-lg">
-                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+
+          {/* New Customers This Month */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 min-h-[100px] flex items-center sm:col-span-2 lg:col-span-3 xl:col-span-1">
+            <div className="flex items-center gap-3 w-full">
+              <div className="p-2 bg-indigo-600 rounded-lg flex-shrink-0">
+                <Users className="w-5 h-5 text-white" />
               </div>
-              <div>
-                <p className="text-gray-300 text-xs sm:text-sm">
+              <div className="min-w-0 flex-1">
+                <p className="text-gray-300 text-xs font-medium truncate">
                   New Customers (Month)
                 </p>
-                <p className="text-xl sm:text-2xl font-bold text-white">
+                <p className="text-xl font-bold text-white">
                   {stats.customers_this_month}
                 </p>
               </div>
             </div>
           </div>
         </div>
-
         <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-white/20 mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex gap-4 w-full sm:w-auto">
@@ -695,7 +706,6 @@ const SuperAdminDashboard: React.FC = () => {
             </button>
           </div>
         </div>
-
         {showAddForm && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-slate-800 rounded-xl p-6 w-full max-w-md border border-slate-700 max-h-[90vh] overflow-y-auto">
@@ -846,7 +856,6 @@ const SuperAdminDashboard: React.FC = () => {
             </div>
           </div>
         )}
-
         <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
