@@ -63,7 +63,7 @@ const SuperAdminRegister: React.FC = () => {
     }
 
     try {
-      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/auth/admin/create-admin`;
+      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/auth/register/superadmin`;
       const response = await axios.post<ApiResponse>(
         apiUrl,
         {
