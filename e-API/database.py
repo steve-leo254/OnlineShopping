@@ -12,10 +12,9 @@ load_dotenv()
 password = os.getenv("DB_PASSWORD")
 
 
-
 db_name = os.getenv("DB_NAME", "ecommerce")
 db_host = os.getenv("DB_HOST", "localhost")
-URL_DATABASE = f"mysql+pymysql://admin:{password}@{db_host}:3306/{db_name}"
+URL_DATABASE = f"mysql+pymysql://root:{password}@{db_host}:3306/{db_name}"
 
 engine = create_engine(URL_DATABASE)
 
