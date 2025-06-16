@@ -30,6 +30,82 @@ type Address = {
 type DeliveryMethod = "pickup" | "delivery" | null;
 type PaymentMethod = "pay-online" | "pay-later" | null;
 
+// Delivery fee configuration based on region and city
+const DELIVERY_FEES: Record<string, Record<string, number>> = {
+  "Nairobi": {
+    "Nairobi": 200, // KSh 200 within Nairobi city
+    "Kiambu": 300,
+    "Machakos": 400,
+    "Kajiado": 350,
+    "default": 500 // Default for other areas in Nairobi region
+  },
+  "Central": {
+    "Nyeri": 600,
+    "Murang'a": 550,
+    "Kirinyaga": 700,
+    "Nyandarua": 800,
+    "Kiambu": 300,
+    "default": 750
+  },
+  "Coast": {
+    "Mombasa": 800,
+    "Kilifi": 1000,
+    "Kwale": 1200,
+    "Malindi": 1100,
+    "default": 1300
+  },
+  "Western": {
+    "Kisumu": 900,
+    "Kakamega": 1000,
+    "Bungoma": 1100,
+    "Vihiga": 950,
+    "default": 1200
+  },
+  "Rift Valley": {
+    "Nakuru": 500,
+    "Eldoret": 800,
+    "Naivasha": 400,
+    "Kericho": 700,
+    "default": 900
+  },
+  "Eastern": {
+    "Machakos": 400,
+    "Kitui": 600,
+    "Makueni": 650,
+    "Embu": 550,
+    "default": 700
+  },
+  "Nyanza": {
+    "Kisumu": 900,
+    "Homa Bay": 1000,
+    "Migori": 1100,
+    "Siaya": 950,
+    "default": 1200
+  },
+  "North Eastern": {
+    "Garissa": 1500,
+    "Wajir": 1800,
+    "Mandera": 2000,
+    "default": 1700
+  },
+  // Default for regions not listed
+  "default": {
+    "default": 1000
+  }
+};
+
+// Function to calculate delivery fee based on region and city
+const calculateDeliveryFee = (region: string, city: string): number => {
+  const normalizedRegion = region.trim();
+  const normalizedCity = city.trim();
+  
+  // Get region fees or default
+  const regionFees = DELIVERY_FEES[normalizedRegion] || DELIVERY_FEES["default"];
+  
+  // Get city fee or region default
+  return regionFees[normalizedCity] || regionFees["default"] || 1000;
+};
+
 type ShoppingCartContext = {
   addToCart: (product: {
     id: number;
@@ -56,6 +132,7 @@ type ShoppingCartContext = {
   deliveryFee: number;
   subtotal: number;
   total: number;
+  getDeliveryFeeForLocation: (region: string, city: string) => number;
 };
 
 const ShoppingCartContext = createContext({} as ShoppingCartContext);
@@ -76,8 +153,19 @@ export function ShoppingCartProvider({ children }: ShoppingCartProviderProps) {
   // Calculate subtotal from cartItems
   const subtotal = cartItems.reduce((total, item) => total + item.quantity * item.price, 0);
 
-  // Calculate delivery fee based on delivery method
-  const deliveryFee = deliveryMethod === "delivery" ? 150 : 0; // KSh 150 for delivery, 0 for pickup
+  // Calculate delivery fee based on delivery method and selected address
+  const deliveryFee = (() => {
+    if (deliveryMethod === "pickup") {
+      return 0;
+    }
+    
+    if (deliveryMethod === "delivery" && selectedAddress) {
+      return calculateDeliveryFee(selectedAddress.region, selectedAddress.city);
+    }
+    
+    // Default delivery fee if delivery method is selected but no address
+    return deliveryMethod === "delivery" ? 500 : 0;
+  })();
 
   // Calculate total
   const total = subtotal + deliveryFee;
@@ -126,6 +214,11 @@ export function ShoppingCartProvider({ children }: ShoppingCartProviderProps) {
     setCartItems([]);
   };
 
+  // Function to get delivery fee for any location (useful for preview)
+  const getDeliveryFeeForLocation = (region: string, city: string): number => {
+    return calculateDeliveryFee(region, city);
+  };
+
   return (
     <ShoppingCartContext.Provider
       value={{
@@ -148,6 +241,7 @@ export function ShoppingCartProvider({ children }: ShoppingCartProviderProps) {
         deliveryFee,
         subtotal,
         total,
+        getDeliveryFeeForLocation,
       }}
     >
       {children}
