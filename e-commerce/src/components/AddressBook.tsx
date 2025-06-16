@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Plus,
-  Edit2,
-  Trash2,
-  MapPin,
-  Home,
-  Star,
-  AlertCircle,
-} from "lucide-react";
+import { Plus, Edit2, Trash2, Home, Star, AlertCircle } from "lucide-react";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { useAuth } from "../context/AuthContext";
 
@@ -579,7 +571,8 @@ const AddressBook: React.FC<AddressBookProps> = ({
           {addresses.map((address) => (
             <div
               key={address.id}
-              className={`relative p-4 rounded-lg border ${
+              onClick={() => handleSelectAddress(address)}
+              className={`relative p-4 rounded-lg border cursor-pointer ${
                 selectedAddress?.id === address.id
                   ? "border-blue-500 bg-blue-50"
                   : "border-gray-200 hover:border-blue-300"
