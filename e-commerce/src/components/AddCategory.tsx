@@ -62,10 +62,10 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ onClose, onCategoryAdded })
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!token || role !== 'admin') {
-      toast.error('Admin access required');
-      return;
-    }
+ if (!token || (role !== 'admin' && role !== 'SUPERADMIN')) {
+  toast.error('Admin access required');
+  return;
+}
 
     if (!validateForm()) {
       return;

@@ -21,6 +21,7 @@ import AccountProfile from "./pages/MyProfile";
 import SuperAdminDashboard from "./pages/AdminPage";
 import SuperAdminRegister from "./pages/SuperAdmin";
 import AddressBook from "./components/AddressBook";
+import ProductDetail from "./components/Productsdetail";
 
 function App() {
   return (
@@ -54,6 +55,7 @@ function App() {
                 path="/order-details/:orderId"
                 element={<OrderDetails />}
               />
+              <Route path="/productdetail" element={<ProductDetail />} />
               <Route path="/orders-overview" element={<OrdersOverview />} />
               <Route path="/orders-management" element={<OrdersManagement />} />
               <Route path="/about" element={<AboutPage />} />
