@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Home, Star, AlertCircle, MapPin, Navigation } from "lucide-react";
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  Home,
+  Star,
+  AlertCircle,
+  MapPin,
+  Navigation,
+} from "lucide-react";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { useAuth } from "../context/AuthContext";
+import countiesData from "../context/kenyan_counties.json";
 
 interface Address {
   id: number;
@@ -42,6 +52,8 @@ const AddressBook: React.FC<AddressBookProps> = ({
     city: "",
     is_default: false,
   });
+  const [selectedCounty, setSelectedCounty] = useState("");
+  const [availableTowns, setAvailableTowns] = useState<string[]>([]);
 
   const { selectedAddress, setSelectedAddress } = useShoppingCart();
   const { token } = useAuth();
@@ -238,15 +250,38 @@ const AddressBook: React.FC<AddressBookProps> = ({
     fetchAddresses();
   }, []);
 
+  useEffect(() => {
+    if (selectedCounty) {
+      const county = countiesData.counties.find(
+        (c) => c.name === selectedCounty
+      );
+      setAvailableTowns(county?.towns || []);
+    } else {
+      setAvailableTowns([]);
+    }
+  }, [selectedCounty]);
+
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value, type } = e.target;
-    setFormData({
-      ...formData,
-      [name]:
-        type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
-    });
+
+    if (name === "region") {
+      setSelectedCounty(value);
+      setFormData((prev) => ({
+        ...prev,
+        region: value,
+        city: "", // Reset city when county changes
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]:
+          type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
+      }));
+    }
   };
 
   const handleSubmit = async () => {
@@ -361,15 +396,14 @@ const AddressBook: React.FC<AddressBookProps> = ({
           <Navigation className="w-4 h-4 text-white" />
         </div>
       </div>
-      
-      <h3 className="text-xl font-bold text-gray-800 mb-2">
-        No Addresses Yet
-      </h3>
-      
+
+      <h3 className="text-xl font-bold text-gray-800 mb-2">No Addresses Yet</h3>
+
       <p className="text-gray-600 mb-8 max-w-sm leading-relaxed">
-        You haven't added any delivery addresses yet. Add your first address to get started with seamless deliveries.
+        You haven't added any delivery addresses yet. Add your first address to
+        get started with seamless deliveries.
       </p>
-      
+
       <button
         onClick={() => setShowForm(true)}
         className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl flex items-center gap-3 transition-all duration-300 hover:scale-105 hover:shadow-lg font-medium text-base"
@@ -377,7 +411,7 @@ const AddressBook: React.FC<AddressBookProps> = ({
         <Plus className="w-5 h-5" />
         Add Your First Address
       </button>
-      
+
       <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-lg">
         <div className="flex flex-col items-center p-4 bg-blue-50 rounded-lg">
           <Home className="w-6 h-6 text-blue-600 mb-2" />
@@ -387,9 +421,7 @@ const AddressBook: React.FC<AddressBookProps> = ({
         </div>
         <div className="flex flex-col items-center p-4 bg-purple-50 rounded-lg">
           <Star className="w-6 h-6 text-purple-600 mb-2" />
-          <span className="text-xs text-gray-600 text-center">
-            Set Default
-          </span>
+          <span className="text-xs text-gray-600 text-center">Set Default</span>
         </div>
         <div className="flex flex-col items-center p-4 bg-green-50 rounded-lg">
           <Navigation className="w-6 h-6 text-green-600 mb-2" />
@@ -523,6 +555,7 @@ const AddressBook: React.FC<AddressBookProps> = ({
                   type="text"
                   name="address"
                   value={formData.address}
+                  placeholder="123 Kilimani Road, Kilimani"
                   onChange={handleInputChange}
                   className="text-gray-500 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
                   required
@@ -546,29 +579,42 @@ const AddressBook: React.FC<AddressBookProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Region <span className="text-red-500">*</span>
+                    Region/County <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="region"
                     value={formData.region}
                     onChange={handleInputChange}
                     className="text-gray-500 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
                     required
-                  />
+                  >
+                    <option value="">Select County</option>
+                    {countiesData.counties.map((county) => (
+                      <option key={county.code} value={county.name}>
+                        {county.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
-                    City <span className="text-red-500">*</span>
+                    City/Town <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="city"
                     value={formData.city}
                     onChange={handleInputChange}
                     className="text-gray-500 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm"
                     required
-                  />
+                    disabled={!selectedCounty}
+                  >
+                    <option value="">Select Town</option>
+                    {availableTowns.map((town) => (
+                      <option key={town} value={town}>
+                        {town}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -618,9 +664,7 @@ const AddressBook: React.FC<AddressBookProps> = ({
         )}
 
         {/* Show Empty State when no addresses and no form */}
-        {addresses.length === 0 && !showForm && (
-          <EmptyState />
-        )}
+        {addresses.length === 0 && !showForm && <EmptyState />}
 
         {/* Address List */}
         {addresses.length > 0 && (
