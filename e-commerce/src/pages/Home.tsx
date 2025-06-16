@@ -10,10 +10,9 @@ import {
   Sparkles,
   Zap,
   Shield,
-  CheckCircle,
-  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify"; // Import toast
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -25,16 +24,6 @@ const Home: React.FC = () => {
   // Ref for carousel container
   const carouselRef = useRef<HTMLDivElement>(null);
   const scrollSpeed = 0.7; // Pixels to scroll per frame
-
-  // Enhanced alert notification state
-  const [notification, setNotification] = useState({
-    show: false,
-    message: "",
-    type: "success" as "success" | "error" | "info",
-  });
-
-  // Notification timeout ref
-  const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch products when component mounts
   useEffect(() => {
@@ -82,32 +71,6 @@ const Home: React.FC = () => {
     };
   }, [products]); // Restart effect when products change
 
-  // Enhanced notification function
-  const showNotification = (
-    message: string,
-    type: "success" | "error" | "info" = "success"
-  ) => {
-    // Clear existing timeout
-    if (notificationTimeoutRef.current) {
-      clearTimeout(notificationTimeoutRef.current);
-    }
-
-    setNotification({ show: true, message, type });
-
-    // Auto-hide after 4 seconds
-    notificationTimeoutRef.current = setTimeout(() => {
-      hideNotification();
-    }, 4000);
-  };
-
-  const hideNotification = () => {
-    setNotification((prev) => ({ ...prev, show: false }));
-    if (notificationTimeoutRef.current) {
-      clearTimeout(notificationTimeoutRef.current);
-      notificationTimeoutRef.current = null;
-    }
-  };
-
   // Helper function for adding to cart with enhanced alert notification
   const addToCartWithAlert = (product: any) => {
     try {
@@ -118,23 +81,11 @@ const Home: React.FC = () => {
         img_url: imgEndPoint + product.img_url,
         stockQuantity: product.stock_quantity,
       });
-      showNotification(`${product.name} added to cart!`, "success");
+      toast.success(`${product.name} added to cart!`);
     } catch (error) {
-      showNotification(
-        "Failed to add item to cart. Please try again.",
-        "error"
-      );
+      toast.error("Failed to add item to cart. Please try again.");
     }
   };
-
-  // Clean up timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (notificationTimeoutRef.current) {
-        clearTimeout(notificationTimeoutRef.current);
-      }
-    };
-  }, []);
 
   //  ============== HERO =============
   //  =================================
@@ -208,89 +159,6 @@ const Home: React.FC = () => {
 
   return (
     <>
-      {/* Enhanced Notification Component with Animations */}
-      <div
-        className={`fixed top-4 left-4 z-50 transition-all duration-500 ease-in-out transform ${
-          notification.show
-            ? "translate-x-0 opacity-100 scale-100"
-            : "translate-x-full opacity-0 scale-95 pointer-events-none"
-        }`}
-      >
-        <div
-          className={`
-          max-w-sm px-6 py-4 rounded-xl shadow-2xl backdrop-blur-lg border border-white/20
-          ${
-            notification.type === "success"
-              ? "bg-gradient-to-r from-green-500/90 to-emerald-500/90 text-white"
-              : notification.type === "error"
-              ? "bg-gradient-to-r from-red-500/90 to-rose-500/90 text-white"
-              : "bg-gradient-to-r from-blue-500/90 to-indigo-500/90 text-white"
-          }
-          animate-pulse
-        `}
-        >
-          <div className="flex items-center justify-between space-x-3">
-            <div className="flex items-center space-x-3">
-              <div
-                className={`
-                w-8 h-8 rounded-full flex items-center justify-center
-                ${
-                  notification.type === "success"
-                    ? "bg-white/20"
-                    : notification.type === "error"
-                    ? "bg-white/20"
-                    : "bg-white/20"
-                }
-              `}
-              >
-                {notification.type === "success" && (
-                  <CheckCircle className="w-5 h-5" />
-                )}
-                {notification.type === "error" && <X className="w-5 h-5" />}
-                {notification.type === "info" && (
-                  <Sparkles className="w-5 h-5" />
-                )}
-              </div>
-              <div>
-                <p className="font-semibold text-sm leading-tight">
-                  {notification.message}
-                </p>
-                <div className="text-xs opacity-75 mt-1">
-                  {notification.type === "success" && "Success!"}
-                  {notification.type === "error" && "Error occurred"}
-                  {notification.type === "info" && "Information"}
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={hideNotification}
-              className="ml-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full p-1 transition-all duration-200 flex-shrink-0"
-              aria-label="Close notification"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Progress bar */}
-          <div className="mt-3 w-full bg-white/20 rounded-full h-1 overflow-hidden">
-            <div
-              className="h-full bg-white/60 rounded-full animate-pulse"
-              style={{
-                animation: "shrink 4s linear forwards",
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Add CSS animation for progress bar */}
-      <style>{`
-        @keyframes shrink {
-          from { width: 100%; }
-          to { width: 0%; }
-        }
-      `}</style>
-
       {/* First Section: Sliding Carousel Showing One Image at a Time with Auto Slide */}
       {/* Hero Section with Enhanced Carousel */}
       <section className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800">

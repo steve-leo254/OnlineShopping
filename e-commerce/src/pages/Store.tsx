@@ -18,6 +18,7 @@ import axios from "axios";
 import { useFetchProducts } from "../components/UseFetchProducts";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
+import { toast } from "react-toastify"; // Import toast
 
 interface Category {
   id: string | null;
@@ -146,22 +147,6 @@ const Store = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isFiltering, setIsFiltering] = useState<boolean>(false);
 
-  // Enhanced notification state
-  const [notification, setNotification] = useState<{
-    show: boolean;
-    message: string;
-    type: "success" | "error" | "info";
-  }>({
-    show: false,
-    message: "",
-    type: "success",
-  });
-
-  // Notification timeout ref
-  const notificationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
-
   const productsPerPage = 8;
 
   // Debounce search term
@@ -171,30 +156,6 @@ const Store = () => {
     () => apiProducts.map(transformProduct),
     [apiProducts]
   );
-
-  // Enhanced notification function
-  const showNotification = (
-    message: string,
-    type: "success" | "error" | "info" = "success"
-  ) => {
-    if (notificationTimeoutRef.current) {
-      clearTimeout(notificationTimeoutRef.current);
-    }
-
-    setNotification({ show: true, message, type });
-
-    notificationTimeoutRef.current = setTimeout(() => {
-      hideNotification();
-    }, 4000);
-  };
-
-  const hideNotification = () => {
-    setNotification((prev) => ({ ...prev, show: false }));
-    if (notificationTimeoutRef.current) {
-      clearTimeout(notificationTimeoutRef.current);
-      notificationTimeoutRef.current = null;
-    }
-  };
 
   const getFilteredAndSortedProducts = useCallback(
     (productsToFilter: Product[]) => {
@@ -252,7 +213,7 @@ const Store = () => {
       await fetchProducts(1, productsPerPage, debouncedSearchTerm, categoryId);
     } catch (error) {
       console.error("Error filtering by category:", error);
-      showNotification("Failed to filter products. Please try again.", "error");
+      toast.error("Failed to filter products. Please try again.");
     } finally {
       setIsFiltering(false);
     }
@@ -262,10 +223,10 @@ const Store = () => {
     const newFavorites = new Set(favorites);
     if (newFavorites.has(productId)) {
       newFavorites.delete(productId);
-      showNotification("Removed from favorites", "info");
+      toast.info("Removed from favorites");
     } else {
       newFavorites.add(productId);
-      showNotification("Added to favorites!", "success");
+      toast.success("Added to favorites!");
     }
     setFavorites(newFavorites);
   };
@@ -306,7 +267,7 @@ const Store = () => {
     } catch (error) {
       console.error("Error fetching categories:", error);
       if (categories.length === 0) {
-        showNotification("Failed to load product categories.", "error");
+        toast.error("Failed to load product categories.");
         const uniqueCategories = [
           { id: null, name: "All" },
           ...Array.from(
@@ -326,7 +287,7 @@ const Store = () => {
         setCategories(uniqueCategories);
       }
     }
-  }, [apiProducts, categories.length]);
+  }, [apiProducts, categories.length, API_BASE_URL]); // Added API_BASE_URL to dependency array
 
   const getCurrentCategoryName = () => {
     const category = categories.find(
@@ -338,9 +299,8 @@ const Store = () => {
   const handleAddToCart = (product: Product) => {
     const currentQuantityInCart = getItemQuantity(parseInt(product.id));
     if (currentQuantityInCart >= product.stockQuantity) {
-      showNotification(
-        `Cannot add more than available stock (${product.stockQuantity}) for ${product.name}`,
-        "error"
+      toast.error(
+        `Cannot add more than available stock (${product.stockQuantity}) for ${product.name}`
       );
       return;
     }
@@ -353,12 +313,9 @@ const Store = () => {
         img_url: product.img_url,
         stockQuantity: product.stockQuantity,
       });
-      showNotification(`${product.name} added to cart!`, "success");
+      toast.success(`${product.name} added to cart!`);
     } catch (error) {
-      showNotification(
-        "Failed to add item to cart. Please try again.",
-        "error"
-      );
+      toast.error("Failed to add item to cart. Please try again.");
     }
   };
 
@@ -381,104 +338,8 @@ const Store = () => {
     fetchCategories();
   }, [fetchCategories]);
 
-  // Clean up timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (notificationTimeoutRef.current) {
-        clearTimeout(notificationTimeoutRef.current);
-      }
-    };
-  }, []);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Enhanced Notification Component with Animations (matching Home page) */}
-      <div
-        className={`fixed top-4 left-4 z-50 transition-all duration-500 ease-in-out transform ${
-          notification.show
-            ? "translate-y-0 opacity-100"
-            : "-translate-y-2 opacity-0"
-        }`}
-      >
-        <div
-          className={`
-          max-w-sm px-6 py-4 rounded-xl shadow-2xl backdrop-blur-lg border border-white/20
-          ${
-            notification.type === "success"
-              ? "bg-gradient-to-r from-green-500/90 to-emerald-500/90 text-white"
-              : notification.type === "error"
-              ? "bg-gradient-to-r from-red-500/90 to-rose-500/90 text-white"
-              : "bg-gradient-to-r from-blue-500/90 to-indigo-500/90 text-white"
-          }
-          animate-pulse
-        `}
-        >
-          <div className="flex items-center justify-between space-x-3">
-            <div className="flex items-center space-x-3">
-              <div
-                className={`
-                w-8 h-8 rounded-full flex items-center justify-center
-                ${
-                  notification.type === "success"
-                    ? "bg-white/20"
-                    : notification.type === "error"
-                    ? "bg-white/20"
-                    : "bg-white/20"
-                }
-              `}
-              >
-                {notification.type === "success" && (
-                  <CheckCircle className="w-5 h-5" />
-                )}
-                {notification.type === "error" && <X className="w-5 h-5" />}
-                {notification.type === "info" && (
-                  <Sparkles className="w-5 h-5" />
-                )}
-              </div>
-              <div>
-                <p className="font-semibold text-sm leading-tight">
-                  {notification.message}
-                </p>
-                <div className="text-xs opacity-75 mt-1">
-                  {notification.type === "success" && "Success!"}
-                  {notification.type === "error" && "Error occurred"}
-                  {notification.type === "info" && "Information"}
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={hideNotification}
-              className="ml-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full p-1 transition-all duration-200 flex-shrink-0"
-              aria-label="Close notification"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Progress bar */}
-          <div className="mt-3 w-full bg-white/20 rounded-full h-1 overflow-hidden">
-            <div
-              className="h-full bg-white/60 rounded-full animate-pulse"
-              style={{
-                animation: "shrink 4s linear forwards",
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Add CSS animation for progress bar */}
-      <style>{`
-        @keyframes shrink {
-          from {
-            width: 100%;
-          }
-          to {
-            width: 0%;
-          }
-        }
-      `}</style>
-
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 text-center">
