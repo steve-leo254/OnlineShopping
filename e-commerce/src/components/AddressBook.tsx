@@ -376,7 +376,7 @@ const AddressBook: React.FC<AddressBookProps> = ({
     >
       {/* Header: Only show in page mode */}
       {mode === "page" && (
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4 flex-shrink-0">
+        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800  px-6 py-4 flex-shrink-0">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-white mb-1">
