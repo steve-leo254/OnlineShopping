@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Search,
   Grid,
@@ -10,9 +10,6 @@ import {
   ChevronLeft,
   ChevronRight,
   SlidersHorizontal,
-  CheckCircle,
-  X,
-  Sparkles,
 } from "lucide-react";
 import axios from "axios";
 import { useFetchProducts } from "../components/UseFetchProducts";
