@@ -91,7 +91,7 @@ const CartDropdown: React.FC = () => {
       <div className="max-h-60 sm:max-h-80 overflow-y-auto">
         {cartProducts.length > 0 ? (
           <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
-            {cartProducts.map((cartProduct, index) => (
+            {cartProducts.map((cartProduct) => (
               <div
                 key={cartProduct.product.id}
                 className="group relative bg-gradient-to-r from-gray-50 to-white rounded-xl p-3 sm:p-4 hover:shadow-md transition-all duration-300 border border-gray-100 hover:border-blue-200"
