@@ -243,7 +243,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
 
       {/* Form Container */}
       <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-8" encType='multipart/form-data'>
           {/* Basic Information */}
           <div className="bg-gray-50 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-4">
