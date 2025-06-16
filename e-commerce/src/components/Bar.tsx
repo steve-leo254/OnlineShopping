@@ -49,6 +49,7 @@ const Bar: React.FC = () => {
                     alt="Flowtechs Logo"
                   />
                 </Link>
+                {/* <h2>FlowTech</h2> */}
               </div>
 
               {/* Desktop Navigation Links */}

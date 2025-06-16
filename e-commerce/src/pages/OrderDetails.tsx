@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { formatCurrency } from "../cart/formatCurrency";
 import { useAuth } from "../context/AuthContext";
 import LoadingComponent from "../components/Loading";
+import { useShoppingCart } from "../context/ShoppingCartContext"; 
 
 // Define interfaces based on your pydantic models
 interface Product {
@@ -60,7 +61,7 @@ const OrderDetails: React.FC = () => {
   console.log("Extracted Order ID:", orderId);
 
   // Configuration variables for delivery
-  const DELIVERY_FEE = 150; // Fixed delivery fee
+  const  { deliveryFee } = useShoppingCart();
 
   // image endpoint
   const imgEndPoint = import.meta.env.VITE_API_BASE_URL;
@@ -179,7 +180,7 @@ const OrderDetails: React.FC = () => {
   }
 
   // Calculate subtotal (total from database minus tax and delivery)
-  const subtotal = order.total - DELIVERY_FEE;
+  const subtotal = order.total - deliveryFee;
 
   // Format the address
   const formatAddress = (address: Address | undefined) => {
@@ -371,7 +372,7 @@ const OrderDetails: React.FC = () => {
                         Delivery Fee
                       </span>
                       <span className="font-semibold text-gray-900 text-sm sm:text-base">
-                        {formatCurrency(DELIVERY_FEE)}
+                        {formatCurrency(deliveryFee)}
                       </span>
                     </div>
                     <div className="border-t border-gray-200 pt-3">
