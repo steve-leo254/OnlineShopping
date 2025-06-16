@@ -274,7 +274,7 @@ const Bar: React.FC = () => {
             id="ecommerce-navbar-menu-1"
             className="bg-gray-50 border border-gray-200 rounded-lg py-3 hidden px-4 mt-4 dark:bg-gray-800 dark:border-gray-700"
           >
-            <ul className="text-gray-900 text-sm font-medium space-y-3 dark:text-gray-200">
+            <ul className="text-white text-sm font-medium space-y-3 ">
               <li>
                 <Link
                   to="/"
