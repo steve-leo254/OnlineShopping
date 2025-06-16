@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Home, Star, AlertCircle } from "lucide-react";
+import { Plus, Edit2, Trash2, Home, Star, AlertCircle, MapPin, Navigation } from "lucide-react";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { useAuth } from "../context/AuthContext";
 
@@ -350,6 +350,57 @@ const AddressBook: React.FC<AddressBookProps> = ({
     }
   };
 
+  // Empty State Component
+  const EmptyState = () => (
+    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+      <div className="relative mb-6">
+        <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
+          <MapPin className="w-10 h-10 text-blue-600" />
+        </div>
+        <div className="absolute -top-1 -right-1 w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full flex items-center justify-center">
+          <Navigation className="w-4 h-4 text-white" />
+        </div>
+      </div>
+      
+      <h3 className="text-xl font-bold text-gray-800 mb-2">
+        No Addresses Yet
+      </h3>
+      
+      <p className="text-gray-600 mb-8 max-w-sm leading-relaxed">
+        You haven't added any delivery addresses yet. Add your first address to get started with seamless deliveries.
+      </p>
+      
+      <button
+        onClick={() => setShowForm(true)}
+        className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-xl flex items-center gap-3 transition-all duration-300 hover:scale-105 hover:shadow-lg font-medium text-base"
+      >
+        <Plus className="w-5 h-5" />
+        Add Your First Address
+      </button>
+      
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-lg">
+        <div className="flex flex-col items-center p-4 bg-blue-50 rounded-lg">
+          <Home className="w-6 h-6 text-blue-600 mb-2" />
+          <span className="text-xs text-gray-600 text-center">
+            Home & Office
+          </span>
+        </div>
+        <div className="flex flex-col items-center p-4 bg-purple-50 rounded-lg">
+          <Star className="w-6 h-6 text-purple-600 mb-2" />
+          <span className="text-xs text-gray-600 text-center">
+            Set Default
+          </span>
+        </div>
+        <div className="flex flex-col items-center p-4 bg-green-50 rounded-lg">
+          <Navigation className="w-6 h-6 text-green-600 mb-2" />
+          <span className="text-xs text-gray-600 text-center">
+            Quick Delivery
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="bg-white h-full">
@@ -368,7 +419,7 @@ const AddressBook: React.FC<AddressBookProps> = ({
 
   return (
     <div
-      className={`bg-white h-full flex flex-col relative ${
+      className={`bg-white h-full flex flex-col relative min-h-screen ${
         mode === "modal"
           ? "max-w-lg mx-auto rounded-2xl shadow-lg border border-blue-100"
           : ""
@@ -566,100 +617,110 @@ const AddressBook: React.FC<AddressBookProps> = ({
           </div>
         )}
 
+        {/* Show Empty State when no addresses and no form */}
+        {addresses.length === 0 && !showForm && (
+          <EmptyState />
+        )}
+
         {/* Address List */}
-        <div className="space-y-4 pb-8">
-          {addresses.map((address) => (
-            <div
-              key={address.id}
-              onClick={() => handleSelectAddress(address)}
-              className={`relative p-4 rounded-lg border cursor-pointer ${
-                selectedAddress?.id === address.id
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 hover:border-blue-300"
-              } transition-all duration-200`}
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Home className="w-4 h-4 text-blue-600" />
-                    <h3 className="text-base font-semibold text-gray-800">
-                      {address.first_name} {address.last_name}
-                    </h3>
-                    {address.is_default && (
-                      <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1">
-                        <Star className="w-2.5 h-2.5" />
-                        Default
-                      </span>
-                    )}
-                    {selectedAddress &&
-                      selectedAddress.id === address.id &&
-                      !address.is_default && (
-                        <span className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-2 py-0.5 rounded-full text-xs font-medium">
-                          Selected
+        {addresses.length > 0 && (
+          <div className="space-y-4 pb-8">
+            {addresses.map((address) => (
+              <div
+                key={address.id}
+                onClick={() => handleSelectAddress(address)}
+                className={`relative p-4 rounded-lg border cursor-pointer ${
+                  selectedAddress?.id === address.id
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-200 hover:border-blue-300"
+                } transition-all duration-200`}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Home className="w-4 h-4 text-blue-600" />
+                      <h3 className="text-base font-semibold text-gray-800">
+                        {address.first_name} {address.last_name}
+                      </h3>
+                      {address.is_default && (
+                        <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1">
+                          <Star className="w-2.5 h-2.5" />
+                          Default
                         </span>
                       )}
-                  </div>
-                  <div className="text-gray-600 space-y-0.5 text-sm">
-                    {formatAddress(address).map((line, index) => (
-                      <p key={index}>{line}</p>
-                    ))}
-                    <p className="text-blue-600 font-medium">
-                      {address.phone_number}
-                    </p>
-                  </div>
-
-                  {/* Set Default Button */}
-                  {!address.is_default && (
-                    <div className="mt-3">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDefault(address.id);
-                        }}
-                        className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-3 py-1.5 rounded-lg hover:from-yellow-500 hover:to-orange-500 transition-all duration-300 hover:scale-105 font-medium text-xs flex items-center gap-1"
-                      >
-                        <Star className="w-3 h-3" />
-                        Set as Default
-                      </button>
+                      {selectedAddress &&
+                        selectedAddress.id === address.id &&
+                        !address.is_default && (
+                          <span className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-2 py-0.5 rounded-full text-xs font-medium">
+                            Selected
+                          </span>
+                        )}
                     </div>
-                  )}
-                </div>
-                <div className="flex flex-col gap-1 ml-3">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEdit(address);
-                    }}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 hover:scale-105"
-                    title="Edit address"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(address.id);
-                    }}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-105"
-                    title="Delete address"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                    <div className="text-gray-600 space-y-0.5 text-sm">
+                      {formatAddress(address).map((line, index) => (
+                        <p key={index}>{line}</p>
+                      ))}
+                      <p className="text-blue-600 font-medium">
+                        {address.phone_number}
+                      </p>
+                    </div>
+
+                    {/* Set Default Button */}
+                    {!address.is_default && (
+                      <div className="mt-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDefault(address.id);
+                          }}
+                          className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-3 py-1.5 rounded-lg hover:from-yellow-500 hover:to-orange-500 transition-all duration-300 hover:scale-105 font-medium text-xs flex items-center gap-1"
+                        >
+                          <Star className="w-3 h-3" />
+                          Set as Default
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1 ml-3">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(address);
+                      }}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 hover:scale-105"
+                      title="Edit address"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(address.id);
+                      }}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-105"
+                      title="Delete address"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
-        <div className="sticky bottom-4 left-6 z-50">
-          <button
-            onClick={() => setShowForm(true)}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-300 hover:scale-105 text-sm font-medium shadow-lg"
-          >
-            <Plus className="w-4 h-4" />
-            Add New Address
-          </button>
-        </div>
+        {/* Add New Address Button - Only show when there are existing addresses */}
+        {addresses.length > 0 && (
+          <div className="sticky bottom-4 left-6 z-50">
+            <button
+              onClick={() => setShowForm(true)}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-300 hover:scale-105 text-sm font-medium shadow-lg"
+            >
+              <Plus className="w-4 h-4" />
+              Add New Address
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
