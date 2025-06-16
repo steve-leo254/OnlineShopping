@@ -18,6 +18,7 @@ import axios from "axios";
 import { useFetchProducts } from "../components/UseFetchProducts";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
+import { useNavigate } from "react-router-dom";
 
 interface Category {
   id: string | null;
@@ -132,6 +133,7 @@ const Store = () => {
     error,
     fetchProducts,
   } = useFetchProducts();
+  const navigate = useNavigate();
 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -360,6 +362,10 @@ const Store = () => {
         "error"
       );
     }
+  };
+
+  const handleProductClick = (product: Product) => {
+    navigate(`/product/${product.id}`, { state: { product } });
   };
 
   useEffect(() => {
@@ -683,6 +689,7 @@ const Store = () => {
                       ? "flex items-center p-4"
                       : "flex flex-col h-full"
                   }`}
+                  onClick={() => handleProductClick(product)}
                 >
                   <div
                     className={`relative overflow-hidden ${
@@ -714,7 +721,10 @@ const Store = () => {
                     </div>
                     <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <button
-                        onClick={() => toggleFavorite(product.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(product.id);
+                        }}
                         className={`p-2 rounded-full shadow-lg transition-colors ${
                           favorites.has(product.id) || product.isFavorite
                             ? "bg-red-500 text-white"
@@ -805,7 +815,10 @@ const Store = () => {
                             </div>
                           </div>
                           <button
-                            onClick={() => handleAddToCart(product)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddToCart(product);
+                            }}
                             disabled={
                               !product.inStock ||
                               getItemQuantity(parseInt(product.id)) >=
@@ -884,7 +897,10 @@ const Store = () => {
                               </div>
                             </div>
                             <button
-                              onClick={() => handleAddToCart(product)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAddToCart(product);
+                              }}
                               disabled={
                                 !product.inStock ||
                                 getItemQuantity(parseInt(product.id)) >=

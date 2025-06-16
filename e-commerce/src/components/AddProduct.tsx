@@ -134,11 +134,13 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!token || role !== 'admin') {
-      toast.error('Admin access required');
-      return;
-    }
 
+    if (!token || (role !== 'admin' && role !== 'SUPERADMIN')) {
+     toast.error('Admin access required');
+     return;
+   }
+
+   
     // Client-side validation
     if (!formData.name) {
       toast.error('Product name is required');
