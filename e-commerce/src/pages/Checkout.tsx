@@ -149,7 +149,7 @@ const Checkout = () => {
       address_id: selectedAddress?.id,
       delivery_fee: deliveryFee,
     };
-    const response = await fetch("http://localhost:8000/create_order", {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/create_order`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -195,7 +195,7 @@ const Checkout = () => {
       amount: amount,
     };
     const response = await fetch(
-      "http://localhost:8000/payments/lnmo/transact",
+      `${import.meta.env.VITE_API_BASE_URL}/payments/lnmo/transact`,
       {
         method: "POST",
         headers: {
@@ -214,7 +214,7 @@ const Checkout = () => {
 
   const checkTransactionStatus = async (orderId: number) => {
     const response = await fetch(
-      "http://localhost:8000/payments/transactions",
+      `${import.meta.env.VITE_API_BASE_URL}/payments/transactions`,
       {
         method: "POST",
         headers: {
@@ -265,7 +265,7 @@ const Checkout = () => {
           clearInterval(interval);
           // Update order status to "processing" after payment confirmation
           const response = await fetch(
-            `http://localhost:8000/update-order-status/${orderId}`,
+            `${import.meta.env.VITE_API_BASE_URL}/update-order-status/${orderId}`,
             {
               method: "PUT",
               headers: {
