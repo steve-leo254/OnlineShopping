@@ -5,7 +5,6 @@ import Home from "./pages/Home";
 import Layout from "./assets/Layout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import ProtectedRoute from "./assets/PrivateRoutes";
 import Products from "./pages/Product";
 import Store from "./pages/Store";
 import ShoppingCart from "./pages/ShoppingCart";
