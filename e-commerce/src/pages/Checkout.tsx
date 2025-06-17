@@ -104,7 +104,7 @@ const Checkout = () => {
     paymentMethod: "cod",
     mpesaPhone: "",
   });
-  const [orderId, setOrderId] = useState<number | null>(null);
+  const [orderId] = useState<number | null>(null);
 
   // Add state to preserve order details after cart is cleared
   const [savedOrderDetails, setSavedOrderDetails] = useState<SavedOrderDetails>(
