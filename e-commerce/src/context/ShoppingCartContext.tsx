@@ -32,13 +32,13 @@ type PaymentMethod = "pay-online" | "pay-later" | null;
 
 // Delivery fee configuration based on individual counties
 const DELIVERY_FEES: Record<string, number> = {
-  Nairobi: 200, // KSh 200 within Nairobi city
-  Kiambu: 300,
-  Machakos: 400,
-  Kajiado: 350,
+  Nairobi: 300, 
+  Kiambu: 350,
+  Machakos: 450,
+  Kajiado: 400,
   Nyeri: 600,
   "Murang'a": 550,
-  Kirinyaga: 700,
+  Kirinyaga: 500,
   Nyandarua: 800,
   Mombasa: 800,
   Kilifi: 1000,
@@ -51,14 +51,14 @@ const DELIVERY_FEES: Record<string, number> = {
   Mandera: 2000,
   Marsabit: 1900,
   Isiolo: 1600,
-  Meru: 700,
+  Meru: 900,
   "Tharaka Nithi": 750,
-  Embu: 550,
+  Embu: 650,
   Kitui: 600,
   Makueni: 650,
   Nakuru: 500,
   Narok: 800,
-  Kericho: 700,
+  Kericho: 750,
   Bomet: 750,
   Kakamega: 1000,
   Vihiga: 950,
@@ -68,7 +68,7 @@ const DELIVERY_FEES: Record<string, number> = {
   Kisumu: 900,
   "Homa Bay": 1000,
   Migori: 1100,
-  Kisii: 850,
+  Kisii: 900,
   Nyamira: 900,
   Turkana: 2200,
   "West Pokot": 2000,
@@ -79,7 +79,6 @@ const DELIVERY_FEES: Record<string, number> = {
   Nandi: 900,
   Baringo: 1300,
   Laikipia: 1000,
-  // Default for counties not listed
   default: 1000,
 };
 
