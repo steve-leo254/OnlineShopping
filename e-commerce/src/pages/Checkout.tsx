@@ -1,12 +1,6 @@
 import { useState } from "react";
 import type { ChangeEvent, MouseEvent } from "react";
-import {
-  CreditCard,
-  Truck,
-  MapPin,
-  Lock,
-  CheckCircle,
-} from "lucide-react";
+import { CreditCard, Truck, MapPin, Lock, CheckCircle } from "lucide-react";
 import DeliveryDetails from "../components/DeliveryDetails";
 
 import DeliveryOptions from "../components/deliveryOptions";
@@ -560,26 +554,63 @@ const Checkout = () => {
                     Delivery Information
                   </h3>
                   <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
-                    <p className="font-medium text-sm sm:text-base">
-                      {displayAddress
-                        ? `${displayAddress.first_name} ${displayAddress.last_name}`
-                        : `${formData.firstName} ${formData.lastName}`}
-                    </p>
-                    <p className="text-gray-600 text-sm sm:text-base">
-                      {displayAddress
-                        ? displayAddress.phone_number
-                        : formData.phone}
-                    </p>
-                    <p className="text-gray-600 text-sm sm:text-base">
-                      {displayAddress
-                        ? displayAddress.address
-                        : formData.address}
-                    </p>
-                    <p className="text-gray-600 text-sm sm:text-base">
-                      {displayAddress
-                        ? `${displayAddress.city}, ${displayAddress.region}`
-                        : `${formData.city}, ${formData.county}`}
-                    </p>
+                    <div className="space-y-2">
+                      <div className="flex items-start">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm sm:text-base text-gray-900">
+                            {displayAddress
+                              ? `${displayAddress.first_name} ${displayAddress.last_name}`
+                              : `${formData.firstName} ${formData.lastName}`}
+                          </p>
+                          <p className="text-gray-600 text-sm sm:text-base">
+                            Phone:{" "}
+                            {displayAddress
+                              ? displayAddress.phone_number
+                              : formData.phone}
+                          </p>
+                        </div>
+                        <div className="ml-4">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {deliveryMethod === "delivery"
+                              ? "Delivery"
+                              : "Pickup"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-gray-200 pt-2">
+                        <p className="text-gray-600 text-sm sm:text-base">
+                          <span className="font-medium text-gray-700">
+                            Address:
+                          </span>{" "}
+                          {displayAddress
+                            ? displayAddress.address
+                            : formData.address}
+                        </p>
+                        <p className="text-gray-600 text-sm sm:text-base">
+                          <span className="font-medium text-gray-700">
+                            City/Town:
+                          </span>{" "}
+                          {displayAddress ? displayAddress.city : formData.city}
+                        </p>
+                        <p className="text-gray-600 text-sm sm:text-base">
+                          <span className="font-medium text-gray-700">
+                            County:
+                          </span>{" "}
+                          {displayAddress
+                            ? displayAddress.region
+                            : formData.county}
+                        </p>
+                        {formData.additionalInfo && (
+                          <p className="text-gray-600 text-sm sm:text-base mt-1">
+                            <span className="font-medium text-gray-700">
+                              Additional Info:
+                            </span>{" "}
+                            {formData.additionalInfo}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
