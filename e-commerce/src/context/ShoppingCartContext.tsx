@@ -2,7 +2,6 @@
 import { createContext, useContext } from "react";
 import { useLocalStorage } from "../cart/useLocalStorage"; // Adjust path as needed
 import type { ReactNode } from "react";
-import countiesData from "./kenyan_counties.json";
 
 type ShoppingCartProviderProps = {
   children: ReactNode;
