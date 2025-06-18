@@ -16,6 +16,7 @@ interface FormData {
 interface ApiResponse {
   message: string;
   access_token?: string;
+  user_id?: number;
 }
 
 interface Alert {
@@ -35,11 +36,78 @@ const Register: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alert, setAlert] = useState<Alert | null>(null);
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+  const [pendingUserId, setPendingUserId] = useState<number | null>(null);
 
   // Email validation function
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+  };
+
+  // Check if email domain is valid and can receive emails
+  const checkEmailDomain = async (email: string): Promise<boolean> => {
+    try {
+      const domain = email.split("@")[1];
+
+      // Check if domain has MX records (can receive emails)
+      const response = await fetch(
+        `https://dns.google/resolve?name=${domain}&type=MX`
+      );
+      const data = await response.json();
+
+      // If MX records exist, the domain can receive emails
+      return data.Answer && data.Answer.length > 0;
+    } catch (error) {
+      console.error("Domain check error:", error);
+      return true; // Fallback to allow registration
+    }
+  };
+
+  // Check against common disposable email providers
+  const isDisposableEmail = (email: string): boolean => {
+    const disposableDomains = [
+      "tempmail.org",
+      "10minutemail.com",
+      "guerrillamail.com",
+      "mailinator.com",
+      "yopmail.com",
+      "throwaway.email",
+      "temp-mail.org",
+      "sharklasers.com",
+      "getairmail.com",
+      "mailnesia.com",
+      "maildrop.cc",
+      "mailmetrash.com",
+      "trashmail.com",
+      "spam4.me",
+      "bccto.me",
+      "chacuo.net",
+      "dispostable.com",
+      "fakeinbox.com",
+      "mailnull.com",
+      "spamspot.com",
+      "tempr.email",
+      "tmpmail.org",
+      "tmpeml.com",
+      "tmpbox.net",
+      "tmpmail.net",
+    ];
+
+    const domain = email.split("@")[1]?.toLowerCase();
+    return disposableDomains.includes(domain);
+  };
+
+  // Enhanced but more permissive email verification
+  const verifyEmailExists = async (email: string): Promise<boolean> => {
+    // First check if it's a disposable email
+    if (isDisposableEmail(email)) {
+      return false;
+    }
+
+    // Then check if domain can receive emails
+    const domainValid = await checkEmailDomain(email);
+    return domainValid;
   };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -64,9 +132,19 @@ const Register: React.FC = () => {
     setIsSubmitting(true);
     setAlert(null);
 
-    // Email validation
+    // Basic email format validation
     if (!isValidEmail(formData.email)) {
       showAlert("error", "Please enter a valid email address.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Check for disposable emails
+    if (isDisposableEmail(formData.email)) {
+      showAlert(
+        "error",
+        "Disposable email addresses are not allowed. Please use a valid email address."
+      );
       setIsSubmitting(false);
       return;
     }
@@ -85,6 +163,7 @@ const Register: React.FC = () => {
     }
 
     try {
+      // Step 1: Register user (account will be inactive until email is verified)
       const apiUrl = `${API_BASE_URL}/auth/register/customer`;
       const response = await axios.post<ApiResponse>(
         apiUrl,
@@ -102,42 +181,17 @@ const Register: React.FC = () => {
 
       console.log("Registration successful:", response.data);
 
-      // Show success message
-      showAlert("success", "Registration successful! Signing you in...");
-
-      // Automatically sign in the user
-      try {
-        const loginResponse = await axios.post<ApiResponse>(
-          `${API_BASE_URL}/auth/login`,
-          {
-            email: formData.email,
-            password: formData.password,
-          },
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (loginResponse.data.access_token) {
-          login(loginResponse.data.access_token);
-
-          // Delay navigation to show success message
-          setTimeout(() => {
-            navigate("/");
-          }, 1500);
-        }
-      } catch (loginError) {
-        console.error("Auto-login failed:", loginError);
-        showAlert(
-          "warning",
-          "Registration successful! Please log in manually."
-        );
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
+      // Store user ID for verification
+      if (response.data.user_id) {
+        setPendingUserId(response.data.user_id);
       }
+
+      // Show verification message
+      setShowVerificationMessage(true);
+      showAlert(
+        "success",
+        "Registration successful! Please check your email to verify your account."
+      );
     } catch (error) {
       console.error("Registration error:", error);
       const errorMessage = axios.isAxiosError(error)
@@ -147,6 +201,64 @@ const Register: React.FC = () => {
       showAlert("error", errorMessage);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Function to handle email verification
+  const handleEmailVerification = async (token: string) => {
+    try {
+      const response = await axios.post<ApiResponse>(
+        `${API_BASE_URL}/auth/verify-email`,
+        { token },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data.access_token) {
+        login(response.data.access_token);
+        showAlert(
+          "success",
+          "Email verified successfully! Welcome to FlowTech!"
+        );
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
+      }
+    } catch (error) {
+      console.error("Email verification error:", error);
+      showAlert(
+        "error",
+        "Email verification failed. Please try again or contact support."
+      );
+    }
+  };
+
+  // Function to resend verification email
+  const resendVerificationEmail = async () => {
+    if (!pendingUserId) return;
+
+    try {
+      await axios.post(
+        `${API_BASE_URL}/auth/resend-verification`,
+        { user_id: pendingUserId },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      showAlert(
+        "success",
+        "Verification email sent again! Please check your inbox."
+      );
+    } catch (error) {
+      showAlert(
+        "error",
+        "Failed to resend verification email. Please try again."
+      );
     }
   };
 
@@ -194,135 +306,196 @@ const Register: React.FC = () => {
           </a>
           <div className="w-full bg-white rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
             <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
-              <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl">
-                Create an account
-              </h1>
-              {/* Alert Component */}
-              {alert && <AlertComponent alert={alert} />}
-              <form onSubmit={handleSubmit} action="#">
-                <div className="max-h-[50vh] overflow-y-auto scrollbar-custom space-y-4 md:space-y-6">
-                  <div>
-                    <label
-                      htmlFor="username"
-                      className="block mb-2 text-sm font-medium text-gray-900"
+              {showVerificationMessage ? (
+                // Email Verification Message
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg
+                      className="w-8 h-8 text-green-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      Username
-                    </label>
-                    <input
-                      value={formData.username}
-                      onChange={handleChange}
-                      type="text"
-                      name="username"
-                      id="username"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
-                      placeholder="Your username"
-                      required
-                    />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
+                    </svg>
                   </div>
-                  <div>
-                    <label
-                      htmlFor="email"
-                      className="block mb-2 text-sm font-medium text-gray-900"
-                    >
-                      Your email
-                    </label>
-                    <input
-                      value={formData.email}
-                      onChange={handleChange}
-                      type="email"
-                      name="email"
-                      id="email"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
-                      placeholder="name@company.com"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="password"
-                      className="block mb-2 text-sm font-medium text-gray-900"
-                    >
-                      Password
-                    </label>
-                    <input
-                      value={formData.password}
-                      onChange={handleChange}
-                      type="password"
-                      name="password"
-                      id="password"
-                      placeholder="••••••••"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
-                      required
-                      minLength={6}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Password must be at least 6 characters long
+                  <h1 className="text-xl font-bold text-gray-900 mb-2">
+                    Check Your Email
+                  </h1>
+                  <p className="text-gray-600 mb-6">
+                    We've sent a verification link to{" "}
+                    <strong>{formData.email}</strong>
+                  </p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <p className="text-sm text-blue-800">
+                      Please click the verification link in your email to
+                      activate your account.
                     </p>
                   </div>
-                  <div>
-                    <label
-                      htmlFor="confirm-password"
-                      className="block mb-2 text-sm font-medium text-gray-900"
+                  <div className="space-y-3">
+                    <button
+                      onClick={resendVerificationEmail}
+                      className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                      Confirm password
-                    </label>
-                    <input
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      type="password"
-                      name="confirmPassword"
-                      id="confirm-password"
-                      placeholder="••••••••"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
-                      required
-                    />
-                  </div>
-                  <div className="flex items-start">
-                    <div className="flex items-center h-5">
-                      <input
-                        id="terms"
-                        aria-describedby="terms"
-                        type="checkbox"
-                        name="terms"
-                        className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300"
-                        required
-                      />
-                    </div>
-                    <div className="ml-3 text-sm">
-                      <label
-                        htmlFor="terms"
-                        className="font-light text-gray-500"
-                      >
-                        I accept the{" "}
-                        <a
-                          className="font-medium text-primary-600 hover:underline"
-                          href="#"
-                        >
-                          Terms and Conditions
-                        </a>
-                      </label>
-                    </div>
+                      Resend Verification Email
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowVerificationMessage(false);
+                        setFormData({
+                          username: "",
+                          email: "",
+                          password: "",
+                          confirmPassword: "",
+                        });
+                      }}
+                      className="w-full bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
+                    >
+                      Back to Registration
+                    </button>
                   </div>
                 </div>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className={`bg-gradient-to-r from-green-600 to-blue-600 w-full mt-4 text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center ${
-                    isSubmitting ? "opacity-70 cursor-not-allowed" : ""
-                  }`}
-                >
-                  {isSubmitting ? "Creating account..." : "Create an account"}
-                </button>
-                <p className="mt-4 text-sm font-light text-gray-500">
-                  Already have an account?{" "}
-                  <Link
-                    to="/login"
-                    className="font-medium text-primary-600 hover:underline"
-                  >
-                    Login here
-                  </Link>
-                </p>
-              </form>
+              ) : (
+                // Registration Form
+                <>
+                  <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl">
+                    Create an account
+                  </h1>
+                  {/* Alert Component */}
+                  {alert && <AlertComponent alert={alert} />}
+                  <form onSubmit={handleSubmit} action="#">
+                    <div className="max-h-[50vh] overflow-y-auto scrollbar-custom space-y-4 md:space-y-6">
+                      <div>
+                        <label
+                          htmlFor="username"
+                          className="block mb-2 text-sm font-medium text-gray-900"
+                        >
+                          Username
+                        </label>
+                        <input
+                          value={formData.username}
+                          onChange={handleChange}
+                          type="text"
+                          name="username"
+                          id="username"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                          placeholder="Your username"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="email"
+                          className="block mb-2 text-sm font-medium text-gray-900"
+                        >
+                          Your email
+                        </label>
+                        <input
+                          value={formData.email}
+                          onChange={handleChange}
+                          type="email"
+                          name="email"
+                          id="email"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                          placeholder="name@company.com"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="password"
+                          className="block mb-2 text-sm font-medium text-gray-900"
+                        >
+                          Password
+                        </label>
+                        <input
+                          value={formData.password}
+                          onChange={handleChange}
+                          type="password"
+                          name="password"
+                          id="password"
+                          placeholder="••••••••"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                          required
+                          minLength={6}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Password must be at least 6 characters long
+                        </p>
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="confirm-password"
+                          className="block mb-2 text-sm font-medium text-gray-900"
+                        >
+                          Confirm password
+                        </label>
+                        <input
+                          value={formData.confirmPassword}
+                          onChange={handleChange}
+                          type="password"
+                          name="confirmPassword"
+                          id="confirm-password"
+                          placeholder="••••••••"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                          required
+                        />
+                      </div>
+                      <div className="flex items-start">
+                        <div className="flex items-center h-5">
+                          <input
+                            id="terms"
+                            aria-describedby="terms"
+                            type="checkbox"
+                            name="terms"
+                            className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300"
+                            required
+                          />
+                        </div>
+                        <div className="ml-3 text-sm">
+                          <label
+                            htmlFor="terms"
+                            className="font-light text-gray-500"
+                          >
+                            I accept the{" "}
+                            <a
+                              className="font-medium text-primary-600 hover:underline"
+                              href="#"
+                            >
+                              Terms and Conditions
+                            </a>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className={`bg-gradient-to-r from-green-600 to-blue-600 w-full mt-4 text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center ${
+                        isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      {isSubmitting
+                        ? "Creating account..."
+                        : "Create an account"}
+                    </button>
+                    <p className="mt-4 text-sm font-light text-gray-500">
+                      Already have an account?{" "}
+                      <Link
+                        to="/login"
+                        className="font-medium text-primary-600 hover:underline"
+                      >
+                        Login here
+                      </Link>
+                    </p>
+                  </form>
+                </>
+              )}
             </div>
           </div>
         </div>
