@@ -1,31 +1,6 @@
 @import "tailwindcss";
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
 
-html, body, #root {
-  height: 100%;
-  margin: 0;
-}
 
-/* Add this to force the theme changes */
-html {
-  transition: all 0.3s ease;
-}
-
-html:not(.dark) {
-  background-color: white !important;
-  color: black !important;
-}
-
-html:not(.dark) body {
-  background-color: white !important;
-  color: black !important;
-}
-
-html.dark {
-  background-color: #1f2937 !important;
-  color: white !important;
-}
-
-html.dark body {
-  background-color: #1f2937 !important;
-  color: white !important;
-}
