@@ -50,6 +50,8 @@ class Users(Base):
     is_verified = Column(Boolean, default=False, nullable=False)
     verification_token = Column(String(255), nullable=True)
     verification_expires = Column(DateTime, nullable=True)
+    reset_token = Column(String(255), nullable=True)
+    reset_token_expires = Column(DateTime, nullable=True)
     orders = relationship("Orders", back_populates="user")
     products = relationship("Products", back_populates="user")
     addresses = relationship("Address", back_populates="user")
@@ -93,6 +95,7 @@ class Products(Base):
     user = relationship("Users", back_populates="products")
     category = relationship("Categories", back_populates="products")
     order_details = relationship("OrderDetails", back_populates="product")
+
 
 class Orders(Base):
     __tablename__ = "orders"
