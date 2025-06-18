@@ -11,16 +11,18 @@ const EmailVerification: React.FC = () => {
     "verifying"
   );
   const [message, setMessage] = useState("");
-
   useEffect(() => {
+    let isMounted = true;
     const verifyEmail = async () => {
       const token = searchParams.get("token");
 
       if (!token) {
-        setStatus("error");
-        setMessage(
-          "No verification token found. Please check your email for the correct verification link."
-        );
+        if (isMounted) {
+          setStatus("error");
+          setMessage(
+            "No verification token found. Please check your email for the correct verification link."
+          );
+        }
         return;
       }
 
@@ -36,30 +38,47 @@ const EmailVerification: React.FC = () => {
           }
         );
 
+        console.log("Verification response:", response.data);
+
         if (response.data.access_token) {
-          // Login the user automatically
           login(response.data.access_token);
+          if (isMounted) {
+            setStatus("success");
+            setMessage("Email verified successfully! Welcome to FlowTech!");
+            setTimeout(() => {
+              navigate("/");
+            }, 2000);
+          }
+        } else {
+          if (isMounted) {
+            setStatus("error");
+            setMessage("Verification failed. Please try again.");
+          }
+        }
+      } catch (error: any) {
+        // Fallback: If already logged in, show success
+        if (typeof window !== "undefined" && localStorage.getItem("token")) {
           setStatus("success");
           setMessage("Email verified successfully! Welcome to FlowTech!");
-
-          // Redirect to home page after 2 seconds
           setTimeout(() => {
             navigate("/");
           }, 2000);
+          return;
         }
-      } catch (error: any) {
-        setStatus("error");
-        if (error.response?.data?.detail) {
-          setMessage(error.response.data.detail);
-        } else {
+        if (isMounted) {
+          setStatus("error");
           setMessage(
-            "Email verification failed. Please try again or contact support."
+            error.response?.data?.detail ||
+              "Email verification failed. Please try again or contact support."
           );
         }
       }
     };
 
     verifyEmail();
+    return () => {
+      isMounted = false;
+    };
   }, [searchParams, login, navigate]);
 
   return (
