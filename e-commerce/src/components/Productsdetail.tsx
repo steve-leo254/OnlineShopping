@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import type { JSX } from "react";
 import {
   ArrowLeft,
   Star,
@@ -17,7 +16,6 @@ import {
   X,
   Eye,
 } from "lucide-react";
-import { useParams, useLocation, useNavigate } from "react-router-dom";
 
 // Types
 interface Product {
@@ -53,16 +51,136 @@ interface Review {
 type TabType = "description" | "specifications" | "reviews";
 type NotificationType = "success" | "error" | "info";
 
+// Static Data
+const staticProduct: Product = {
+  id: 1,
+  name: "Wireless Bluetooth Headphones Pro Max",
+  price: 299.99,
+  originalPrice: 399.99,
+  rating: 4.5,
+  reviews: 1247,
+  images: [
+    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=600&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=600&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=600&h=600&fit=crop"
+  ],
+  category: "Electronics",
+  brand: "AudioTech",
+  inStock: true,
+  discount: 25,
+  isNew: true,
+  isFavorite: false,
+  stockQuantity: 15,
+  description: "Experience premium sound quality with our flagship wireless headphones. Featuring advanced noise cancellation technology, 40-hour battery life, and crystal-clear audio reproduction. Perfect for music enthusiasts, professionals, and everyday use. The ergonomic design ensures comfortable wear for extended periods, while the premium materials provide durability and style.",
+  specifications: {
+    "Driver Size": "40mm",
+    "Frequency Response": "20Hz - 20kHz",
+    "Battery Life": "40 hours",
+    "Charging Time": "2 hours",
+    "Weight": "280g",
+    "Connectivity": "Bluetooth 5.0",
+    "Noise Cancellation": "Active ANC",
+    "Microphone": "Built-in",
+    "Warranty": "2 years"
+  }
+};
+
+const staticReviews: Review[] = [
+  {
+    id: 1,
+    user: "Sarah Johnson",
+    rating: 5,
+    comment: "Absolutely amazing headphones! The sound quality is incredible and the noise cancellation works perfectly. I use them daily for work calls and music.",
+    date: "2024-01-15",
+    verified: true
+  },
+  {
+    id: 2,
+    user: "Mike Chen",
+    rating: 4,
+    comment: "Great build quality and comfortable to wear. Battery life is excellent. Only minor complaint is that they're a bit heavy for long sessions.",
+    date: "2024-01-10",
+    verified: true
+  },
+  {
+    id: 3,
+    user: "Emily Davis",
+    rating: 5,
+    comment: "Best purchase I've made this year. The audio is crystal clear and the ANC is top-notch. Highly recommend!",
+    date: "2024-01-08",
+    verified: false
+  }
+];
+
+const staticRelatedProducts: Product[] = [
+  {
+    id: 2,
+    name: "Wireless Earbuds Pro",
+    price: 199.99,
+    originalPrice: 249.99,
+    rating: 4.3,
+    reviews: 892,
+    images: ["https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop"],
+    category: "Electronics",
+    brand: "AudioTech",
+    inStock: true,
+    discount: 20,
+    stockQuantity: 25,
+    description: "Compact wireless earbuds with great sound",
+    specifications: {}
+  },
+  {
+    id: 3,
+    name: "Gaming Headset RGB",
+    price: 149.99,
+    rating: 4.1,
+    reviews: 445,
+    images: ["https://images.unsplash.com/photo-1599669454699-248893623440?w=400&h=400&fit=crop"],
+    category: "Electronics",
+    brand: "GameTech",
+    inStock: true,
+    stockQuantity: 18,
+    description: "Professional gaming headset with RGB lighting",
+    specifications: {}
+  },
+  {
+    id: 4,
+    name: "Studio Monitor Headphones",
+    price: 399.99,
+    rating: 4.7,
+    reviews: 234,
+    images: ["https://images.unsplash.com/photo-1524678606370-a47ad25cb82a?w=400&h=400&fit=crop"],
+    category: "Electronics",
+    brand: "StudioPro",
+    inStock: false,
+    stockQuantity: 0,
+    description: "Professional studio monitoring headphones",
+    specifications: {}
+  },
+  {
+    id: 5,
+    name: "Noise Cancelling Headphones",
+    price: 249.99,
+    originalPrice: 299.99,
+    rating: 4.4,
+    reviews: 678,
+    images: ["https://images.unsplash.com/photo-1487215078519-e21cc028cb29?w=400&h=400&fit=crop"],
+    category: "Electronics",
+    brand: "QuietTech",
+    inStock: true,
+    discount: 17,
+    stockQuantity: 12,
+    description: "Advanced noise cancelling technology",
+    specifications: {}
+  }
+];
+
 const ProductDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const location = useLocation();
-  const navigate = useNavigate();
-  
-  const [product, setProduct] = useState<Product | null>(location.state?.product || null);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState<boolean>(!product);
-  const [error, setError] = useState<string>("");
+  const [product] = useState<Product>(staticProduct);
+  const [reviews] = useState<Review[]>(staticReviews);
+  const [relatedProducts] = useState<Product[]>(staticRelatedProducts);
+  const [loading, setLoading] = useState<boolean>(true);
   
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
@@ -79,71 +197,15 @@ const ProductDetail: React.FC = () => {
     type: "success",
   });
 
-  // Fetch product data
+  // Simulate loading
   useEffect(() => {
-    const fetchProduct = async () => {
-      if (!product && id) {
-        try {
-          setLoading(true);
-          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/public/products/${id}`);
-          
-          if (!response.ok) {
-            throw new Error('Product not found');
-          }
-          
-          const productData = await response.json();
-          setProduct(productData);
-          setIsFavorite(productData.isFavorite || false);
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Failed to load product');
-        } finally {
-          setLoading(false);
-        }
-      } else if (product) {
-        setIsFavorite(product.isFavorite || false);
-      }
-    };
+    const timer = setTimeout(() => {
+      setLoading(false);
+      setIsFavorite(product.isFavorite || false);
+    }, 1000);
 
-    fetchProduct();
-  }, [id, product]);
-
-  // Fetch reviews
-  useEffect(() => {
-    const fetchReviews = async () => {
-      if (product?.id) {
-        try {
-          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/public/products/${product.id}/reviews`);
-          if (response.ok) {
-            const reviewsData = await response.json();
-            setReviews(reviewsData);
-          }
-        } catch (err) {
-          console.error('Failed to fetch reviews:', err);
-        }
-      }
-    };
-
-    fetchReviews();
-  }, [product?.id]);
-
-  // Fetch related products
-  useEffect(() => {
-    const fetchRelatedProducts = async () => {
-      if (product?.category) {
-        try {
-          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/public/products?category=${product.category}&limit=4&exclude=${product.id}`);
-          if (response.ok) {
-            const relatedData = await response.json();
-            setRelatedProducts(relatedData);
-          }
-        } catch (err) {
-          console.error('Failed to fetch related products:', err);
-        }
-      }
-    };
-
-    fetchRelatedProducts();
-  }, [product?.category, product?.id]);
+    return () => clearTimeout(timer);
+  }, [product]);
 
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-US', {
@@ -159,7 +221,7 @@ const ProductDetail: React.FC = () => {
     }, 4000);
   };
 
-  const handleAddToCart = async (): Promise<void> => {
+  const handleAddToCart = (): void => {
     if (!product) return;
     
     if (quantity > product.stockQuantity) {
@@ -170,26 +232,10 @@ const ProductDetail: React.FC = () => {
       return;
     }
 
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cart/add`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          productId: product.id,
-          quantity: quantity,
-        }),
-      });
-
-      if (response.ok) {
-        showNotification(`${quantity} ${product.name}(s) added to cart!`, "success");
-      } else {
-        throw new Error('Failed to add to cart');
-      }
-    } catch (err) {
-      showNotification("Failed to add to cart. Please try again.", "error");
-    }
+    // Simulate API call
+    setTimeout(() => {
+      showNotification(`${quantity} ${product.name}(s) added to cart!`, "success");
+    }, 500);
   };
 
   const handleQuantityChange = (newQuantity: number): void => {
@@ -198,29 +244,15 @@ const ProductDetail: React.FC = () => {
     }
   };
 
-  const toggleFavorite = async (): Promise<void> => {
-    if (!product) return;
-
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/favorites/${product.id}`, {
-        method: isFavorite ? 'DELETE' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        setIsFavorite(!isFavorite);
-        showNotification(
-          isFavorite ? "Removed from favorites" : "Added to favorites!",
-          isFavorite ? "info" : "success"
-        );
-      } else {
-        throw new Error('Failed to update favorites');
-      }
-    } catch (err) {
-      showNotification("Failed to update favorites. Please try again.", "error");
-    }
+  const toggleFavorite = (): void => {
+    // Simulate API call
+    setTimeout(() => {
+      setIsFavorite(!isFavorite);
+      showNotification(
+        isFavorite ? "Removed from favorites" : "Added to favorites!",
+        isFavorite ? "info" : "success"
+      );
+    }, 300);
   };
 
   const handleShare = async (): Promise<void> => {
@@ -237,7 +269,6 @@ const ProductDetail: React.FC = () => {
         console.log("Error sharing:", error);
       }
     } else {
-      navigator.clipboard.writeText(window.location.href);
       showNotification("Product link copied to clipboard!", "info");
     }
   };
@@ -255,16 +286,14 @@ const ProductDetail: React.FC = () => {
   };
 
   const handleRelatedProductClick = (relatedProduct: Product): void => {
-    navigate(`/products/${relatedProduct.id}`, { 
-      state: { product: relatedProduct } 
-    });
+    showNotification(`Viewing ${relatedProduct.name}`, "info");
   };
 
   const handleBackToProducts = (): void => {
-    navigate('/products');
+    showNotification("Navigating back to products", "info");
   };
 
-  const renderStars = (rating: number): JSX.Element => {
+  const renderStars = (rating: number) => {
     return (
       <div className="flex items-center">
         {[...Array(5)].map((_, i) => (
@@ -279,7 +308,7 @@ const ProductDetail: React.FC = () => {
     );
   };
 
-  const renderNotification = (): JSX.Element | null => {
+  const renderNotification = () => {
     if (!notification.show) return null;
 
     const bgColor = {
@@ -308,42 +337,6 @@ const ProductDetail: React.FC = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading product...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <X className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Product Not Found</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={handleBackToProducts}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Back to Products
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // No product state
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">Product not found</p>
-          <button
-            onClick={handleBackToProducts}
-            className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Back to Products
-          </button>
         </div>
       </div>
     );
