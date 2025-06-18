@@ -151,6 +151,37 @@ def send_verification_email(email: str, username: str, token: str):
         return False
 
 
+def send_order_confirmation_email(email: str, username: str, order: dict):
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = MAIL_FROM
+        msg["To"] = email
+        msg["Subject"] = "Your FlowTech Order Confirmation"
+
+        html_body = f"""
+        <html>
+        <body>
+            <h2>Thank you for your order, {username}!</h2>
+            <p>Your order has been placed successfully.</p>
+            <p><strong>Order ID:</strong> {order['order_id']}</p>
+            <p><strong>Total:</strong> KES {order['total']}</p>
+            <p>We will notify you when your order is shipped.</p>
+        </body>
+        </html>
+        """
+        msg.attach(MIMEText(html_body, "html"))
+        server = smtplib.SMTP(MAIL_SERVER, MAIL_PORT)
+        server.starttls()
+        server.login(MAIL_USERNAME, MAIL_PASSWORD)
+        server.sendmail(MAIL_FROM, email, msg.as_string())
+        server.quit()
+        logger.info(f"Order confirmation email sent to {email}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send order confirmation email to {email}: {str(e)}")
+        return False
+
+
 # User creation helper
 def create_user_model(user_request, role: Role, db: Session):
     """Helper function to create user with proper error handling"""
