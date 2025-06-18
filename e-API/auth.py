@@ -1,10 +1,10 @@
 from datetime import timedelta, datetime
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from starlette import status
-from database import db_dependency
+from database import db_dependency, get_db
 from models import Users
 from fastapi.security import OAuth2PasswordBearer
 import jwt
@@ -607,3 +607,63 @@ async def resend_verification_email(
         raise HTTPException(
             status_code=500, detail="Error resending verification email"
         )
+
+
+@router.post("/request-password-reset", status_code=200)
+async def request_password_reset(
+    email: str = Body(..., embed=True), db: Session = Depends(get_db)
+):
+    """Request a password reset: send email with reset link if user exists."""
+    user = db.query(Users).filter(Users.email == email).first()
+    if not user:
+        # Don't reveal if user exists
+        return {"message": "If the email exists, a reset link has been sent."}
+    token = generate_verification_token()
+    user.reset_token = token
+    user.reset_token_expires = datetime.utcnow() + timedelta(minutes=30)
+    db.commit()
+    # Send reset email
+    reset_url = f"http://localhost:5173/reset-password?token={token}"
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = MAIL_FROM
+        msg["To"] = user.email
+        msg["Subject"] = "Reset Your FlowTech Password"
+        html_body = f"""
+        <html><body>
+        <h2>Password Reset Request</h2>
+        <p>Click the link below to reset your password. This link will expire in 30 minutes.</p>
+        <a href='{reset_url}' style='background: #667eea; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;'>Reset Password</a>
+        <p>If you did not request this, you can ignore this email.</p>
+        </body></html>
+        """
+        msg.attach(MIMEText(html_body, "html"))
+        server = smtplib.SMTP(MAIL_SERVER, MAIL_PORT)
+        server.starttls()
+        server.login(MAIL_USERNAME, MAIL_PASSWORD)
+        server.sendmail(MAIL_FROM, user.email, msg.as_string())
+        server.quit()
+        logger.info(f"Password reset email sent to {user.email}")
+    except Exception as e:
+        logger.error(f"Failed to send password reset email: {str(e)}")
+    return {"message": "If the email exists, a reset link has been sent."}
+
+
+@router.post("/reset-password", status_code=200)
+async def reset_password(
+    token: str = Body(...), new_password: str = Body(...), db: Session = Depends(get_db)
+):
+    """Reset password using token and new password."""
+    user = db.query(Users).filter(Users.reset_token == token).first()
+    if (
+        not user
+        or not user.reset_token_expires
+        or user.reset_token_expires < datetime.utcnow()
+    ):
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token.")
+    user.hashed_password = bcrypt_context.hash(new_password)
+    user.reset_token = None
+    user.reset_token_expires = None
+    db.commit()
+    logger.info(f"Password reset for user {user.email}")
+    return {"message": "Password has been reset successfully."}
