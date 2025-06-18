@@ -2,9 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import type { FormEvent, ChangeEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useAuth } from "../context/AuthContext";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -28,8 +26,6 @@ interface Alert {
 
 const Register: React.FC = () => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-  const navigate = useNavigate();
-  const { login } = useAuth();
   const [formData, setFormData] = useState<FormData>({
     username: "",
     email: "",
@@ -47,25 +43,6 @@ const Register: React.FC = () => {
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
-  };
-
-  // Check if email domain is valid and can receive emails
-  const checkEmailDomain = async (email: string): Promise<boolean> => {
-    try {
-      const domain = email.split("@")[1];
-
-      // Check if domain has MX records (can receive emails)
-      const response = await fetch(
-        `https://dns.google/resolve?name=${domain}&type=MX`
-      );
-      const data = await response.json();
-
-      // If MX records exist, the domain can receive emails
-      return data.Answer && data.Answer.length > 0;
-    } catch (error) {
-      console.error("Domain check error:", error);
-      return true; // Fallback to allow registration
-    }
   };
 
   // Check against common disposable email providers
@@ -100,18 +77,6 @@ const Register: React.FC = () => {
 
     const domain = email.split("@")[1]?.toLowerCase();
     return disposableDomains.includes(domain);
-  };
-
-  // Enhanced but more permissive email verification
-  const verifyEmailExists = async (email: string): Promise<boolean> => {
-    // First check if it's a disposable email
-    if (isDisposableEmail(email)) {
-      return false;
-    }
-
-    // Then check if domain can receive emails
-    const domainValid = await checkEmailDomain(email);
-    return domainValid;
   };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -204,38 +169,6 @@ const Register: React.FC = () => {
       showAlert("error", errorMessage);
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  // Function to handle email verification
-  const handleEmailVerification = async (token: string) => {
-    try {
-      const response = await axios.post<ApiResponse>(
-        `${API_BASE_URL}/auth/verify-email`,
-        { token },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.data.access_token) {
-        login(response.data.access_token);
-        showAlert(
-          "success",
-          "Email verified successfully! Welcome to FlowTech!"
-        );
-        setTimeout(() => {
-          navigate("/");
-        }, 1500);
-      }
-    } catch (error) {
-      console.error("Email verification error:", error);
-      showAlert(
-        "error",
-        "Email verification failed. Please try again or contact support."
-      );
     }
   };
 
