@@ -158,13 +158,40 @@ def send_order_confirmation_email(email: str, username: str, order: dict):
         msg["To"] = email
         msg["Subject"] = "Your FlowTech Order Confirmation"
 
+        # Build product list HTML
+        product_rows = ""
+        for p in order.get("products", []):
+            product_rows += f"""
+                <tr>
+                    <td style='padding: 8px; border: 1px solid #eee;'>{p['name']}</td>
+                    <td style='padding: 8px; border: 1px solid #eee; text-align: center;'>{p['quantity']}</td>
+                    <td style='padding: 8px; border: 1px solid #eee; text-align: right;'>KES {p['unit_price']:.2f}</td>
+                    <td style='padding: 8px; border: 1px solid #eee; text-align: right;'>KES {p['total_price']:.2f}</td>
+                </tr>
+            """
+
         html_body = f"""
         <html>
         <body>
             <h2>Thank you for your order, {username}!</h2>
             <p>Your order has been placed successfully.</p>
             <p><strong>Order ID:</strong> {order['order_id']}</p>
-            <p><strong>Total:</strong> KES {order['total']}</p>
+            <table style='width: 100%; border-collapse: collapse; margin-bottom: 16px;'>
+                <thead>
+                    <tr>
+                        <th style='padding: 8px; border: 1px solid #eee;'>Product</th>
+                        <th style='padding: 8px; border: 1px solid #eee;'>Qty</th>
+                        <th style='padding: 8px; border: 1px solid #eee;'>Unit Price</th>
+                        <th style='padding: 8px; border: 1px solid #eee;'>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {product_rows}
+                </tbody>
+            </table>
+            <p><strong>Subtotal:</strong> KES {order.get('subtotal', 0):.2f}</p>
+            <p><strong>Delivery Fee:</strong> KES {order.get('delivery_fee', 0):.2f}</p>
+            <p><strong>Grand Total:</strong> KES {order['total']:.2f}</p>
             <p>We will notify you when your order is shipped.</p>
         </body>
         </html>
