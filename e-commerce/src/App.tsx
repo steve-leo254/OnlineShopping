@@ -23,6 +23,8 @@ import SuperAdminRegister from "./pages/SuperAdmin";
 import AddressBook from "./components/AddressBook";
 import ProductDetail from "./components/Productsdetail";
 import EmailVerification from "./pages/EmailVerification";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   return (
@@ -44,6 +46,8 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<EmailVerification />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             {/* <Route element={<ProtectedRoute />}> */}
             <Route element={<Layout />}>
               <Route index element={<Home />} />
