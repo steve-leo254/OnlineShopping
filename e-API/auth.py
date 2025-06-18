@@ -1,11 +1,11 @@
 from datetime import timedelta, datetime
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, Path
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from starlette import status
 from database import db_dependency, get_db
-from models import Users
+from models import Users, Orders
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 from pydantic_models import (
@@ -667,3 +667,53 @@ async def reset_password(
     db.commit()
     logger.info(f"Password reset for user {user.email}")
     return {"message": "Password has been reset successfully."}
+
+
+@router.post("/cancel-order/{order_id}", status_code=200)
+async def cancel_order(
+    order_id: int = Path(...),
+    reason: str = Body(..., embed=True),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_active_user),
+):
+    """Cancel an order with a reason and notify admin by email."""
+    # Find the order
+    order = (
+        db.query(Users)
+        .session.query(Orders)
+        .filter(
+            Orders.order_id == order_id,
+            Orders.user_id == current_user["id"],
+        )
+        .first()
+    )
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found.")
+    if order.status == "cancelled":
+        raise HTTPException(status_code=400, detail="Order is already cancelled.")
+    # Cancel the order
+    order.status = "cancelled"
+    db.commit()
+    # Send email to admin
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = MAIL_FROM
+        msg["To"] = MAIL_FROM
+        msg["Subject"] = f"Order #{order_id} Cancelled by Customer"
+        html_body = f"""
+        <html><body>
+        <h2>Order Cancelled</h2>
+        <p>Order <b>#{order_id}</b> was cancelled by customer <b>{current_user['username']}</b>.</p>
+        <p><b>Reason:</b> {reason}</p>
+        </body></html>
+        """
+        msg.attach(MIMEText(html_body, "html"))
+        server = smtplib.SMTP(MAIL_SERVER, MAIL_PORT)
+        server.starttls()
+        server.login(MAIL_USERNAME, MAIL_PASSWORD)
+        server.sendmail(MAIL_FROM, MAIL_FROM, msg.as_string())
+        server.quit()
+        logger.info(f"Admin notified of order cancellation for order {order_id}")
+    except Exception as e:
+        logger.error(f"Failed to send admin cancellation email: {str(e)}")
+    return {"message": "Order cancelled and admin notified."}
