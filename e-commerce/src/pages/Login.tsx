@@ -5,7 +5,6 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
 
-
 interface LoginFormData {
   email: string;
   password: string;
@@ -21,7 +20,7 @@ interface Alert {
 }
 
 const Login: React.FC = () => {
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const location = useLocation();
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -157,11 +156,7 @@ const Login: React.FC = () => {
             href="#"
             className="flex items-center mb-6 text-2xl font-semibold text-gray-900"
           >
-            <img
-              className="w-20 h-20 mr-4"
-              src="/logos.png"
-              alt="logo"
-            />
+            <img className="w-20 h-20 mr-4" src="/logos.png" alt="logo" />
             FlowTech
           </a>
           <div className="w-full bg-white rounded-lg shadow sm:max-w-md xl:p-0">
@@ -234,12 +229,12 @@ const Login: React.FC = () => {
                       </label>
                     </div>
                   </div>
-                  <a
-                    href="#"
-                    className="text-sm font-medium text-primary-600 hover:underline"
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm font-medium text-gray-600 hover:underline"
                   >
                     Forgot password?
-                  </a>
+                  </Link>
                 </div>
                 <button
                   type="submit"
