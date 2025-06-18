@@ -676,35 +676,19 @@ async def cancel_order(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_active_user),
 ):
-    """Cancel an order with a reason and notify admin by email."""
-    # Find the order
-    order = (
-        db.query(Users)
-        .session.query(Orders)
-        .filter(
-            Orders.order_id == order_id,
-            Orders.user_id == current_user["id"],
-        )
-        .first()
-    )
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found.")
-    if order.status == "cancelled":
-        raise HTTPException(status_code=400, detail="Order is already cancelled.")
-    # Cancel the order
-    order.status = "cancelled"
-    db.commit()
-    # Send email to admin
+    """Send a cancellation request email to admin with order ID, customer username, and reason. Does NOT update order status."""
+  
     try:
         msg = MIMEMultipart()
         msg["From"] = MAIL_FROM
         msg["To"] = MAIL_FROM
-        msg["Subject"] = f"Order #{order_id} Cancelled by Customer"
+        msg["Subject"] = f"Order Cancellation Request: Order #{order_id}"
         html_body = f"""
         <html><body>
-        <h2>Order Cancelled</h2>
-        <p>Order <b>#{order_id}</b> was cancelled by customer <b>{current_user['username']}</b>.</p>
+        <h2>Order Cancellation Request</h2>
+        <p>Customer <b>{current_user['username']}</b> has requested to cancel order <b>#{order_id}</b>.</p>
         <p><b>Reason:</b> {reason}</p>
+        <p>Please review this request in the admin dashboard.</p>
         </body></html>
         """
         msg.attach(MIMEText(html_body, "html"))
@@ -713,7 +697,7 @@ async def cancel_order(
         server.login(MAIL_USERNAME, MAIL_PASSWORD)
         server.sendmail(MAIL_FROM, MAIL_FROM, msg.as_string())
         server.quit()
-        logger.info(f"Admin notified of order cancellation for order {order_id}")
+        logger.info(f"Admin notified of cancellation request for order {order_id}")
     except Exception as e:
         logger.error(f"Failed to send admin cancellation email: {str(e)}")
-    return {"message": "Order cancelled and admin notified."}
+    return {"message": "Cancellation request sent to admin."}
