@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const EmailVerification: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -11,6 +12,7 @@ const EmailVerification: React.FC = () => {
     "verifying"
   );
   const [message, setMessage] = useState("");
+  const toastShown = useRef(false);
   useEffect(() => {
     let isMounted = true;
     const verifyEmail = async () => {
@@ -22,6 +24,10 @@ const EmailVerification: React.FC = () => {
           setMessage(
             "No verification token found. Please check your email for the correct verification link."
           );
+          if (!toastShown.current) {
+            toast.error("No verification token found.");
+            toastShown.current = true;
+          }
         }
         return;
       }
@@ -45,6 +51,10 @@ const EmailVerification: React.FC = () => {
           if (isMounted) {
             setStatus("success");
             setMessage("Email verified successfully! Welcome to FlowTech!");
+            if (!toastShown.current) {
+              toast.success("Email verified! Welcome to FlowTech!");
+              toastShown.current = true;
+            }
             setTimeout(() => {
               navigate("/");
             }, 2000);
@@ -53,6 +63,10 @@ const EmailVerification: React.FC = () => {
           if (isMounted) {
             setStatus("error");
             setMessage("Verification failed. Please try again.");
+            if (!toastShown.current) {
+              toast.error("Verification failed. Please try again.");
+              toastShown.current = true;
+            }
           }
         }
       } catch (error: any) {
@@ -60,6 +74,10 @@ const EmailVerification: React.FC = () => {
         if (typeof window !== "undefined" && localStorage.getItem("token")) {
           setStatus("success");
           setMessage("Email verified successfully! Welcome to FlowTech!");
+          if (!toastShown.current) {
+            toast.success("Email verified! Welcome to FlowTech!");
+            toastShown.current = true;
+          }
           setTimeout(() => {
             navigate("/");
           }, 2000);
@@ -71,6 +89,13 @@ const EmailVerification: React.FC = () => {
             error.response?.data?.detail ||
               "Email verification failed. Please try again or contact support."
           );
+          if (!toastShown.current) {
+            toast.error(
+              error.response?.data?.detail ||
+                "Email verification failed. Please try again or contact support."
+            );
+            toastShown.current = true;
+          }
         }
       }
     };
