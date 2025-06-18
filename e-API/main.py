@@ -413,6 +413,28 @@ async def create_order(
         # Commit all changes
         db.commit()
 
+        # Fetch order details for email
+        order_details = (
+            db.query(models.OrderDetails)
+            .filter(models.OrderDetails.order_id == new_order.order_id)
+            .all()
+        )
+        product_list = []
+        for detail in order_details:
+            product = (
+                db.query(models.Products)
+                .filter(models.Products.id == detail.product_id)
+                .first()
+            )
+            product_list.append(
+                {
+                    "name": product.name,
+                    "quantity": float(detail.quantity),
+                    "unit_price": float(product.price),
+                    "total_price": float(detail.total_price),
+                }
+            )
+
         # Send order confirmation email
         try:
             user_obj = (
@@ -425,7 +447,9 @@ async def create_order(
                     {
                         "order_id": new_order.order_id,
                         "total": float(new_order.total),
-                        # Add more details as needed
+                        "delivery_fee": float(new_order.delivery_fee),
+                        "products": product_list,
+                        "subtotal": float(total_cost),
                     },
                 )
         except Exception as e:
