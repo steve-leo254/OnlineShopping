@@ -31,6 +31,7 @@ from auth import (
     require_superadmin,
     get_user_role,
     send_order_confirmation_email,
+    send_admin_new_order_notification,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func, or_
@@ -451,6 +452,14 @@ async def create_order(
                         "products": product_list,
                         "subtotal": float(total_cost),
                     },
+                )
+                # Send admin notification
+                send_admin_new_order_notification(
+                    {
+                        "order_id": new_order.order_id,
+                        "total": float(new_order.total),
+                        "customer_name": user_obj.username,
+                    }
                 )
         except Exception as e:
             logger.error(f"Failed to send order confirmation email: {str(e)}")
