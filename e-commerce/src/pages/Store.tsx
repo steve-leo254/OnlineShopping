@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Search,
-  Grid,
-  List,
   Star,
   Heart,
   Eye,
