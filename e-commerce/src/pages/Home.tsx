@@ -19,7 +19,7 @@ const Home: React.FC = () => {
   // Use the custom hook to fetch products for carousel
   const { isLoading, products, error, fetchProducts } = useFetchProducts();
   const { addToCart } = useShoppingCart();
-  const imgEndPoint = "http://127.0.0.1:8000";
+  const imgEndPoint = import.meta.env.VITE_API_BASE_URL;
 
   // Ref for carousel container
   const carouselRef = useRef<HTMLDivElement>(null);

@@ -22,6 +22,7 @@ import SuperAdminDashboard from "./pages/AdminPage";
 import SuperAdminRegister from "./pages/SuperAdmin";
 import AddressBook from "./components/AddressBook";
 import ProductDetail from "./components/Productsdetail";
+import EmailVerification from "./pages/EmailVerification";
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/verify-email" element={<EmailVerification />} />
             {/* <Route element={<ProtectedRoute />}> */}
             <Route element={<Layout />}>
               <Route index element={<Home />} />

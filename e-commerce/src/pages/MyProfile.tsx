@@ -48,14 +48,14 @@ const AccountProfile: React.FC = () => {
 
       try {
         // Fetch user data
-        const userResponse = await axios.get("http://127.0.0.1:8000/me", {
+        const userResponse = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUser(userResponse.data);
 
         // Fetch user addresses
         const addressResponse = await axios.get(
-          "http://127.0.0.1:8000/addresses",
+          `${import.meta.env.VITE_API_BASE_URL}/addresses`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -64,7 +64,7 @@ const AccountProfile: React.FC = () => {
 
         // Fetch recent orders (limit to 4 for latest orders)
         const ordersResponse = await axios.get(
-          "http://127.0.0.1:8000/orders?limit=4",
+          `${import.meta.env.VITE_API_BASE_URL}/orders?limit=4`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -95,7 +95,7 @@ const AccountProfile: React.FC = () => {
 
     try {
       await axios.put(
-        `http://127.0.0.1:8000/update-order-status/${orderId}`,
+        `${import.meta.env.VITE_API_BASE_URL}/update-order-status/${orderId}`,
         { status: "cancelled" },
         { headers: { Authorization: `Bearer ${token}` } }
       );

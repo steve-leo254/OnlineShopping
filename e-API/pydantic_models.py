@@ -6,11 +6,11 @@ from typing import Dict, Any, List, Optional
 from pydantic import Field
 
 
-
 class Role(str, Enum):
     SUPERADMIN = "SUPERADMIN"
     ADMIN = "admin"
     CUSTOMER = "customer"
+
 
 class OrderStatus(str, Enum):
     PENDING = "pending"
@@ -19,15 +19,16 @@ class OrderStatus(str, Enum):
     PROCESSING = "processing"
 
 
-
 # Pydantic model for the request body
 class UpdateOrderStatusRequest(BaseModel):
     status: OrderStatus  # Expect "status" in the body, matching frontend
+
 
 class CreateUserRequest(BaseModel):
     username: str
     email: EmailStr
     password: str
+
 
 class CreateAdminRequest(BaseModel):
     username: str
@@ -35,20 +36,25 @@ class CreateAdminRequest(BaseModel):
     password: str
     role: Role = Role.ADMIN  # Default to admin, but can be overridden
 
+
 class LoginUserRequest(BaseModel):
     email: EmailStr
     password: str
+
 
 class Token(BaseModel):
     access_token: str
     token_type: str
 
+
 class CategoryBase(BaseModel):
     name: str
     description: Optional[str]
 
+
 class CategoryResponse(CategoryBase):
     id: int
+
 
 class ProductsBase(BaseModel):
     name: str
@@ -66,7 +72,6 @@ class ProductsBase(BaseModel):
     discount: Optional[float] = 0.0  # New field
     is_new: bool = False  # New field
     is_favorite: bool = False  # New field
-    
 
 
 class ProductResponse(ProductsBase):
@@ -75,16 +80,19 @@ class ProductResponse(ProductsBase):
     user_id: int
     category: Optional[CategoryResponse]
 
+
 class CartItem(BaseModel):
     id: int
     quantity: float
+
 
 class CartPayload(BaseModel):
     cart: List[CartItem]
     address_id: Optional[int] = None
     delivery_fee: float = 0.0
-    transaction_id: Optional[int] = None  
-    
+    transaction_id: Optional[int] = None
+
+
 class OrderDetailResponse(BaseModel):
     order_detail_id: int
     product_id: Optional[int]
@@ -99,15 +107,35 @@ class OrderDetailResponse(BaseModel):
 class TokenVerifyRequest(BaseModel):
     token: str
 
+
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
+
 
 class ResetPasswordRequest(BaseModel):
     new_password: str
 
+
 class TokenVerificationResponse(BaseModel):
     username: str
     tokenverification: str
+
+
+class EmailVerificationRequest(BaseModel):
+    token: str
+
+
+class ResendVerificationRequest(BaseModel):
+    user_id: int
+
+
+class EmailVerificationResponse(BaseModel):
+    message: str
+    access_token: str
+    token_type: str
+    user_role: str
+    username: str
+
 
 class UpdateProduct(BaseModel):
     name: Optional[str]
@@ -126,6 +154,7 @@ class UpdateProduct(BaseModel):
     is_new: Optional[bool] = None  # New field
     is_favorite: Optional[bool] = None  # New field
 
+
 class PaginatedProductResponse(BaseModel):
     items: List[ProductResponse]
     total: int
@@ -133,22 +162,26 @@ class PaginatedProductResponse(BaseModel):
     limit: int
     pages: int
 
+
 class ImageResponse(BaseModel):
     message: str
     img_url: str
+
 
 class AddressBase(BaseModel):
     first_name: str
     last_name: str
     phone_number: str
     address: str
-    additional_info: Optional[str] 
+    additional_info: Optional[str]
     region: str
-    city: str 
+    city: str
     is_default: bool = False
+
 
 class AddressCreate(AddressBase):
     pass
+
 
 class AddressResponse(AddressBase):
     id: int
@@ -182,8 +215,6 @@ class PaginatedOrderResponse(BaseModel):
     pages: int
 
 
-
-
 # Pydantic model for user details in the response
 class UserResponse(BaseModel):
     id: int
@@ -192,6 +223,7 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 # Extend OrderResponse to exclude order_details and include user
 class OrderWithUserResponse(BaseModel):
@@ -208,6 +240,7 @@ class OrderWithUserResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
 # Pydantic model for paginated response
 class PaginatedOrderWithUserResponse(BaseModel):
     items: List[OrderWithUserResponse]
@@ -219,6 +252,7 @@ class PaginatedOrderWithUserResponse(BaseModel):
 
 # Add these models to your existing pydantic_models.py file
 
+
 class TransactionStatus(str, Enum):
     PENDING = "PENDING"
     PROCESSING = "PROCESSING"
@@ -226,18 +260,27 @@ class TransactionStatus(str, Enum):
     REJECTED = "REJECTED"
     ACCEPTED = "ACCEPTED"
 
+
 class TransactionRequest(BaseModel):
     amount: Decimal = Field(..., gt=0, description="Transaction amount")
-    phone_number: str = Field(..., min_length=10, max_length=15, description="Phone number in format 254XXXXXXXXX")
+    phone_number: str = Field(
+        ...,
+        min_length=10,
+        max_length=15,
+        description="Phone number in format 254XXXXXXXXX",
+    )
     order_id: int = Field(..., description="Order ID to link the payment to")
+
 
 class QueryRequest(BaseModel):
     checkout_request_id: str = Field(..., description="M-Pesa CheckoutRequestID")
+
 
 class APIResponse(BaseModel):
     status: str
     message: str
     data: Dict[Any, Any] = {}
+
 
 class TransactionResponse(BaseModel):
     id: int
@@ -261,13 +304,16 @@ class TransactionResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
 # M-Pesa Callback Models
 class CallbackMetadataItem(BaseModel):
     name: str
     value: Optional[str] = None
 
+
 class CallbackMetadata(BaseModel):
     item: List[CallbackMetadataItem]
+
 
 class StkCallback(BaseModel):
     merchantRequestID: str
@@ -276,8 +322,10 @@ class StkCallback(BaseModel):
     resultDesc: str
     callbackMetadata: Optional[CallbackMetadata] = None
 
+
 class CallbackBody(BaseModel):
     stkCallback: StkCallback
+
 
 class CallbackRequest(BaseModel):
     body: CallbackBody
@@ -285,6 +333,7 @@ class CallbackRequest(BaseModel):
 
 class CheckTransactionStatus(BaseModel):
     order_id: str  # Assuming order_id is a string; adjust type if needed
+
 
 # User management models
 class AdminUserResponse(BaseModel):
@@ -298,6 +347,7 @@ class AdminUserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
 
 class PaginatedUserResponse(BaseModel):
     items: List[AdminUserResponse]

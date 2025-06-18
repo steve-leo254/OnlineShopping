@@ -168,7 +168,7 @@ const OrdersManagement: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/admin/orders?${params.toString()}`,
+        `${import.meta.env.VITE_API_BASE_URL}/admin/orders?${params.toString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -212,7 +212,7 @@ const OrdersManagement: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/update-order-status/${orderId}`,
+        `${import.meta.env.VITE_API_BASE_URL}/update-order-status/${orderId}`,
         {
           method: "PUT",
           headers: {
@@ -249,7 +249,7 @@ const OrdersManagement: React.FC = () => {
       amount: amount,
     };
     const response = await fetch(
-      "http://127.0.0.1:8000/payments/lnmo/transact",
+      `${import.meta.env.VITE_API_BASE_URL}/payments/lnmo/transact`,
       {
         method: "POST",
         headers: {
@@ -269,7 +269,7 @@ const OrdersManagement: React.FC = () => {
   // Check transaction status
   const checkTransactionStatus = async (orderId: number) => {
     const response = await fetch(
-      "http://127.0.0.1:8000/payments/transactions",
+      `${import.meta.env.VITE_API_BASE_URL}/payments/transactions`,
       {
         method: "POST",
         headers: {
@@ -348,7 +348,7 @@ const OrdersManagement: React.FC = () => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/update-order-status/${orderId}`,
+        `${import.meta.env.VITE_API_BASE_URL}/update-order-status/${orderId}`,
         {
           method: "PUT",
           headers: {

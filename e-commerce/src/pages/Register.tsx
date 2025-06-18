@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { FormEvent, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 interface FormData {
   username: string;
@@ -15,81 +15,19 @@ interface FormData {
 
 interface ApiResponse {
   message: string;
+  access_token?: string;
+  user_id?: number;
 }
 
-interface Toast {
-  id: number;
+interface Alert {
+  type: "success" | "error" | "warning" | "info";
   message: string;
-  type: 'success' | 'error' | 'warning';
 }
-
-const Toast: React.FC<{ toast: Toast; onRemove: (id: number) => void }> = ({ toast, onRemove }) => {
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      onRemove(toast.id);
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [toast.id, onRemove]);
-
-  const getIcon = () => {
-    switch (toast.type) {
-      case 'success':
-        return <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />;
-      case 'error':
-        return <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />;
-      case 'warning':
-        return <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0" />;
-      default:
-        return null;
-    }
-  };
-
-  const getBgColor = () => {
-    switch (toast.type) {
-      case 'success':
-        return 'bg-green-50 border-green-200';
-      case 'error':
-        return 'bg-red-50 border-red-200';
-      case 'warning':
-        return 'bg-yellow-50 border-yellow-200';
-      default:
-        return 'bg-gray-50 border-gray-200';
-    }
-  };
-
-  const getTextColor = () => {
-    switch (toast.type) {
-      case 'success':
-        return 'text-green-800';
-      case 'error':
-        return 'text-red-800';
-      case 'warning':
-        return 'text-yellow-800';
-      default:
-        return 'text-gray-800';
-    }
-  };
-
-  return (
-    <div className={`flex items-center p-4 mb-4 border rounded-lg ${getBgColor()} ${getTextColor()} animate-in slide-in-from-right-5 duration-300`}>
-      {getIcon()}
-      <div className="ml-3 text-sm font-medium">{toast.message}</div>
-      <button
-        type="button"
-        className={`ml-auto -mx-1.5 -my-1.5 rounded-lg focus:ring-2 p-1.5 hover:bg-opacity-20 inline-flex h-8 w-8 ${getTextColor()}`}
-        onClick={() => onRemove(toast.id)}
-      >
-        <span className="sr-only">Close</span>
-        <XCircle className="w-3 h-3" />
-      </button>
-    </div>
-  );
-};
 
 const Register: React.FC = () => {
-  const API_BASE_URL = "https://api.example.com"; // Replace with your actual API URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState<FormData>({
     username: "",
     email: "",
@@ -97,139 +35,135 @@ const Register: React.FC = () => {
     confirmPassword: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [toasts, setToasts] = useState<Toast[]>([]);
-  const [emailValidation, setEmailValidation] = useState<{
-    isValid: boolean;
-    isChecking: boolean;
-    message: string;
-  }>({
-    isValid: false,
-    isChecking: false,
-    message: '',
-  });
-
-  const addToast = (message: string, type: 'success' | 'error' | 'warning') => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
-  };
-
-  const removeToast = (id: number) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
-  };
+  const [alert, setAlert] = useState<Alert | null>(null);
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+  const [pendingUserId, setPendingUserId] = useState<number | null>(null);
 
   // Email validation function
-  const validateEmail = (email: string): boolean => {
+  const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
-  // Check if email exists (simulated - you might want to integrate with a real service)
-  const checkEmailExists = async (email: string): Promise<boolean> => {
-    if (!validateEmail(email)) return false;
-    
-    setEmailValidation(prev => ({ ...prev, isChecking: true }));
-    
+  // Check if email domain is valid and can receive emails
+  const checkEmailDomain = async (email: string): Promise<boolean> => {
     try {
-      // This is a simulation - replace with actual email verification service
-      // For example, you could use a service like Hunter.io, ZeroBounce, or similar
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      
-      // For demo purposes, we'll accept common email providers
-      const commonProviders = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com'];
-      const domain = email.split('@')[1]?.toLowerCase();
-      const isCommonProvider = commonProviders.includes(domain);
-      
-      setEmailValidation({
-        isValid: isCommonProvider,
-        isChecking: false,
-        message: isCommonProvider 
-          ? 'Email appears to be valid' 
-          : 'Please use a valid email from a recognized provider'
-      });
-      
-      return isCommonProvider;
+      const domain = email.split("@")[1];
+
+      // Check if domain has MX records (can receive emails)
+      const response = await fetch(
+        `https://dns.google/resolve?name=${domain}&type=MX`
+      );
+      const data = await response.json();
+
+      // If MX records exist, the domain can receive emails
+      return data.Answer && data.Answer.length > 0;
     } catch (error) {
-      setEmailValidation({
-        isValid: false,
-        isChecking: false,
-        message: 'Could not verify email'
-      });
+      console.error("Domain check error:", error);
+      return true; // Fallback to allow registration
+    }
+  };
+
+  // Check against common disposable email providers
+  const isDisposableEmail = (email: string): boolean => {
+    const disposableDomains = [
+      "tempmail.org",
+      "10minutemail.com",
+      "guerrillamail.com",
+      "mailinator.com",
+      "yopmail.com",
+      "throwaway.email",
+      "temp-mail.org",
+      "sharklasers.com",
+      "getairmail.com",
+      "mailnesia.com",
+      "maildrop.cc",
+      "mailmetrash.com",
+      "trashmail.com",
+      "spam4.me",
+      "bccto.me",
+      "chacuo.net",
+      "dispostable.com",
+      "fakeinbox.com",
+      "mailnull.com",
+      "spamspot.com",
+      "tempr.email",
+      "tmpmail.org",
+      "tmpeml.com",
+      "tmpbox.net",
+      "tmpmail.net",
+    ];
+
+    const domain = email.split("@")[1]?.toLowerCase();
+    return disposableDomains.includes(domain);
+  };
+
+  // Enhanced but more permissive email verification
+  const verifyEmailExists = async (email: string): Promise<boolean> => {
+    // First check if it's a disposable email
+    if (isDisposableEmail(email)) {
       return false;
     }
+
+    // Then check if domain can receive emails
+    const domainValid = await checkEmailDomain(email);
+    return domainValid;
   };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    console.log(`Input changed: ${name} = ${value}`);
-    
+    console.log(`Input changed: ${name} = ${value}`); // Debug log
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
-
-    // Validate email on change
-    if (name === 'email' && value) {
-      const debounceTimer = setTimeout(() => {
-        checkEmailExists(value);
-      }, 500);
-      
-      return () => clearTimeout(debounceTimer);
-    }
+    // Clear alert when user starts typing
+    if (alert) setAlert(null);
   };
 
-  const validateForm = (): boolean => {
-    if (!formData.username.trim()) {
-      addToast('Username is required', 'error');
-      return false;
-    }
-
-    if (!formData.email.trim()) {
-      addToast('Email is required', 'error');
-      return false;
-    }
-
-    if (!validateEmail(formData.email)) {
-      addToast('Please enter a valid email address', 'error');
-      return false;
-    }
-
-    if (!emailValidation.isValid) {
-      addToast('Please use a valid email from a recognized provider', 'error');
-      return false;
-    }
-
-    if (!formData.password) {
-      addToast('Password is required', 'error');
-      return false;
-    }
-
-    if (formData.password.length < 8) {
-      addToast('Password must be at least 8 characters long', 'error');
-      return false;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      addToast('Passwords do not match', 'error');
-      return false;
-    }
-
-    return true;
+  const showAlert = (type: Alert["type"], message: string) => {
+    setAlert({ type, message });
+    // Auto-hide alert after 5 seconds
+    setTimeout(() => setAlert(null), 5000);
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setError(null);
+    setAlert(null);
 
-    console.log("Form data being sent:", formData);
+    // Basic email format validation
+    if (!isValidEmail(formData.email)) {
+      showAlert("error", "Please enter a valid email address.");
+      setIsSubmitting(false);
+      return;
+    }
 
-    if (!validateForm()) {
+    // Check for disposable emails
+    if (isDisposableEmail(formData.email)) {
+      showAlert(
+        "error",
+        "Disposable email addresses are not allowed. Please use a valid email address."
+      );
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Password validation
+    if (formData.password.length < 6) {
+      showAlert("error", "Password must be at least 6 characters long.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      showAlert("error", "Passwords do not match");
       setIsSubmitting(false);
       return;
     }
 
     try {
+      // Step 1: Register user (account will be inactive until email is verified)
       const apiUrl = `${API_BASE_URL}/auth/register/customer`;
       const response = await axios.post<ApiResponse>(
         apiUrl,
@@ -246,215 +180,322 @@ const Register: React.FC = () => {
       );
 
       console.log("Registration successful:", response.data);
-      addToast('Account created successfully! Redirecting to homepage...', 'success');
-      
-      // Redirect to homepage after successful registration
-      setTimeout(() => {
-        navigate("/"); // Change this to your homepage route
-      }, 2000);
-      
+
+      // Store user ID for verification
+      if (response.data.user_id) {
+        setPendingUserId(response.data.user_id);
+      }
+
+      // Show verification message
+      setShowVerificationMessage(true);
+      showAlert(
+        "success",
+        "Registration successful! Please check your email to verify your account."
+      );
     } catch (error) {
       console.error("Registration error:", error);
       const errorMessage = axios.isAxiosError(error)
-        ? error.response?.data?.detail || error.response?.data?.message || "Registration failed. Please try again."
+        ? error.response?.data?.detail ||
+          "Registration failed. Please try again."
         : "Registration failed. Please try again.";
-      
-      addToast(errorMessage, 'error');
-      setError(errorMessage);
+      showAlert("error", errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Function to handle email verification
+  const handleEmailVerification = async (token: string) => {
+    try {
+      const response = await axios.post<ApiResponse>(
+        `${API_BASE_URL}/auth/verify-email`,
+        { token },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data.access_token) {
+        login(response.data.access_token);
+        showAlert(
+          "success",
+          "Email verified successfully! Welcome to FlowTech!"
+        );
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
+      }
+    } catch (error) {
+      console.error("Email verification error:", error);
+      showAlert(
+        "error",
+        "Email verification failed. Please try again or contact support."
+      );
+    }
+  };
+
+  // Function to resend verification email
+  const resendVerificationEmail = async () => {
+    if (!pendingUserId) return;
+
+    try {
+      await axios.post(
+        `${API_BASE_URL}/auth/resend-verification`,
+        { user_id: pendingUserId },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      showAlert(
+        "success",
+        "Verification email sent again! Please check your inbox."
+      );
+    } catch (error) {
+      showAlert(
+        "error",
+        "Failed to resend verification email. Please try again."
+      );
+    }
+  };
+
+  const AlertComponent = ({ alert }: { alert: Alert }) => {
+    const alertStyles = {
+      success: "bg-green-50 border-green-200 text-green-800",
+      error: "bg-red-50 border-red-200 text-red-800",
+      warning: "bg-yellow-50 border-yellow-200 text-yellow-800",
+      info: "bg-blue-50 border-blue-200 text-blue-800",
+    };
+
+    const iconStyles = {
+      success: "✓",
+      error: "✕",
+      warning: "⚠",
+      info: "ℹ",
+    };
+
+    return (
+      <div className={`p-4 mb-4 border rounded-lg ${alertStyles[alert.type]}`}>
+        <div className="flex items-center">
+          <span className="mr-2 font-bold">{iconStyles[alert.type]}</span>
+          <span className="text-sm font-medium">{alert.message}</span>
+          <button
+            onClick={() => setAlert(null)}
+            className="ml-auto text-lg font-bold hover:opacity-70"
+          >
+            ×
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
-      {/* Toast Container */}
-      <div className="fixed top-4 right-4 z-50 w-full max-w-sm">
-        {toasts.map((toast) => (
-          <Toast key={toast.id} toast={toast} onRemove={removeToast} />
-        ))}
-      </div>
-
       <section className="bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 antialiased min-h-screen">
         <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto min-h-screen lg:py-0">
           <a
             href="#"
-            className="flex items-center mb-6 text-2xl font-semibold text-white"
+            className="flex items-center mb-6 text-2xl font-semibold text-gray-900"
           >
-            <img
-              className="w-20 h-20 mr-2"
-              src="/logos.png"
-              alt="logo"
-            />
+            <img className="w-20 h-20 mr-2" src="/logos.png" alt="logo" />
             FlowTech
           </a>
-          <div className="w-full bg-white rounded-lg shadow-2xl md:mt-0 sm:max-w-md xl:p-0">
+          <div className="w-full bg-white rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
             <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
-              <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl">
-                Create an account
-              </h1>
-              {error && <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg border border-red-200">{error}</div>}
-              <form onSubmit={handleSubmit} action="#">
-                <div className="max-h-[50vh] overflow-y-auto scrollbar-custom space-y-4 md:space-y-6">
-                  <div>
-                    <label
-                      htmlFor="username"
-                      className="block mb-2 text-sm font-medium text-gray-900"
+              {showVerificationMessage ? (
+                // Email Verification Message
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg
+                      className="w-8 h-8 text-green-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      Username
-                    </label>
-                    <input
-                      value={formData.username}
-                      onChange={handleChange}
-                      type="text"
-                      name="username"
-                      id="username"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition-colors"
-                      placeholder="Your username"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="email"
-                      className="block mb-2 text-sm font-medium text-gray-900"
-                    >
-                      Your email
-                    </label>
-                    <div className="relative">
-                      <input
-                        value={formData.email}
-                        onChange={handleChange}
-                        type="email"
-                        name="email"
-                        id="email"
-                        className={`bg-gray-50 border text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition-colors ${
-                          emailValidation.isChecking 
-                            ? 'border-yellow-300' 
-                            : emailValidation.isValid 
-                              ? 'border-green-300' 
-                              : formData.email 
-                                ? 'border-red-300' 
-                                : 'border-gray-300'
-                        }`}
-                        placeholder="name@company.com"
-                        required
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                       />
-                      {emailValidation.isChecking && (
-                        <div className="absolute right-3 top-3">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-                        </div>
-                      )}
-                    </div>
-                    {emailValidation.message && (
-                      <p className={`mt-1 text-xs ${emailValidation.isValid ? 'text-green-600' : 'text-red-600'}`}>
-                        {emailValidation.message}
-                      </p>
-                    )}
+                    </svg>
                   </div>
-                  <div>
-                    <label
-                      htmlFor="password"
-                      className="block mb-2 text-sm font-medium text-gray-900"
+                  <h1 className="text-xl font-bold text-gray-900 mb-2">
+                    Check Your Email
+                  </h1>
+                  <p className="text-gray-600 mb-6">
+                    We've sent a verification link to{" "}
+                    <strong>{formData.email}</strong>
+                  </p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <p className="text-sm text-blue-800">
+                      Please click the verification link in your email to
+                      activate your account.
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    <button
+                      onClick={resendVerificationEmail}
+                      className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                      Password
-                    </label>
-                    <input
-                      value={formData.password}
-                      onChange={handleChange}
-                      type="password"
-                      name="password"
-                      id="password"
-                      placeholder="••••••••"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition-colors"
-                      required
-                    />
-                    {formData.password && (
-                      <p className={`mt-1 text-xs ${formData.password.length >= 8 ? 'text-green-600' : 'text-red-600'}`}>
-                        Password must be at least 8 characters long
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="confirm-password"
-                      className="block mb-2 text-sm font-medium text-gray-900"
+                      Resend Verification Email
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowVerificationMessage(false);
+                        setFormData({
+                          username: "",
+                          email: "",
+                          password: "",
+                          confirmPassword: "",
+                        });
+                      }}
+                      className="w-full bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
                     >
-                      Confirm password
-                    </label>
-                    <input
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      type="password"
-                      name="confirmPassword"
-                      id="confirm-password"
-                      placeholder="••••••••"
-                      className={`bg-gray-50 border text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 transition-colors ${
-                        formData.confirmPassword 
-                          ? formData.password === formData.confirmPassword 
-                            ? 'border-green-300' 
-                            : 'border-red-300'
-                          : 'border-gray-300'
-                      }`}
-                      required
-                    />
-                    {formData.confirmPassword && (
-                      <p className={`mt-1 text-xs ${formData.password === formData.confirmPassword ? 'text-green-600' : 'text-red-600'}`}>
-                        {formData.password === formData.confirmPassword ? 'Passwords match' : 'Passwords do not match'}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-start">
-                    <div className="flex items-center h-5">
-                      <input
-                        id="terms"
-                        aria-describedby="terms"
-                        type="checkbox"
-                        name="terms"
-                        className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-blue-300"
-                        required
-                      />
-                    </div>
-                    <div className="ml-3 text-sm">
-                      <label
-                        htmlFor="terms"
-                        className="font-light text-gray-500"
-                      >
-                        I accept the{" "}
-                        <a
-                          className="font-medium text-blue-600 hover:underline"
-                          href="#"
-                        >
-                          Terms and Conditions
-                        </a>
-                      </label>
-                    </div>
+                      Back to Registration
+                    </button>
                   </div>
                 </div>
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !emailValidation.isValid}
-                  className="bg-gradient-to-r from-green-600 to-blue-600 w-full mt-4 text-white hover:from-green-700 hover:to-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                >
-                  {isSubmitting ? (
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Creating Account...
+              ) : (
+                // Registration Form
+                <>
+                  <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl">
+                    Create an account
+                  </h1>
+                  {/* Alert Component */}
+                  {alert && <AlertComponent alert={alert} />}
+                  <form onSubmit={handleSubmit} action="#">
+                    <div className="max-h-[50vh] overflow-y-auto scrollbar-custom space-y-4 md:space-y-6">
+                      <div>
+                        <label
+                          htmlFor="username"
+                          className="block mb-2 text-sm font-medium text-gray-900"
+                        >
+                          Username
+                        </label>
+                        <input
+                          value={formData.username}
+                          onChange={handleChange}
+                          type="text"
+                          name="username"
+                          id="username"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                          placeholder="Your username"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="email"
+                          className="block mb-2 text-sm font-medium text-gray-900"
+                        >
+                          Your email
+                        </label>
+                        <input
+                          value={formData.email}
+                          onChange={handleChange}
+                          type="email"
+                          name="email"
+                          id="email"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                          placeholder="name@company.com"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="password"
+                          className="block mb-2 text-sm font-medium text-gray-900"
+                        >
+                          Password
+                        </label>
+                        <input
+                          value={formData.password}
+                          onChange={handleChange}
+                          type="password"
+                          name="password"
+                          id="password"
+                          placeholder="••••••••"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                          required
+                          minLength={6}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Password must be at least 6 characters long
+                        </p>
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="confirm-password"
+                          className="block mb-2 text-sm font-medium text-gray-900"
+                        >
+                          Confirm password
+                        </label>
+                        <input
+                          value={formData.confirmPassword}
+                          onChange={handleChange}
+                          type="password"
+                          name="confirmPassword"
+                          id="confirm-password"
+                          placeholder="••••••••"
+                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+                          required
+                        />
+                      </div>
+                      <div className="flex items-start">
+                        <div className="flex items-center h-5">
+                          <input
+                            id="terms"
+                            aria-describedby="terms"
+                            type="checkbox"
+                            name="terms"
+                            className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300"
+                            required
+                          />
+                        </div>
+                        <div className="ml-3 text-sm">
+                          <label
+                            htmlFor="terms"
+                            className="font-light text-gray-500"
+                          >
+                            I accept the{" "}
+                            <a
+                              className="font-medium text-primary-600 hover:underline"
+                              href="#"
+                            >
+                              Terms and Conditions
+                            </a>
+                          </label>
+                        </div>
+                      </div>
                     </div>
-                  ) : (
-                    'Create an account'
-                  )}
-                </button>
-                <p className="mt-4 text-sm font-light text-gray-500">
-                  Already have an account?{" "}
-                  <Link
-                    to="/login"
-                    className="font-medium text-blue-600 hover:underline"
-                  >
-                    Login here
-                  </Link>
-                </p>
-              </form>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className={`bg-gradient-to-r from-green-600 to-blue-600 w-full mt-4 text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center ${
+                        isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      {isSubmitting
+                        ? "Creating account..."
+                        : "Create an account"}
+                    </button>
+                    <p className="mt-4 text-sm font-light text-gray-500">
+                      Already have an account?{" "}
+                      <Link
+                        to="/login"
+                        className="font-medium text-primary-600 hover:underline"
+                      >
+                        Login here
+                      </Link>
+                    </p>
+                  </form>
+                </>
+              )}
             </div>
           </div>
         </div>
