@@ -209,6 +209,38 @@ def send_order_confirmation_email(email: str, username: str, order: dict):
         return False
 
 
+def send_admin_new_order_notification(order: dict):
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = MAIL_FROM
+        msg["To"] = MAIL_FROM  # Send to FlowTech business email
+        msg["Subject"] = f"New Order #{order['order_id']} Received"
+
+        html_body = f"""
+        <html>
+        <body>
+            <h2>New Order Received</h2>
+            <p>A new order has been placed on FlowTech.</p>
+            <p><strong>Order ID:</strong> {order['order_id']}</p>
+            <p><strong>Customer:</strong> {order.get('customer_name', 'N/A')}</p>
+            <p><strong>Total:</strong> KES {order['total']:.2f}</p>
+            <p>Check the admin dashboard for full details.</p>
+        </body>
+        </html>
+        """
+        msg.attach(MIMEText(html_body, "html"))
+        server = smtplib.SMTP(MAIL_SERVER, MAIL_PORT)
+        server.starttls()
+        server.login(MAIL_USERNAME, MAIL_PASSWORD)
+        server.sendmail(MAIL_FROM, MAIL_FROM, msg.as_string())
+        server.quit()
+        logger.info(f"Admin notification email sent for order {order['order_id']}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send admin notification email: {str(e)}")
+        return False
+
+
 # User creation helper
 def create_user_model(user_request, role: Role, db: Session):
     """Helper function to create user with proper error handling"""
