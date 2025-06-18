@@ -30,6 +30,7 @@ from auth import (
     create_user_model,
     require_superadmin,
     get_user_role,
+    send_order_confirmation_email,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func, or_
@@ -411,6 +412,24 @@ async def create_order(
 
         # Commit all changes
         db.commit()
+
+        # Send order confirmation email
+        try:
+            user_obj = (
+                db.query(models.Users).filter(models.Users.id == user.get("id")).first()
+            )
+            if user_obj:
+                send_order_confirmation_email(
+                    user_obj.email,
+                    user_obj.username,
+                    {
+                        "order_id": new_order.order_id,
+                        "total": float(new_order.total),
+                        # Add more details as needed
+                    },
+                )
+        except Exception as e:
+            logger.error(f"Failed to send order confirmation email: {str(e)}")
 
         logger.info(f"Order {new_order.order_id} created for user {user.get('id')}")
         return {
