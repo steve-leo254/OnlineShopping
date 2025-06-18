@@ -40,7 +40,7 @@ const Bar: React.FC = () => {
               {/* Logo */}
               <div className="flex-shrink-0">
                 <Link
-                  to="https://www.instagram.com/flowtechs_ltd"
+                  to="/"
                   className="flex items-center space-x-3"
                 >
                   <img
