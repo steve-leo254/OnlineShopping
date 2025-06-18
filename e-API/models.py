@@ -46,13 +46,13 @@ class Categories(Base):
 class Products(Base):
     __tablename__ = 'products'
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), unique=True, nullable=False, index=True)
+    name = Column(String(200), unique=True, nullable=False, index=True)
     cost = Column(Numeric(precision=14, scale=2), nullable=False)
     price = Column(Numeric(precision=14, scale=2), nullable=False)
     original_price = Column(Numeric(precision=14, scale=2), nullable=True)  # New field
     img_url = Column(String(200), nullable=True)
     stock_quantity = Column(Numeric(precision=14, scale=2), nullable=False)
-    description = Column(String(200), nullable=True)
+    description = Column(String(1000), nullable=True)
     rating = Column(Numeric(precision=3, scale=2), nullable=True, default=0.0)  # New field (0.00 to 5.00)
     reviews = Column(Integer, nullable=False, default=0)  # New field - number of reviews
     discount = Column(Numeric(precision=5, scale=2), nullable=True, default=0.0)  # New field - discount percentage
@@ -66,10 +66,6 @@ class Products(Base):
     user = relationship("Users", back_populates="products")
     category = relationship("Categories", back_populates="products")
     order_details = relationship("OrderDetails", back_populates="product")
-
-# class ProductSpecs(Base):
-
-
 
 
 
@@ -87,6 +83,7 @@ class Orders(Base):
     order_details = relationship("OrderDetails", back_populates="order")
     address = relationship("Address")
     transactions = relationship("Transaction", back_populates="order")
+
 
 
 class OrderDetails(Base):
