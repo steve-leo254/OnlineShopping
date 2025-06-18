@@ -44,6 +44,9 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-default-secure-key")
 ALGORITHM = "HS256"
 
+# Frontend base URL for email links
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173")
+
 # Security contexts
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl="auth/login")
@@ -91,7 +94,7 @@ def send_verification_email(email: str, username: str, token: str):
         msg["Subject"] = "Verify Your FlowTech Account"
 
         # Create HTML body
-        verification_url = f"http://localhost:5173/verify-email?token={token}"
+        verification_url = f"{FRONTEND_BASE_URL}/verify-email?token={token}"
         html_body = f"""
         <html>
         <body>
@@ -623,7 +626,7 @@ async def request_password_reset(
     user.reset_token_expires = datetime.utcnow() + timedelta(minutes=30)
     db.commit()
     # Send reset email
-    reset_url = f"http://localhost:5173/reset-password?token={token}"
+    reset_url = f"{FRONTEND_BASE_URL}/reset-password?token={token}"
     try:
         msg = MIMEMultipart()
         msg["From"] = MAIL_FROM
@@ -677,7 +680,7 @@ async def cancel_order(
     current_user: dict = Depends(get_active_user),
 ):
     """Send a cancellation request email to admin with order ID, customer username, and reason. Does NOT update order status."""
-  
+
     try:
         msg = MIMEMultipart()
         msg["From"] = MAIL_FROM
