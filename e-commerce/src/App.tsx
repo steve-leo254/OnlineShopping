@@ -23,6 +23,9 @@ import SuperAdminRegister from "./pages/SuperAdmin";
 import AddressBook from "./components/AddressBook";
 import ProductDetail from "./components/Productsdetail";
 import EmailVerification from "./pages/EmailVerification";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import ProtectedRoute from "./assets/PrivateRoutes";
 
 function App() {
   return (
@@ -31,7 +34,7 @@ function App() {
         <Router>
           <ToastContainer
             position="top-left"
-            autoClose={1000}
+            autoClose={3000}
             hideProgressBar={true}
             newestOnTop={true}
             closeOnClick
@@ -44,29 +47,38 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<EmailVerification />} />
-            {/* <Route element={<ProtectedRoute />}> */}
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/SuperAdmin" element={<SuperAdminRegister />} />
+
             <Route element={<Layout />}>
               <Route index element={<Home />} />
-              <Route path="/products" element={<Products />} />
               <Route path="/store" element={<Store />} />
-              <Route path="/AdminPage" element={<SuperAdminDashboard />} />
               <Route path="/shopping-cart" element={<ShoppingCart />} />
-              <Route path="/checkout" element={<Checkout />} />
-
-              <Route
-                path="/order-details/:orderId"
-                element={<OrderDetails />}
-              />
-              <Route path="/productdetail" element={<ProductDetail />} />
-              <Route path="/orders-overview" element={<OrdersOverview />} />
-              <Route path="/orders-management" element={<OrdersManagement />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="*" element={<NotFound />} />
-              <Route path="/SuperAdmin" element={<SuperAdminRegister />} />
-              <Route path="/MyProfile" element={<AccountProfile />} />
-              <Route path="/address-book" element={<AddressBook />} />
             </Route>
-            {/* </Route> */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<Layout />}>
+                <Route path="/products" element={<Products />} />
+                <Route path="/AdminPage" element={<SuperAdminDashboard />} />
+                <Route path="/checkout" element={<Checkout />} />
+
+                <Route
+                  path="/order-details/:orderId"
+                  element={<OrderDetails />}
+                />
+                <Route path="/productdetail" element={<ProductDetail />} />
+                <Route path="/orders-overview" element={<OrdersOverview />} />
+                <Route
+                  path="/orders-management"
+                  element={<OrdersManagement />}
+                />
+
+                <Route path="/MyProfile" element={<AccountProfile />} />
+                <Route path="/address-book" element={<AddressBook />} />
+              </Route>
+            </Route>
           </Routes>
         </Router>
       </ShoppingCartProvider>

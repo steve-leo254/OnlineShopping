@@ -1,11 +1,11 @@
 from datetime import timedelta, datetime
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body, Path
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from starlette import status
-from database import db_dependency
-from models import Users
+from database import db_dependency, get_db
+from models import Users, Orders
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 from pydantic_models import (
@@ -43,6 +43,9 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 # Environment variables with secure defaults
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-default-secure-key")
 ALGORITHM = "HS256"
+
+# Frontend base URL for email links
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173")
 
 # Security contexts
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -91,7 +94,7 @@ def send_verification_email(email: str, username: str, token: str):
         msg["Subject"] = "Verify Your FlowTech Account"
 
         # Create HTML body
-        verification_url = f"http://localhost:5173/verify-email?token={token}"
+        verification_url = f"{FRONTEND_BASE_URL}/verify-email?token={token}"
         html_body = f"""
         <html>
         <body>
@@ -148,6 +151,96 @@ def send_verification_email(email: str, username: str, token: str):
         return True
     except Exception as e:
         logger.error(f"Failed to send verification email to {email}: {str(e)}")
+        return False
+
+
+def send_order_confirmation_email(email: str, username: str, order: dict):
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = MAIL_FROM
+        msg["To"] = email
+        msg["Subject"] = "Your FlowTech Order Confirmation"
+
+        # Build product list HTML
+        product_rows = ""
+        for p in order.get("products", []):
+            product_rows += f"""
+                <tr>
+                    <td style='padding: 8px; border: 1px solid #eee;'>{p['name']}</td>
+                    <td style='padding: 8px; border: 1px solid #eee; text-align: center;'>{p['quantity']}</td>
+                    <td style='padding: 8px; border: 1px solid #eee; text-align: right;'>KES {p['unit_price']:.2f}</td>
+                    <td style='padding: 8px; border: 1px solid #eee; text-align: right;'>KES {p['total_price']:.2f}</td>
+                </tr>
+            """
+
+        html_body = f"""
+        <html>
+        <body>
+            <h2>Thank you for your order, {username}!</h2>
+            <p>Your order has been placed successfully.</p>
+            <p><strong>Order ID:</strong> {order['order_id']}</p>
+            <table style='width: 100%; border-collapse: collapse; margin-bottom: 16px;'>
+                <thead>
+                    <tr>
+                        <th style='padding: 8px; border: 1px solid #eee;'>Product</th>
+                        <th style='padding: 8px; border: 1px solid #eee;'>Qty</th>
+                        <th style='padding: 8px; border: 1px solid #eee;'>Unit Price</th>
+                        <th style='padding: 8px; border: 1px solid #eee;'>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {product_rows}
+                </tbody>
+            </table>
+            <p><strong>Subtotal:</strong> KES {order.get('subtotal', 0):.2f}</p>
+            <p><strong>Delivery Fee:</strong> KES {order.get('delivery_fee', 0):.2f}</p>
+            <p><strong>Grand Total:</strong> KES {order['total']:.2f}</p>
+            <p>We will notify you when your order is shipped.</p>
+        </body>
+        </html>
+        """
+        msg.attach(MIMEText(html_body, "html"))
+        server = smtplib.SMTP(MAIL_SERVER, MAIL_PORT)
+        server.starttls()
+        server.login(MAIL_USERNAME, MAIL_PASSWORD)
+        server.sendmail(MAIL_FROM, email, msg.as_string())
+        server.quit()
+        logger.info(f"Order confirmation email sent to {email}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send order confirmation email to {email}: {str(e)}")
+        return False
+
+
+def send_admin_new_order_notification(order: dict):
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = MAIL_FROM
+        msg["To"] = MAIL_FROM  # Send to FlowTech business email
+        msg["Subject"] = f"New Order #{order['order_id']} Received"
+
+        html_body = f"""
+        <html>
+        <body>
+            <h2>New Order Received</h2>
+            <p>A new order has been placed on FlowTech.</p>
+            <p><strong>Order ID:</strong> {order['order_id']}</p>
+            <p><strong>Customer:</strong> {order.get('customer_name', 'N/A')}</p>
+            <p><strong>Total:</strong> KES {order['total']:.2f}</p>
+            <p>Check the admin dashboard for full details.</p>
+        </body>
+        </html>
+        """
+        msg.attach(MIMEText(html_body, "html"))
+        server = smtplib.SMTP(MAIL_SERVER, MAIL_PORT)
+        server.starttls()
+        server.login(MAIL_USERNAME, MAIL_PASSWORD)
+        server.sendmail(MAIL_FROM, MAIL_FROM, msg.as_string())
+        server.quit()
+        logger.info(f"Admin notification email sent for order {order['order_id']}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send admin notification email: {str(e)}")
         return False
 
 
@@ -517,3 +610,97 @@ async def resend_verification_email(
         raise HTTPException(
             status_code=500, detail="Error resending verification email"
         )
+
+
+@router.post("/request-password-reset", status_code=200)
+async def request_password_reset(
+    email: str = Body(..., embed=True), db: Session = Depends(get_db)
+):
+    """Request a password reset: send email with reset link if user exists."""
+    user = db.query(Users).filter(Users.email == email).first()
+    if not user:
+        # Don't reveal if user exists
+        return {"message": "If the email exists, a reset link has been sent."}
+    token = generate_verification_token()
+    user.reset_token = token
+    user.reset_token_expires = datetime.utcnow() + timedelta(minutes=30)
+    db.commit()
+    # Send reset email
+    reset_url = f"{FRONTEND_BASE_URL}/reset-password?token={token}"
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = MAIL_FROM
+        msg["To"] = user.email
+        msg["Subject"] = "Reset Your FlowTech Password"
+        html_body = f"""
+        <html><body>
+        <h2>Password Reset Request</h2>
+        <p>Click the link below to reset your password. This link will expire in 30 minutes.</p>
+        <a href='{reset_url}' style='background: #667eea; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;'>Reset Password</a>
+        <p>If you did not request this, you can ignore this email.</p>
+        </body></html>
+        """
+        msg.attach(MIMEText(html_body, "html"))
+        server = smtplib.SMTP(MAIL_SERVER, MAIL_PORT)
+        server.starttls()
+        server.login(MAIL_USERNAME, MAIL_PASSWORD)
+        server.sendmail(MAIL_FROM, user.email, msg.as_string())
+        server.quit()
+        logger.info(f"Password reset email sent to {user.email}")
+    except Exception as e:
+        logger.error(f"Failed to send password reset email: {str(e)}")
+    return {"message": "If the email exists, a reset link has been sent."}
+
+
+@router.post("/reset-password", status_code=200)
+async def reset_password(
+    token: str = Body(...), new_password: str = Body(...), db: Session = Depends(get_db)
+):
+    """Reset password using token and new password."""
+    user = db.query(Users).filter(Users.reset_token == token).first()
+    if (
+        not user
+        or not user.reset_token_expires
+        or user.reset_token_expires < datetime.utcnow()
+    ):
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token.")
+    user.hashed_password = bcrypt_context.hash(new_password)
+    user.reset_token = None
+    user.reset_token_expires = None
+    db.commit()
+    logger.info(f"Password reset for user {user.email}")
+    return {"message": "Password has been reset successfully."}
+
+
+@router.post("/cancel-order/{order_id}", status_code=200)
+async def cancel_order(
+    order_id: int = Path(...),
+    reason: str = Body(..., embed=True),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_active_user),
+):
+    """Send a cancellation request email to admin with order ID, customer username, and reason. Does NOT update order status."""
+
+    try:
+        msg = MIMEMultipart()
+        msg["From"] = MAIL_FROM
+        msg["To"] = MAIL_FROM
+        msg["Subject"] = f"Order Cancellation Request: Order #{order_id}"
+        html_body = f"""
+        <html><body>
+        <h2>Order Cancellation Request</h2>
+        <p>Customer <b>{current_user['username']}</b> has requested to cancel order <b>#{order_id}</b>.</p>
+        <p><b>Reason:</b> {reason}</p>
+        <p>Please review this request in the admin dashboard.</p>
+        </body></html>
+        """
+        msg.attach(MIMEText(html_body, "html"))
+        server = smtplib.SMTP(MAIL_SERVER, MAIL_PORT)
+        server.starttls()
+        server.login(MAIL_USERNAME, MAIL_PASSWORD)
+        server.sendmail(MAIL_FROM, MAIL_FROM, msg.as_string())
+        server.quit()
+        logger.info(f"Admin notified of cancellation request for order {order_id}")
+    except Exception as e:
+        logger.error(f"Failed to send admin cancellation email: {str(e)}")
+    return {"message": "Cancellation request sent to admin."}

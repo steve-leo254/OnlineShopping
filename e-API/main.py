@@ -30,6 +30,8 @@ from auth import (
     create_user_model,
     require_superadmin,
     get_user_role,
+    send_order_confirmation_email,
+    send_admin_new_order_notification,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func, or_
@@ -411,6 +413,56 @@ async def create_order(
 
         # Commit all changes
         db.commit()
+
+        # Fetch order details for email
+        order_details = (
+            db.query(models.OrderDetails)
+            .filter(models.OrderDetails.order_id == new_order.order_id)
+            .all()
+        )
+        product_list = []
+        for detail in order_details:
+            product = (
+                db.query(models.Products)
+                .filter(models.Products.id == detail.product_id)
+                .first()
+            )
+            product_list.append(
+                {
+                    "name": product.name,
+                    "quantity": float(detail.quantity),
+                    "unit_price": float(product.price),
+                    "total_price": float(detail.total_price),
+                }
+            )
+
+        # Send order confirmation email
+        try:
+            user_obj = (
+                db.query(models.Users).filter(models.Users.id == user.get("id")).first()
+            )
+            if user_obj:
+                send_order_confirmation_email(
+                    user_obj.email,
+                    user_obj.username,
+                    {
+                        "order_id": new_order.order_id,
+                        "total": float(new_order.total),
+                        "delivery_fee": float(new_order.delivery_fee),
+                        "products": product_list,
+                        "subtotal": float(total_cost),
+                    },
+                )
+                # Send admin notification
+                send_admin_new_order_notification(
+                    {
+                        "order_id": new_order.order_id,
+                        "total": float(new_order.total),
+                        "customer_name": user_obj.username,
+                    }
+                )
+        except Exception as e:
+            logger.error(f"Failed to send order confirmation email: {str(e)}")
 
         logger.info(f"Order {new_order.order_id} created for user {user.get('id')}")
         return {

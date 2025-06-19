@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { Eye, EyeOff } from "lucide-react";
+import { toast } from "react-toastify";
 
 interface FormData {
   username: string;
@@ -25,6 +27,8 @@ const SuperAdminRegister: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -45,25 +49,27 @@ const SuperAdminRegister: React.FC = () => {
 
     // Validation
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
+      toast.error("Passwords do not match");
       setIsSubmitting(false);
       return;
     }
 
     if (formData.password.length < 8) {
-      setError("Password must be at least 8 characters long");
+      toast.error("Password must be at least 8 characters long");
       setIsSubmitting(false);
       return;
     }
 
     if (!formData.username.trim() || !formData.email.trim()) {
-      setError("Username and email are required");
+      toast.error("Username and email are required");
       setIsSubmitting(false);
       return;
     }
 
     try {
-      const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/auth/register/superadmin`;
+      const apiUrl = `${
+        import.meta.env.VITE_API_BASE_URL
+      }/auth/register/superadmin`;
       const response = await axios.post<ApiResponse>(
         apiUrl,
         {
@@ -83,8 +89,11 @@ const SuperAdminRegister: React.FC = () => {
 
       // Success case (axios throws for non-2xx status codes by default)
       console.log("Super Admin registration successful:", response.data);
-      setSuccessMessage(response.data.message || "Super Admin account created successfully! You can now login.");
-      
+      setSuccessMessage(
+        response.data.message ||
+          "Super Admin account created successfully! You can now login."
+      );
+
       // Clear form
       setFormData({
         username: "",
@@ -97,40 +106,57 @@ const SuperAdminRegister: React.FC = () => {
       setTimeout(() => {
         navigate("/login");
       }, 3000);
-
     } catch (error) {
       console.error("Super Admin registration error:", error);
-      
+
       if (axios.isAxiosError(error)) {
         if (error.response) {
           // Server responded with error status
           const responseData = error.response.data as ApiResponse;
-          
+
           if (error.response.status === 400) {
-            setError(typeof responseData.detail === 'string' ? responseData.detail : "Username or email already exists");
+            setError(
+              typeof responseData.detail === "string"
+                ? responseData.detail
+                : "Username or email already exists"
+            );
           } else if (error.response.status === 422) {
             // Validation error
             if (Array.isArray(responseData.detail)) {
-              const errorMessages = responseData.detail.map((err) => 
-                `${err.loc?.join('.')} - ${err.msg}`
-              ).join(', ');
+              const errorMessages = responseData.detail
+                .map((err) => `${err.loc?.join(".")} - ${err.msg}`)
+                .join(", ");
               setError(errorMessages);
             } else {
-              setError(typeof responseData.detail === 'string' ? responseData.detail : "Validation error");
+              setError(
+                typeof responseData.detail === "string"
+                  ? responseData.detail
+                  : "Validation error"
+              );
             }
           } else if (error.response.status >= 500) {
             setError("Server error. Please try again later.");
           } else {
-            setError(typeof responseData.detail === 'string' ? responseData.detail : `HTTP error! status: ${error.response.status}`);
+            setError(
+              typeof responseData.detail === "string"
+                ? responseData.detail
+                : `HTTP error! status: ${error.response.status}`
+            );
           }
         } else if (error.request) {
           // Network error
-          setError("Cannot connect to server. Please make sure the API server is running on http://localhost:8000");
+          setError(
+            "Cannot connect to server. Please make sure the API server is running on http://localhost:8000"
+          );
         } else {
           setError("Request failed. Please try again.");
         }
       } else {
-        setError(error instanceof Error ? error.message : "Registration failed. Please try again.");
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Registration failed. Please try again."
+        );
       }
     } finally {
       setIsSubmitting(false);
@@ -149,7 +175,7 @@ const SuperAdminRegister: React.FC = () => {
           </div>
           <span className="text-white">FlowTech</span>
         </a>
-        
+
         <div className="w-full bg-white rounded-lg shadow-2xl md:mt-0 sm:max-w-md xl:p-0 border border-red-200">
           <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
             <div className="text-center">
@@ -157,7 +183,8 @@ const SuperAdminRegister: React.FC = () => {
                 Create Super Admin Account
               </h1>
               <p className="text-sm text-gray-600 mt-2">
-                This will create a system administrator account with full privileges
+                This will create a system administrator account with full
+                privileges
               </p>
             </div>
 
@@ -222,17 +249,34 @@ const SuperAdminRegister: React.FC = () => {
                   >
                     Password <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    value={formData.password}
-                    onChange={handleChange}
-                    type="password"
-                    name="password"
-                    id="password"
-                    placeholder="••••••••"
-                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-600 focus:border-red-600 block w-full p-2.5"
-                    required
-                    disabled={isSubmitting}
-                  />
+                  <div className="relative">
+                    <input
+                      value={formData.password}
+                      onChange={handleChange}
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      id="password"
+                      placeholder="••••••••"
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-600 focus:border-red-600 block w-full p-2.5 pr-10"
+                      required
+                      disabled={isSubmitting}
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-700 focus:outline-none"
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
                   <p className="text-xs text-gray-500 mt-1">
                     Password must be at least 8 characters long
                   </p>
@@ -245,24 +289,49 @@ const SuperAdminRegister: React.FC = () => {
                   >
                     Confirm Password <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    type="password"
-                    name="confirmPassword"
-                    id="confirm-password"
-                    placeholder="••••••••"
-                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-600 focus:border-red-600 block w-full p-2.5"
-                    required
-                    disabled={isSubmitting}
-                  />
+                  <div className="relative">
+                    <input
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      type={showConfirmPassword ? "text" : "password"}
+                      name="confirmPassword"
+                      id="confirm-password"
+                      placeholder="••••••••"
+                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-red-600 focus:border-red-600 block w-full p-2.5 pr-10"
+                      required
+                      disabled={isSubmitting}
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-700 focus:outline-none"
+                      aria-label={
+                        showConfirmPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                   <div className="flex items-start">
                     <div className="flex items-center h-5">
-                      <svg className="w-4 h-4 text-amber-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      <svg
+                        className="w-4 h-4 text-amber-600 mr-2"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     </div>
                     <div className="text-sm">
@@ -270,7 +339,10 @@ const SuperAdminRegister: React.FC = () => {
                         Important Security Notice
                       </p>
                       <p className="text-amber-700 mt-1">
-                        Super Admin accounts have full system access. Only create this account if you are authorized to do so. This action should only be performed during initial system setup.
+                        Super Admin accounts have full system access. Only
+                        create this account if you are authorized to do so. This
+                        action should only be performed during initial system
+                        setup.
                       </p>
                     </div>
                   </div>
@@ -289,11 +361,9 @@ const SuperAdminRegister: React.FC = () => {
                     />
                   </div>
                   <div className="ml-3 text-sm">
-                    <label
-                      htmlFor="terms"
-                      className="font-light text-gray-500"
-                    >
-                      I understand the responsibilities and acknowledge that I have authorization to create a Super Admin account{" "}
+                    <label htmlFor="terms" className="font-light text-gray-500">
+                      I understand the responsibilities and acknowledge that I
+                      have authorization to create a Super Admin account{" "}
                       <span className="text-red-500">*</span>
                     </label>
                   </div>
@@ -307,9 +377,25 @@ const SuperAdminRegister: React.FC = () => {
               >
                 {isSubmitting ? (
                   <div className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Creating Super Admin...
                   </div>

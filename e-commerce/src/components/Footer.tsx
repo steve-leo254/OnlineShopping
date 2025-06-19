@@ -23,8 +23,8 @@ const Footer: React.FC = () => {
                     d="M3 10h18M3 6h18M3 14h18M3 18h18"
                   />
                 </svg>
-                <h3 className="text-2xl font-bold">Wide Selection</h3>
-                <p className="max-w-xs">
+                <h3 className="text-2xl font-bold text-white">Wide Selection</h3>
+                <p className="max-w-xs text-white">
                   Thousands of products from top brands and newest arrivals, all
                   in one place.
                 </p>
@@ -44,8 +44,8 @@ const Footer: React.FC = () => {
                     d="M12 8v4l3 3M8 21h8a2 2 0 002-2v-7H6v7a2 2 0 002 2z"
                   />
                 </svg>
-                <h3 className="text-2xl font-bold">Fast Shipping</h3>
-                <p className="max-w-xs">
+                <h3 className="text-2xl font-bold text-white">Fast Shipping</h3>
+                <p className="max-w-xs text-white">
                   Get your products delivered quickly with our reliable shipping
                   partners.
                 </p>
@@ -73,8 +73,8 @@ const Footer: React.FC = () => {
                     d="M12 6v6l4 2"
                   />
                 </svg>
-                <h3 className="text-2xl font-bold">24/7 Support</h3>
-                <p className="max-w-xs">
+                <h3 className="text-2xl font-bold text-white">24/7 Support</h3>
+                <p className="max-w-xs text-white">
                   Our friendly support team is here to help you anytime.
                 </p>
               </div>
@@ -100,6 +100,19 @@ const Footer: React.FC = () => {
                 <svg
                   className="w-5 h-5"
                   fill="currentColor"
+                  viewBox="0 0 50 50"
+                  aria-hidden="true"
+                >
+                  <path d="M41,4H9C6.243,4,4,6.243,4,9v32c0,2.757,2.243,5,5,5h32c2.757,0,5-2.243,5-5V9C46,6.243,43.757,4,41,4z M37.006,22.323 c-0.227,0.021-0.457,0.035-0.69,0.035c-2.623,0-4.928-1.349-6.269-3.388c0,5.349,0,11.435,0,11.537c0,4.709-3.818,8.527-8.527,8.527 s-8.527-3.818-8.527-8.527s3.818-8.527,8.527-8.527c0.178,0,0.352,0.016,0.527,0.027v4.202c-0.175-0.021-0.347-0.053-0.527-0.053 c-2.404,0-4.352,1.948-4.352,4.352s1.948,4.352,4.352,4.352s4.527-1.894,4.527-4.298c0-0.095,0.042-19.594,0.042-19.594h4.016 c0.378,3.591,3.277,6.425,6.901,6.685V22.323z" />
+                </svg>
+              </a>
+              <a
+                href="https://www.instagram.com/flowtechs_ltd"
+                className="text-gray-500 hover:text-gray-900 dark:hover:text-white"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
                   viewBox="0 0 24 24"
                   aria-hidden="true"
                 >
@@ -110,32 +123,7 @@ const Footer: React.FC = () => {
                   />
                 </svg>
               </a>
-              <a
-                href="https://www.tiktok.com/@flowtech_solutions"
-                className="text-gray-500 hover:text-gray-900 dark:hover:text-white"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="currentColor"
-                  viewBox="0 0 50 50"
-                  aria-hidden="true"
-                >
-                  <path d="M41,4H9C6.243,4,4,6.243,4,9v32c0,2.757,2.243,5,5,5h32c2.757,0,5-2.243,5-5V9C46,6.243,43.757,4,41,4z M37.006,22.323 c-0.227,0.021-0.457,0.035-0.69,0.035c-2.623,0-4.928-1.349-6.269-3.388c0,5.349,0,11.435,0,11.537c0,4.709-3.818,8.527-8.527,8.527 s-8.527-3.818-8.527-8.527s3.818-8.527,8.527-8.527c0.178,0,0.352,0.016,0.527,0.027v4.202c-0.175-0.021-0.347-0.053-0.527-0.053 c-2.404,0-4.352,1.948-4.352,4.352s1.948,4.352,4.352,4.352s4.527-1.894,4.527-4.298c0-0.095,0.042-19.594,0.042-19.594h4.016 c0.378,3.591,3.277,6.425,6.901,6.685V22.323z" />
-                </svg>
-              </a>
-              <a
-                href="#"
-                className="text-gray-500 hover:text-gray-900 dark:hover:text-white"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
-                </svg>
-              </a>
+
               <a
                 href="https://github.com/steve-leo254"
                 className="text-gray-500 hover:text-gray-900 dark:hover:text-white"

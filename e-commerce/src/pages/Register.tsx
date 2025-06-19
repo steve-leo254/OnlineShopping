@@ -2,9 +2,9 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import type { FormEvent, ChangeEvent } from "react";
-
 import axios from "axios";
-
+import { Eye, EyeOff } from "lucide-react";
+import { toast } from "react-toastify";
 
 interface FormData {
   username: string;
@@ -36,14 +36,14 @@ const Register: React.FC = () => {
   const [alert, setAlert] = useState<Alert | null>(null);
   const [showVerificationMessage, setShowVerificationMessage] = useState(false);
   const [pendingUserId, setPendingUserId] = useState<number | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Email validation function
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
-
-  // Check if email domain is valid and can receive emails
 
   // Check against common disposable email providers
   const isDisposableEmail = (email: string): boolean => {
@@ -79,8 +79,6 @@ const Register: React.FC = () => {
     return disposableDomains.includes(domain);
   };
 
-  // Enhanced but more permissive email verification
-
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     console.log(`Input changed: ${name} = ${value}`); // Debug log
@@ -105,15 +103,14 @@ const Register: React.FC = () => {
 
     // Basic email format validation
     if (!isValidEmail(formData.email)) {
-      showAlert("error", "Please enter a valid email address.");
+      toast.error("Please enter a valid email address.");
       setIsSubmitting(false);
       return;
     }
 
     // Check for disposable emails
     if (isDisposableEmail(formData.email)) {
-      showAlert(
-        "error",
+      toast.error(
         "Disposable email addresses are not allowed. Please use a valid email address."
       );
       setIsSubmitting(false);
@@ -122,13 +119,13 @@ const Register: React.FC = () => {
 
     // Password validation
     if (formData.password.length < 6) {
-      showAlert("error", "Password must be at least 6 characters long.");
+      toast.error("Password must be at least 6 characters long.");
       setIsSubmitting(false);
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      showAlert("error", "Passwords do not match");
+      toast.error("Passwords do not match");
       setIsSubmitting(false);
       return;
     }
@@ -174,8 +171,6 @@ const Register: React.FC = () => {
       setIsSubmitting(false);
     }
   };
-
-  // Function to handle email verification
 
   // Function to resend verification email
   const resendVerificationEmail = async () => {
@@ -354,17 +349,34 @@ const Register: React.FC = () => {
                         >
                           Password
                         </label>
-                        <input
-                          value={formData.password}
-                          onChange={handleChange}
-                          type="password"
-                          name="password"
-                          id="password"
-                          placeholder="••••••••"
-                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
-                          required
-                          minLength={6}
-                        />
+                        <div className="relative">
+                          <input
+                            value={formData.password}
+                            onChange={handleChange}
+                            type={showPassword ? "text" : "password"}
+                            name="password"
+                            id="password"
+                            placeholder="••••••••"
+                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 pr-10"
+                            required
+                            minLength={6}
+                          />
+                          <button
+                            type="button"
+                            tabIndex={-1}
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-700 focus:outline-none"
+                            aria-label={
+                              showPassword ? "Hide password" : "Show password"
+                            }
+                          >
+                            {showPassword ? (
+                              <EyeOff className="w-5 h-5" />
+                            ) : (
+                              <Eye className="w-5 h-5" />
+                            )}
+                          </button>
+                        </div>
                         <p className="text-xs text-gray-500 mt-1">
                           Password must be at least 6 characters long
                         </p>
@@ -376,16 +388,37 @@ const Register: React.FC = () => {
                         >
                           Confirm password
                         </label>
-                        <input
-                          value={formData.confirmPassword}
-                          onChange={handleChange}
-                          type="password"
-                          name="confirmPassword"
-                          id="confirm-password"
-                          placeholder="••••••••"
-                          className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
-                          required
-                        />
+                        <div className="relative">
+                          <input
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            type={showConfirmPassword ? "text" : "password"}
+                            name="confirmPassword"
+                            id="confirm-password"
+                            placeholder="••••••••"
+                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 pr-10"
+                            required
+                          />
+                          <button
+                            type="button"
+                            tabIndex={-1}
+                            onClick={() =>
+                              setShowConfirmPassword((prev) => !prev)
+                            }
+                            className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-700 focus:outline-none"
+                            aria-label={
+                              showConfirmPassword
+                                ? "Hide password"
+                                : "Show password"
+                            }
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="w-5 h-5" />
+                            ) : (
+                              <Eye className="w-5 h-5" />
+                            )}
+                          </button>
+                        </div>
                       </div>
                       <div className="flex items-start">
                         <div className="flex items-center h-5">

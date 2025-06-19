@@ -15,6 +15,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 // Type definitions
 interface User {
@@ -101,6 +102,8 @@ const SuperAdminDashboard: React.FC = () => {
     show: false,
   });
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState<boolean>(false);
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
     limit: 10,
@@ -200,11 +203,10 @@ const SuperAdminDashboard: React.FC = () => {
       );
       if (response.access_token) {
         login(response.access_token);
-        showNotification("success", "Login successful!");
+        toast.success("Login successful!");
       }
     } catch (error: any) {
-      showNotification(
-        "error",
+      toast.error(
         error.message || "Login failed. Please check your credentials."
       );
     } finally {
@@ -214,7 +216,7 @@ const SuperAdminDashboard: React.FC = () => {
 
   const handleLogout = (): void => {
     logout();
-    showNotification("success", "Logged out successfully");
+    toast.success("Logged out successfully");
   };
 
   const fetchUsers = async (authToken: string): Promise<void> => {
@@ -267,16 +269,10 @@ const SuperAdminDashboard: React.FC = () => {
 
   const handleApiError = (error: any) => {
     if (error.message.includes("401") || error.message.includes("403")) {
-      showNotification(
-        "error",
-        "Session expired or invalid. Please login again."
-      );
+      toast.error("Session expired or invalid. Please login again.");
       logout();
     } else {
-      showNotification(
-        "error",
-        error.message || "An unexpected error occurred."
-      );
+      toast.error(error.message || "An unexpected error occurred.");
     }
   };
 
@@ -313,7 +309,7 @@ const SuperAdminDashboard: React.FC = () => {
 
       resetForm();
       setShowAddForm(false);
-      showNotification("success", "Admin added successfully!");
+      toast.success("Admin added successfully!");
       await Promise.all([fetchUsers(token), fetchStats(token)]);
     } catch (error) {
       handleApiError(error);
@@ -333,7 +329,7 @@ const SuperAdminDashboard: React.FC = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      showNotification("success", "User deleted successfully");
+      toast.success("User deleted successfully");
       await Promise.all([fetchUsers(token), fetchStats(token)]);
     } catch (error: any) {
       handleApiError(error);
@@ -488,9 +484,10 @@ const SuperAdminDashboard: React.FC = () => {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setShowPassword((prev) => !prev)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
                   disabled={loading}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />
@@ -789,9 +786,12 @@ const SuperAdminDashboard: React.FC = () => {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowPassword(!showPassword)}
+                      onClick={() => setShowPassword((prev) => !prev)}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
                       disabled={loading}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
                     >
                       {showPassword ? (
                         <EyeOff className="w-4 h-4" />
@@ -811,23 +811,40 @@ const SuperAdminDashboard: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Confirm Password
                   </label>
-                  <input
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        confirmPassword: e.target.value,
-                      })
-                    }
-                    className={`w-full px-3 py-2 bg-slate-700 border ${
-                      formErrors.confirmPassword
-                        ? "border-red-500"
-                        : "border-slate-600"
-                    } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                    placeholder="Confirm password"
-                    disabled={loading}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={formData.confirmPassword}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          confirmPassword: e.target.value,
+                        })
+                      }
+                      className={`w-full px-3 py-2 pr-10 bg-slate-700 border ${
+                        formErrors.confirmPassword
+                          ? "border-red-500"
+                          : "border-slate-600"
+                      } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                      placeholder="Confirm password"
+                      disabled={loading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                      disabled={loading}
+                      aria-label={
+                        showConfirmPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
                   {formErrors.confirmPassword && (
                     <p className="text-red-400 text-sm mt-1">
                       {formErrors.confirmPassword}

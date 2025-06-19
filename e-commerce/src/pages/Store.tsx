@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Search,
-  
   Star,
   Heart,
   Eye,
@@ -133,7 +132,6 @@ const Store = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("featured");
-  const [viewMode] = useState<string>("grid");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null
   );
@@ -423,28 +421,6 @@ const Store = () => {
                       <option value="newest">Newest</option>
                     </select>
                   </div>
-                  <div className="flex bg-gray-100 rounded-lg p-1">
-                    {/* <button
-                      onClick={() => setViewMode("grid")}
-                      className={`p-2 rounded-md transition-colors bg-gray-200 ${
-                        viewMode === "grid"
-                          ? "bg-white shadow-sm"
-                          : "hover:bg-gray-400"
-                      }`}
-                    >
-                      <Grid className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setViewMode("list")}
-                      className={`p-2 rounded-md transition-colors bg-gray-200 ${
-                        viewMode === "list"
-                          ? "bg-white shadow-sm"
-                          : "hover:bg-gray-400"
-                      }`}
-                    >
-                      <List className="w-4 h-4" />
-                    </button> */}
-                  </div>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -525,29 +501,13 @@ const Store = () => {
               )}
             </div>
 
-            <div
-              className={`mb-8 ${
-                viewMode === "grid"
-                  ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
-                  : "space-y-4"
-              }`}
-            >
+            <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {displayedProducts.map((product) => (
                 <div
                   key={product.id}
-                  className={`group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 ${
-                    viewMode === "list"
-                      ? "flex items-center p-4"
-                      : "flex flex-col h-full"
-                  }`}
+                  className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 flex flex-col h-full"
                 >
-                  <div
-                    className={`relative overflow-hidden ${
-                      viewMode === "list"
-                        ? "w-32 h-32 flex-shrink-0 rounded-lg"
-                        : "aspect-square"
-                    }`}
-                  >
+                  <div className="relative overflow-hidden aspect-square">
                     <img
                       src={product.img_url}
                       alt={product.name}
@@ -599,169 +559,82 @@ const Store = () => {
                       </div>
                     )}
                   </div>
-
-                  <div
-                    className={`${
-                      viewMode === "list"
-                        ? "ml-4 flex-1"
-                        : "p-4 flex-1 flex flex-col"
-                    } ${viewMode === "list" ? "" : "justify-between h-full"}`}
-                  >
-                    {viewMode === "list" ? (
-                      <>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-full">
-                            {product.category}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {product.brand}
-                          </span>
-                        </div>
-                        <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
-                          {product.name}
-                        </h3>
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-3 h-3 ${
-                                  i < Math.floor(product.rating)
-                                    ? "text-yellow-400 fill-current"
-                                    : "text-gray-300"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <span className="text-sm font-medium text-gray-900">
-                            {product.rating}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            ({product.reviews})
-                          </span>
-                        </div>
-                        <div className="mb-2">
-                          <span className="text-xs text-gray-500">
-                            Stock: {product.stockQuantity} available
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xl font-bold text-gray-900">
-                                {formatCurrency(product.price)}
-                              </span>
-                              {product.originalPrice > product.price && (
-                                <span className="text-sm text-gray-500 line-through">
-                                  {formatCurrency(product.originalPrice)}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1 text-xs text-gray-500">
-                              <span>Free shipping</span>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => handleAddToCart(product)}
-                            disabled={
-                              !product.inStock ||
-                              getItemQuantity(parseInt(product.id)) >=
-                                product.stockQuantity
-                            } // Disable if already at max stock
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                              product.inStock &&
-                              getItemQuantity(parseInt(product.id)) <
-                                product.stockQuantity
-                                ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
-                                : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                            }`}
-                          >
-                            <ShoppingCart className="w-4 h-4" />
-                            <span className="hidden sm:inline">
-                              Add to Cart
-                            </span>
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-full">
-                              {product.category}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {product.brand}
-                            </span>
-                          </div>
-                          <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2 text-sm sm:text-base">
-                            {product.name}
-                          </h3>
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="flex items-center">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`w-3 h-3 ${
-                                    i < Math.floor(product.rating)
-                                      ? "text-yellow-400 fill-current"
-                                      : "text-gray-300"
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                            <span className="text-sm font-medium text-gray-900">
-                              {product.rating}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              ({product.reviews})
-                            </span>
-                          </div>
-                          <div className="mb-3">
-                            <span className="text-xs text-gray-500">
-                              Stock: {product.stockQuantity} available
-                            </span>
-                          </div>
-                        </div>
-                        <div className="mt-auto">
-                          <div className="flex flex-col gap-3">
-                            <div className="flex flex-col">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-lg sm:text-xl font-bold text-gray-900">
-                                  {formatCurrency(product.price)}
-                                </span>
-                                {product.originalPrice > product.price && (
-                                  <span className="text-sm text-gray-500 line-through">
-                                    {formatCurrency(product.originalPrice)}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1 text-xs text-gray-500">
-                                <span>Delivered at a fee</span>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => handleAddToCart(product)}
-                              disabled={
-                                !product.inStock ||
-                                getItemQuantity(parseInt(product.id)) >=
-                                  product.stockQuantity
-                              } // Disable if already at max stock
-                              className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
-                                product.inStock &&
-                                getItemQuantity(parseInt(product.id)) <
-                                  product.stockQuantity
-                                  ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
-                                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  <div className="p-4 flex-1 flex flex-col justify-between h-full">
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-full">
+                          {product.category}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {product.brand}
+                        </span>
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2 text-sm sm:text-base">
+                        {product.name}
+                      </h3>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-3 h-3 ${
+                                i < Math.floor(product.rating)
+                                  ? "text-yellow-400 fill-current"
+                                  : "text-gray-300"
                               }`}
-                            >
-                              <ShoppingCart className="w-4 h-4 flex-shrink-0" />
-                              <span>Add to Cart</span>
-                            </button>
+                            />
+                          ))}
+                        </div>
+                        <span className="text-sm font-medium text-gray-900">
+                          {product.rating}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          ({product.reviews})
+                        </span>
+                      </div>
+                      <div className="mb-3">
+                        <span className="text-xs text-gray-500">
+                          Stock: {product.stockQuantity} available
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-auto">
+                      <div className="flex flex-col gap-3">
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-lg sm:text-xl font-bold text-gray-900">
+                              {formatCurrency(product.price)}
+                            </span>
+                            {product.originalPrice > product.price && (
+                              <span className="text-sm text-gray-500 line-through">
+                                {formatCurrency(product.originalPrice)}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-gray-500">
+                            <span>Delivered at a fee</span>
                           </div>
                         </div>
-                      </>
-                    )}
+                        <button
+                          onClick={() => handleAddToCart(product)}
+                          disabled={
+                            !product.inStock ||
+                            getItemQuantity(parseInt(product.id)) >=
+                              product.stockQuantity
+                          } // Disable if already at max stock
+                          className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
+                            product.inStock &&
+                            getItemQuantity(parseInt(product.id)) <
+                              product.stockQuantity
+                              ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
+                              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                          }`}
+                        >
+                          <ShoppingCart className="w-4 h-4 flex-shrink-0" />
+                          <span>Add to Cart</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}

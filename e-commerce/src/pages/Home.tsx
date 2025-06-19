@@ -161,8 +161,8 @@ const Home: React.FC = () => {
     <>
       {/* First Section: Sliding Carousel Showing One Image at a Time with Auto Slide */}
       {/* Hero Section with Enhanced Carousel */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800">
-        <div className="absolute inset-0 bg-black/20"></div>
+      <section className="min-h-screen relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800">
+        <div className="absolute inset-0 bg-black/10"></div>
 
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
