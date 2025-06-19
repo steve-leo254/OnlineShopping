@@ -439,7 +439,7 @@ const Register: React.FC = () => {
                             I accept the{" "}
                             <a
                               className="font-medium text-primary-600 hover:underline"
-                              href="#"
+                              href="/termsconditions"
                             >
                               Terms and Conditions
                             </a>
