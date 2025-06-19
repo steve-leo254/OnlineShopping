@@ -61,17 +61,14 @@ class ProductsBase(BaseModel):
     cost: float
     price: float
     original_price: Optional[float] = None  # New field
-    img_url: str
     stock_quantity: float
     barcode: int
     category_id: Optional[int]
     brand: Optional[str]
     description: Optional[str]
     rating: Optional[float] = 0.0  # New field
-    reviews: int = 0  # New field
     discount: Optional[float] = 0.0  # New field
     is_new: bool = False  # New field
-    is_favorite: bool = False  # New field
 
 
 class ProductImageBase(BaseModel):
@@ -238,17 +235,14 @@ class UpdateProduct(BaseModel):
     price: Optional[float]
     cost: Optional[float]
     original_price: Optional[float] = None  # New field
-    img_url: Optional[str]
     stock_quantity: Optional[float]
     barcode: Optional[int]
     category_id: Optional[int]
     brand: Optional[str]
     description: Optional[str]
     rating: Optional[float] = None  # New field
-    reviews: Optional[int] = None  # New field
     discount: Optional[float] = None  # New field
     is_new: Optional[bool] = None  # New field
-    is_favorite: Optional[bool] = None  # New field
 
 
 class PaginatedProductResponse(BaseModel):

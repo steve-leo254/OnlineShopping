@@ -254,6 +254,7 @@ async def add_product(
 ):
     require_admin(user)
     try:
+        # Only use fields that exist in the Products model
         add_product = models.Products(**create_product.dict(), user_id=user.get("id"))
         db.add(add_product)
         db.commit()

@@ -34,10 +34,8 @@ type ProductForm = {
   brand: string;
   description: string;
   rating: number;
-  reviews: number;
   discount: number;
   is_new: boolean;
-  is_favorite: boolean;
 };
 
 interface AddProductProps {
@@ -58,18 +56,17 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
     brand: "",
     description: "",
     rating: 0,
-    reviews: 0,
     discount: 0,
     is_new: false,
-    is_favorite: false,
   });
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [showCategoryModal, setShowCategoryModal] = useState<boolean>(false); // State for category modal
-  const [specifications, setSpecifications] = useState([]);
-  const [specValues, setSpecValues] = useState({});
+  type Specification = { id: number; name: string; value_type: string };
+  const [specifications, setSpecifications] = useState<Specification[]>([]);
+  const [specValues, setSpecValues] = useState<Record<number, string>>({});
 
   // Fetch categories on mount and when a new category is added
   const fetchCategories = async () => {
@@ -136,7 +133,6 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
             name === "stock_quantity" ||
             name === "barcode" ||
             name === "rating" ||
-            name === "reviews" ||
             name === "discount"
           ? Number(value) || 0
           : name === "category_id"
@@ -177,11 +173,11 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
   };
 
   // Handle image uploads (for simplicity, just URLs for now)
-  const handleAddImage = (url) => {
+  const handleAddImage = (url: string) => {
     setFormData((prev) => ({ ...prev, images: [...prev.images, url] }));
   };
 
-  const handleRemoveImage = (url) => {
+  const handleRemoveImage = (url: string) => {
     setFormData((prev) => ({
       ...prev,
       images: prev.images.filter((img) => img !== url),
@@ -189,7 +185,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
   };
 
   // Handle specification value changes
-  const handleSpecChange = (specId, value) => {
+  const handleSpecChange = (specId: number, value: string) => {
     setSpecValues((prev) => ({ ...prev, [specId]: value }));
   };
 
@@ -231,10 +227,6 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
       toast.error("Rating must be between 0 and 5");
       return;
     }
-    if (formData.reviews < 0) {
-      toast.error("Reviews cannot be negative");
-      return;
-    }
     if (formData.discount < 0 || formData.discount > 100) {
       toast.error("Discount must be between 0 and 100");
       return;
@@ -243,7 +235,6 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
     setIsLoading(true);
 
     try {
-      let img_url = formData.images[0] || "";
       let uploadedImageUrls: string[] = [];
       // Upload all selected image files
       for (let i = 0; i < imageFiles.length; i++) {
@@ -259,20 +250,17 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
             },
           }
         );
-        if (i === 0) {
-          img_url = imageResponse.data.img_url;
-        }
         uploadedImageUrls.push(imageResponse.data.img_url);
       }
 
-      // Prepare images array for API (uploaded + manual URLs, excluding the main img_url)
+      // Prepare images array for API (uploaded + manual URLs)
       const allImageUrls = [...uploadedImageUrls, ...formData.images].filter(
-        (url) => url && url !== img_url
+        (url) => url
       );
       const images = allImageUrls.map((url) => ({ img_url: url }));
 
       // Prepare specifications array for API
-      const specifications = Object.entries(specValues)
+      const specificationsArr = Object.entries(specValues)
         .filter(([_, value]) => value !== "")
         .map(([specification_id, value]) => ({
           specification_id: Number(specification_id),
@@ -280,14 +268,14 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
         }));
 
       // Create product
-      const productData = { ...formData, img_url };
+      const productData = { ...formData };
       await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/products`,
         {
           ...productData,
           images: images.length > 0 ? images : undefined,
           specifications:
-            specifications.length > 0 ? specifications : undefined,
+            specificationsArr.length > 0 ? specificationsArr : undefined,
         },
         {
           headers: {
@@ -631,48 +619,6 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
             </div>
           )}
 
-          {/* Rating & Reviews */}
-          <div className="bg-yellow-50 rounded-2xl p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Star className="w-5 h-5 text-yellow-600" />
-              <h3 className="text-lg font-semibold text-gray-900">
-                Rating & Reviews
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Rating (0-5)
-                </label>
-                <input
-                  type="number"
-                  name="rating"
-                  value={formData.rating}
-                  onChange={handleChange}
-                  min="0"
-                  max="5"
-                  step="0.1"
-                  className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200"
-                  placeholder="4.5"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Number of Reviews
-                </label>
-                <input
-                  type="number"
-                  name="reviews"
-                  value={formData.reviews}
-                  onChange={handleChange}
-                  min="0"
-                  className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200"
-                  placeholder="150"
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Product Status */}
           <div className="bg-blue-50 rounded-2xl p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -689,18 +635,6 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                 />
                 <span className="text-sm font-medium text-gray-700">
                   New Product
-                </span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="is_favorite"
-                  checked={formData.is_favorite}
-                  onChange={handleChange}
-                  className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                />
-                <span className="text-sm font-medium text-gray-700">
-                  Featured Product
                 </span>
               </label>
             </div>
