@@ -1,5 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Star, Package, CheckCircle, ShoppingBag, ArrowLeft, Sparkles, Gift } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import {
+  Star,
+  Package,
+  CheckCircle,
+  ShoppingBag,
+  ArrowLeft,
+  Sparkles,
+  Gift,
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 
 // Type definitions
 interface User {
@@ -13,6 +24,7 @@ interface Product {
   image: string;
   price: number;
   reviewed: boolean;
+  orderId?: number;
 }
 
 interface ReviewData {
@@ -35,101 +47,160 @@ interface ReviewCardProps {
 }
 
 const ReviewPage: React.FC = () => {
+  const { token } = useAuth();
+  let currentUser: { id: number; name: string } | null = null;
+  if (token) {
+    try {
+      const decoded: any = jwtDecode(token);
+      currentUser = { id: decoded.id, name: decoded.sub };
+    } catch {}
+  }
   const [pendingReviews, setPendingReviews] = useState<Product[]>([]);
   const [submittingReview, setSubmittingReview] = useState<number | null>(null);
-
-  // Mock current user - replace with actual user context/props
-  const currentUser: User = { id: 1, name: 'John Doe' };
-
-  // Mock pending reviews data - replace with actual API call
-  const mockPendingReviews: Product[] = [
-    { 
-      id: 1, 
-      name: 'Wireless Headphones', 
-      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&h=200&fit=crop',
-      price: 99.99,
-      reviewed: false
-    },
-    { 
-      id: 2, 
-      name: 'Smartphone Case', 
-      image: 'https://images.unsplash.com/photo-1601593346740-925612772716?w=200&h=200&fit=crop',
-      price: 24.99,
-      reviewed: false
-    },
-    { 
-      id: 3, 
-      name: 'USB-C Cable', 
-      image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&h=200&fit=crop',
-      price: 15.99,
-      reviewed: false
-    }
-  ];
-
   const [reviews, setReviews] = useState<Record<number, Review>>({});
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-  // Load pending reviews on component mount
   useEffect(() => {
-    setPendingReviews(mockPendingReviews);
-  }, []);
+    const fetchPendingReviews = async () => {
+      if (!token || !currentUser) return;
+      try {
+        // Fetch all delivered orders
+        const orderRes = await axios.get(`${API_BASE_URL}/orders`, {
+          params: { limit: 100, status: "delivered" },
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const deliveredOrders = orderRes.data.items || [];
+        // For each product in each order, check if the user has reviewed it for that order
+        const productsToReview: Product[] = [];
+        deliveredOrders.forEach((order: any) => {
+          if (!order.order_details) return;
+          order.order_details.forEach((detail: any) => {
+            const product = detail.product;
+            // Check if user has reviewed this product in this order
+            const alreadyReviewed = (product.reviews || []).some(
+              (rev: any) =>
+                rev.user_id === currentUser!.id &&
+                rev.order_id === order.order_id
+            );
+            if (!alreadyReviewed) {
+              productsToReview.push({
+                id: product.id,
+                name: product.name,
+                image:
+                  product.images && product.images.length > 0
+                    ? product.images[0].img_url.startsWith("http")
+                      ? product.images[0].img_url
+                      : `${API_BASE_URL}${product.images[0].img_url}`
+                    : "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop",
+                price: product.price,
+                reviewed: false,
+                orderId: order.order_id, // Track which order this product is from
+              });
+            }
+          });
+        });
+        setPendingReviews(productsToReview);
+      } catch (err) {
+        setPendingReviews([]);
+      }
+    };
+    fetchPendingReviews();
+  }, [token, currentUser, API_BASE_URL]);
 
   // Handle review submission
-  const submitReview = async (productId: number, reviewData: ReviewData): Promise<void> => {
+  const submitReview = async (
+    productId: number,
+    reviewData: ReviewData
+  ): Promise<void> => {
     setSubmittingReview(productId);
-    
-    setTimeout(() => {
-      setPendingReviews(prev => 
-        prev.filter(product => product.id !== productId)
+    if (!token || !currentUser) return;
+    try {
+      // Find the product in pendingReviews to get its orderId
+      const productToReview = pendingReviews.find((p) => p.id === productId);
+      if (!productToReview || !productToReview.orderId)
+        throw new Error("Order ID not found for product");
+      // POST review
+      await axios.post(
+        `${API_BASE_URL}/reviews`,
+        {
+          product_id: productId,
+          order_id: productToReview.orderId,
+          rating: reviewData.rating,
+          comment: reviewData.comment,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
-      
-      setReviews(prev => ({
+      // Remove product from pending reviews
+      setPendingReviews((prev) =>
+        prev.filter(
+          (product) =>
+            product.id !== productId ||
+            product.orderId !== productToReview.orderId
+        )
+      );
+      setReviews((prev) => ({
         ...prev,
         [productId]: {
           ...reviewData,
           userId: currentUser.id,
           productId,
-          date: new Date().toISOString()
-        }
+          date: new Date().toISOString(),
+        },
       }));
-      
+    } catch (err) {
+      alert("Failed to submit review. Please try again.");
+    } finally {
       setSubmittingReview(null);
-    }, 1500);
+    }
   };
 
   // Handle skipping individual review
   const skipReview = (productId: number): void => {
-    setPendingReviews(prev => 
-      prev.filter(product => product.id !== productId)
+    setPendingReviews((prev) =>
+      prev.filter((product) => product.id !== productId)
     );
   };
 
   // Individual review component
-  const ReviewCard: React.FC<ReviewCardProps> = ({ product, onSubmit, onSkip, isSubmitting }) => {
+  const ReviewCard: React.FC<ReviewCardProps> = ({
+    product,
+    onSubmit,
+    onSkip,
+    isSubmitting,
+  }) => {
     const [rating, setRating] = useState<number>(0);
     const [hoverRating, setHoverRating] = useState<number>(0);
-    const [comment, setComment] = useState<string>('');
+    const [comment, setComment] = useState<string>("");
 
     const handleSubmit = (): void => {
       if (rating === 0) {
-        alert('Please select a rating');
+        alert("Please select a rating");
         return;
       }
-      
+
       onSubmit(product.id, {
         rating,
         comment,
-        productName: product.name
+        productName: product.name,
       });
     };
 
     const getRatingText = (rating: number): string => {
-      switch(rating) {
-        case 5: return "Amazing! 🌟";
-        case 4: return "Great! 👍";
-        case 3: return "Good 👌";
-        case 2: return "Could be better 🤔";
-        case 1: return "Needs improvement 💭";
-        default: return "";
+      switch (rating) {
+        case 5:
+          return "Amazing! 🌟";
+        case 4:
+          return "Great! 👍";
+        case 3:
+          return "Good 👌";
+        case 2:
+          return "Could be better 🤔";
+        case 1:
+          return "Needs improvement 💭";
+        default:
+          return "";
       }
     };
 
@@ -139,8 +210,8 @@ const ReviewPage: React.FC = () => {
           {/* Product Image */}
           <div className="relative flex-shrink-0">
             <div className="w-16 h-16 rounded-xl overflow-hidden shadow-sm ring-1 ring-gray-200">
-              <img 
-                src={product.image} 
+              <img
+                src={product.image}
                 alt={product.name}
                 className="w-full h-full object-cover"
               />
@@ -157,13 +228,15 @@ const ReviewPage: React.FC = () => {
                 {product.name}
               </h3>
               <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-gray-900">${product.price}</span>
+                <span className="text-lg font-bold text-gray-900">
+                  ${product.price}
+                </span>
                 <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
                   Recent Purchase
                 </span>
               </div>
             </div>
-            
+
             {/* Star Rating */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
@@ -184,17 +257,15 @@ const ReviewPage: React.FC = () => {
                       size={20}
                       className={`${
                         star <= (hoverRating || rating)
-                          ? 'fill-yellow-400 text-yellow-400'
-                          : 'text-gray-300 hover:text-yellow-200'
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-gray-300 hover:text-yellow-200"
                       } transition-colors duration-200`}
                     />
                   </button>
                 ))}
               </div>
               {rating > 0 && (
-                <p className="text-xs text-gray-600">
-                  {getRatingText(rating)}
-                </p>
+                <p className="text-xs text-gray-600">{getRatingText(rating)}</p>
               )}
             </div>
 
@@ -235,7 +306,7 @@ const ReviewPage: React.FC = () => {
                   </>
                 )}
               </button>
-              
+
               <button
                 onClick={() => onSkip(product.id)}
                 disabled={isSubmitting}
@@ -262,9 +333,15 @@ const ReviewPage: React.FC = () => {
                 <Package className="text-white" size={20} />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Product Reviews</h1>
+                <h1 className="text-xl font-bold text-gray-900">
+                  Product Reviews
+                </h1>
                 <p className="text-gray-600 text-sm">
-                  Welcome back, <span className="font-medium text-blue-600">{currentUser.name}</span> ✨
+                  Welcome back,{" "}
+                  <span className="font-medium text-blue-600">
+                    {currentUser ? currentUser.name : "User"}
+                  </span>{" "}
+                  ✨
                 </p>
               </div>
             </div>
@@ -289,15 +366,16 @@ const ReviewPage: React.FC = () => {
                 Share Your Experience
               </h2>
               <p className="text-gray-600 max-w-xl mx-auto">
-                Your honest feedback helps other customers make informed decisions
+                Your honest feedback helps other customers make informed
+                decisions
               </p>
             </div>
 
             <div className="space-y-4">
               {pendingReviews.map((product) => (
-                <ReviewCard 
+                <ReviewCard
                   key={product.id}
-                  product={product} 
+                  product={product}
                   onSubmit={submitReview}
                   onSkip={skipReview}
                   isSubmitting={submittingReview === product.id}
@@ -319,7 +397,8 @@ const ReviewPage: React.FC = () => {
               All Caught Up!
             </h2>
             <p className="text-gray-600 mb-6 max-w-xl mx-auto">
-              You've reviewed all your recent purchases. Your feedback is invaluable!
+              You've reviewed all your recent purchases. Your feedback is
+              invaluable!
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
               <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center justify-center gap-2 font-medium">
@@ -335,7 +414,8 @@ const ReviewPage: React.FC = () => {
               <p className="text-sm text-gray-700 flex items-start gap-2">
                 <span className="text-base">💡</span>
                 <span>
-                  <strong>Thank you!</strong> Your reviews help thousands of customers make better decisions.
+                  <strong>Thank you!</strong> Your reviews help thousands of
+                  customers make better decisions.
                 </span>
               </p>
             </div>
