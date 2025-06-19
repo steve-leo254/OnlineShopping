@@ -26,6 +26,7 @@ import EmailVerification from "./pages/EmailVerification";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ProtectedRoute from "./assets/PrivateRoutes";
+import WishList from "./pages/WishList";
 
 function App() {
   return (
@@ -50,9 +51,12 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/SuperAdmin" element={<SuperAdminRegister />} />
-
+            <Route path="/wishlist" element={<WishList />} />
+ 
             <Route element={<Layout />}>
               <Route index element={<Home />} />
+              <Route path="/productdetail" element={<ProductDetail />} />
+              
               <Route path="/store" element={<Store />} />
               <Route path="/shopping-cart" element={<ShoppingCart />} />
               <Route path="/about" element={<AboutPage />} />
@@ -68,7 +72,7 @@ function App() {
                   path="/order-details/:orderId"
                   element={<OrderDetails />}
                 />
-                <Route path="/productdetail" element={<ProductDetail />} />
+                
                 <Route path="/orders-overview" element={<OrdersOverview />} />
                 <Route
                   path="/orders-management"
