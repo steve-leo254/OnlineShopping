@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext'; // Assuming you have this
 import { Star, Package, CheckCircle, ShoppingBag, ArrowLeft, Sparkles, Gift } from 'lucide-react';
 
 // Type definitions
@@ -12,13 +14,12 @@ interface Product {
   name: string;
   image: string;
   price: number;
-  reviewed: boolean;
+  order_id: number;
 }
 
 interface ReviewData {
   rating: number;
   comment: string;
-  productName: string;
 }
 
 interface Review extends ReviewData {
@@ -29,82 +30,88 @@ interface Review extends ReviewData {
 
 interface ReviewCardProps {
   product: Product;
-  onSubmit: (productId: number, reviewData: ReviewData) => void;
-  onSkip: (productId: number) => void;
+  onSubmit: (reviewData: ReviewData) => void;
   isSubmitting: boolean;
 }
 
-const ReviewPage: React.FC = () => {
-  const [pendingReviews, setPendingReviews] = useState<Product[]>([]);
+const PendingReviews: React.FC = () => {
+  const { token } = useAuth();
+  const [pendingProducts, setPendingProducts] = useState<Product[]>([]);
   const [submittingReview, setSubmittingReview] = useState<number | null>(null);
 
   // Mock current user - replace with actual user context/props
   const currentUser: User = { id: 1, name: 'John Doe' };
 
-  // Mock pending reviews data - replace with actual API call
-  const mockPendingReviews: Product[] = [
-    { 
-      id: 1, 
-      name: 'Wireless Headphones', 
-      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&h=200&fit=crop',
-      price: 99.99,
-      reviewed: false
-    },
-    { 
-      id: 2, 
-      name: 'Smartphone Case', 
-      image: 'https://images.unsplash.com/photo-1601593346740-925612772716?w=200&h=200&fit=crop',
-      price: 24.99,
-      reviewed: false
-    },
-    { 
-      id: 3, 
-      name: 'USB-C Cable', 
-      image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=200&h=200&fit=crop',
-      price: 15.99,
-      reviewed: false
-    }
-  ];
-
-  const [reviews, setReviews] = useState<Record<number, Review>>({});
-
-  // Load pending reviews on component mount
+  // Fetch delivered orders and their products
   useEffect(() => {
-    setPendingReviews(mockPendingReviews);
-  }, []);
+    const fetchPendingReviews = async () => {
+      if (!token) return;
+      try {
+        // 1. Fetch delivered orders
+        const ordersRes = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/orders?status=delivered`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const orders = ordersRes.data.items || [];
 
-  // Handle review submission
-  const submitReview = async (productId: number, reviewData: ReviewData): Promise<void> => {
-    setSubmittingReview(productId);
-    
-    setTimeout(() => {
-      setPendingReviews(prev => 
-        prev.filter(product => product.id !== productId)
-      );
-      
-      setReviews(prev => ({
-        ...prev,
-        [productId]: {
-          ...reviewData,
-          userId: currentUser.id,
-          productId,
-          date: new Date().toISOString()
+        // 2. For each order, get products
+        let products: Product[] = [];
+        for (const order of orders) {
+          for (const detail of order.order_details) {
+            products.push({
+              id: detail.product_id,
+              name: detail.product?.name,
+              image: detail.product?.images?.[0]?.img_url
+                ? import.meta.env.VITE_API_BASE_URL + detail.product.images[0].img_url
+                : 'https://via.placeholder.com/150',
+              price: detail.product?.price,
+              order_id: order.order_id,
+            });
+          }
         }
-      }));
-      
-      setSubmittingReview(null);
-    }, 1500);
-  };
 
-  // Handle skipping individual review
-  const skipReview = (productId: number): void => {
-    setPendingReviews(prev => 
-      prev.filter(product => product.id !== productId)
-    );
+        // 3. Fetch user's reviews
+        const reviewsRes = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/favorites`, // Replace with your reviews endpoint
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const userReviews = reviewsRes.data || [];
+
+        // 4. Filter out products already reviewed
+        const reviewedProductIds = new Set(userReviews.map((r: any) => r.product_id));
+        const pending = products.filter((p) => !reviewedProductIds.has(p.id));
+        setPendingProducts(pending);
+      } catch (err) {
+        setPendingProducts([]);
+      }
+    };
+    fetchPendingReviews();
+  }, [token]);
+
+  // Submit review
+  const submitReview = async (productId: number, orderId: number, reviewData: ReviewData) => {
+    setSubmittingReview(productId);
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/reviews`,
+        {
+          product_id: productId,
+          order_id: orderId,
+          rating: reviewData.rating,
+          comment: reviewData.comment,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setPendingProducts((prev) => prev.filter((p) => p.id !== productId));
+    } catch (err) {
+      // handle error
+    } finally {
+      setSubmittingReview(null);
+    }
   };
 
   // Individual review component
-  const ReviewCard: React.FC<ReviewCardProps> = ({ product, onSubmit, onSkip, isSubmitting }) => {
+  const ReviewCard: React.FC<ReviewCardProps> = ({ product, onSubmit, isSubmitting }) => {
     const [rating, setRating] = useState<number>(0);
     const [hoverRating, setHoverRating] = useState<number>(0);
     const [comment, setComment] = useState<string>('');
@@ -115,10 +122,9 @@ const ReviewPage: React.FC = () => {
         return;
       }
       
-      onSubmit(product.id, {
+      onSubmit({
         rating,
         comment,
-        productName: product.name
       });
     };
 
@@ -145,9 +151,6 @@ const ReviewPage: React.FC = () => {
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
-              {pendingReviews.indexOf(product) + 1}
-            </div>
           </div>
 
           <div className="flex-1 min-w-0">
@@ -158,9 +161,6 @@ const ReviewPage: React.FC = () => {
               </h3>
               <div className="flex items-center gap-2">
                 <span className="text-lg font-bold text-gray-900">${product.price}</span>
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                  Recent Purchase
-                </span>
               </div>
             </div>
             
@@ -235,14 +235,6 @@ const ReviewPage: React.FC = () => {
                   </>
                 )}
               </button>
-              
-              <button
-                onClick={() => onSkip(product.id)}
-                disabled={isSubmitting}
-                className="px-4 py-2.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all duration-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed border border-gray-200"
-              >
-                Skip
-              </button>
             </div>
           </div>
         </div>
@@ -278,12 +270,12 @@ const ReviewPage: React.FC = () => {
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
-        {pendingReviews.length > 0 ? (
+        {pendingProducts.length > 0 ? (
           <>
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg mb-3">
                 <Gift size={14} />
-                {pendingReviews.length} Reviews Pending
+                {pendingProducts.length} Reviews Pending
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-3">
                 Share Your Experience
@@ -294,12 +286,11 @@ const ReviewPage: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              {pendingReviews.map((product) => (
+              {pendingProducts.map((product) => (
                 <ReviewCard 
                   key={product.id}
                   product={product} 
-                  onSubmit={submitReview}
-                  onSkip={skipReview}
+                  onSubmit={(reviewData) => submitReview(product.id, product.order_id, reviewData)}
                   isSubmitting={submittingReview === product.id}
                 />
               ))}
@@ -346,4 +337,4 @@ const ReviewPage: React.FC = () => {
   );
 };
 
-export default ReviewPage;
+export default PendingReviews;
