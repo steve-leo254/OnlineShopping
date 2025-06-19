@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
-import { X, Tag, BookOpen } from "lucide-react"; // Added BookOpen for description
+import { X, Tag, BookOpen, Plus, Trash2, Settings, Sparkles } from "lucide-react";
 
 // Define the category type to match your API
 type CategoryForm = {
@@ -195,26 +195,52 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
     // Optionally: await axios.delete(...)
   };
 
-  return (
-    <section className="bg-gradient-to-br from-blue-50 to-purple-50 p-6 sm:p-8 rounded-lg shadow-2xl antialiased relative overflow-hidden">
-      {/* Background circles for visual flair */}
-      <div className="absolute -top-10 -left-10 w-48 h-48 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
-      <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
+  const getValueTypeColor = (valueType: string) => {
+    switch (valueType) {
+      case "string":
+        return "bg-blue-100 text-blue-700 border-blue-200";
+      case "number":
+        return "bg-green-100 text-green-700 border-green-200";
+      case "boolean":
+        return "bg-purple-100 text-purple-700 border-purple-200";
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-200";
+    }
+  };
 
-      <div className="relative z-10">
-        {" "}
-        {/* Ensure content is above background */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+  const getValueTypeIcon = (valueType: string) => {
+    switch (valueType) {
+      case "string":
+        return "Aa";
+      case "number":
+        return "123";
+      case "boolean":
+        return "T/F";
+      default:
+        return "?";
+    }
+  };
+
+  return (
+    <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6 sm:p-8 rounded-lg shadow-2xl antialiased relative overflow-hidden">
+      {/* Enhanced Background Animation */}
+      <div className="absolute -top-10 -left-10 w-48 h-48 bg-gradient-to-r from-blue-300 to-cyan-300 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob"></div>
+      <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-gradient-to-r from-purple-300 to-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-40 animate-blob animation-delay-2000"></div>
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-gradient-to-r from-indigo-300 to-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000"></div>
+
+      <div className="relative z-10 space-y-8">
+        {/* Category Form */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-xl border border-white/20 overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between p-5 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-xl">
+          <div className="flex items-center justify-between p-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
                 <Tag className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h3 className="text-xl font-bold">Add New Category</h3>
                 <p className="text-sm text-blue-100">
-                  Define a new category for your products
+                  Create a new product category with custom specifications
                 </p>
               </div>
             </div>
@@ -389,84 +415,143 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
             </div>
           </form>
         </div>
+
+        {/* Enhanced Specification Management Section */}
+        {categoryId && (
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-xl border border-white/20 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <Settings className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h4 className="text-xl font-bold flex items-center gap-2">
+                    Specifications Manager
+                    <Sparkles className="w-5 h-5 text-yellow-300" />
+                  </h4>
+                  <p className="text-sm text-indigo-100">
+                    Add custom specifications for your category
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-sm bg-white/20 px-3 py-1 rounded-full">
+                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                {specs.length} specs
+              </div>
+            </div>
+
+            {/* Add Specification Form */}
+            <div className="p-6 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100">
+              <form onSubmit={handleAddSpec} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Specification Name
+                    </label>
+                    <div className="relative">
+                      <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        name="name"
+                        value={specForm.name}
+                        onChange={handleSpecInputChange}
+                        className="pl-10 pr-4 py-2.5 bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block w-full transition-all duration-200"
+                        placeholder="e.g., Screen Size, Weight, Color"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Value Type
+                    </label>
+                    <select
+                      name="value_type"
+                      value={specForm.value_type}
+                      onChange={handleSpecInputChange}
+                      className="w-full px-4 py-2.5 bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                    >
+                      <option value="string">String (Text)</option>
+                      <option value="number">Number</option>
+                      <option value="boolean">Boolean (Yes/No)</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Specification
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Specifications List */}
+            <div className="p-6">
+              {isSpecLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                  <span className="ml-2 text-gray-600">Loading specifications...</span>
+                </div>
+              ) : specs.length === 0 ? (
+                <div className="text-center py-8">
+                  <Settings className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 text-sm">No specifications added yet.</p>
+                  <p className="text-gray-400 text-xs mt-1">
+                    Add your first specification using the form above.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between mb-4">
+                    <h5 className="text-sm font-medium text-gray-700">
+                      Added Specifications ({specs.length})
+                    </h5>
+                  </div>
+                  <div className="grid gap-3">
+                    {specs.map((spec, index) => (
+                      <div
+                        key={spec.id}
+                        className="group flex items-center justify-between p-4 bg-gradient-to-r from-white to-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-all duration-200 hover:border-indigo-300"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full text-xs font-medium text-indigo-700">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <h6 className="font-medium text-gray-900">{spec.name}</h6>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getValueTypeColor(spec.value_type)}`}>
+                                <span className="text-xs font-mono">
+                                  {getValueTypeIcon(spec.value_type)}
+                                </span>
+                                {spec.value_type}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteSpec(spec.id)}
+                          className="opacity-0 group-hover:opacity-100 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-all duration-200"
+                          title="Delete specification"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Specification Management Section */}
-      {categoryId && (
-        <div className="mt-8 bg-white rounded-xl shadow-lg border border-gray-100 p-6">
-          <h4 className="text-lg font-semibold mb-4">Manage Specifications</h4>
-          <form
-            onSubmit={handleAddSpec}
-            className="flex flex-wrap gap-4 items-end mb-4"
-          >
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={specForm.name}
-                onChange={handleSpecInputChange}
-                className="border px-3 py-2 rounded-lg"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Value Type
-              </label>
-              <select
-                name="value_type"
-                value={specForm.value_type}
-                onChange={handleSpecInputChange}
-                className="border px-3 py-2 rounded-lg"
-              >
-                <option value="string">String</option>
-                <option value="number">Number</option>
-                <option value="boolean">Boolean</option>
-              </select>
-            </div>
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg"
-            >
-              Add
-            </button>
-          </form>
-          <div>
-            {isSpecLoading ? (
-              <p>Loading specifications...</p>
-            ) : specs.length === 0 ? (
-              <p className="text-gray-500">No specifications yet.</p>
-            ) : (
-              <ul className="divide-y divide-gray-200">
-                {specs.map((spec) => (
-                  <li
-                    key={spec.id}
-                    className="flex items-center justify-between py-2"
-                  >
-                    <span>
-                      {spec.name}{" "}
-                      <span className="text-xs text-gray-400">
-                        ({spec.value_type})
-                      </span>
-                    </span>
-                    <button
-                      onClick={() => handleDeleteSpec(spec.id)}
-                      className="text-red-500 hover:underline text-xs"
-                    >
-                      Delete
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* CSS Animations for Blob */}
+      {/* Enhanced CSS Animations */}
       <style>{`
         @keyframes blob {
           0% {
@@ -487,6 +572,9 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
         }
         .animation-delay-2000 {
           animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+          animation-delay: 4s;
         }
       `}</style>
     </section>
