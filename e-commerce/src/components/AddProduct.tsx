@@ -267,12 +267,11 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
           value,
         }));
 
-      // Create product
-      const productData = { ...formData };
+      // Create product (flat body)
       await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/products`,
         {
-          ...productData,
+          ...formData,
           images: images.length > 0 ? images : undefined,
           specifications:
             specificationsArr.length > 0 ? specificationsArr : undefined,
