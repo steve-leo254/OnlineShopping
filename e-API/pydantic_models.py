@@ -108,7 +108,6 @@ class ProductSpecificationBase(BaseModel):
 
 
 class ProductSpecificationCreate(ProductSpecificationBase):
-    product_id: int
     specification_id: int
 
 
@@ -445,3 +444,22 @@ class PaginatedUserResponse(BaseModel):
     page: int
     limit: int
     pages: int
+
+
+# For flat product creation request
+class ProductCreateRequest(BaseModel):
+    # All product fields (except id, user_id, created_at, etc.)
+    name: str
+    cost: float
+    price: float
+    original_price: Optional[float] = None
+    stock_quantity: float
+    barcode: int
+    category_id: Optional[int]
+    brand: Optional[str]
+    description: Optional[str]
+    rating: Optional[float] = 0.0
+    discount: Optional[float] = 0.0
+    is_new: bool = False
+    images: Optional[List[ProductImageCreate]] = None
+    specifications: Optional[List[ProductSpecificationCreate]] = None
