@@ -42,13 +42,15 @@ interface Product {
   specifications: Record<string, string | number>;
 }
 
+// Backend Review type
 interface Review {
   id: number;
-  user: string;
+  user_id: number;
+  product_id: number;
+  order_id: number;
   rating: number;
   comment: string;
-  date: string;
-  verified: boolean;
+  created_at: string;
 }
 
 type TabType = "description" | "specifications" | "reviews";
@@ -93,30 +95,33 @@ const staticProduct: Product = {
 const staticReviews: Review[] = [
   {
     id: 1,
-    user: "Sarah Johnson",
+    user_id: 1,
+    product_id: 1,
+    order_id: 1,
     rating: 5,
     comment:
       "Absolutely amazing headphones! The sound quality is incredible and the noise cancellation works perfectly. I use them daily for work calls and music.",
-    date: "2024-01-15",
-    verified: true,
+    created_at: "2024-01-15",
   },
   {
     id: 2,
-    user: "Mike Chen",
+    user_id: 2,
+    product_id: 1,
+    order_id: 2,
     rating: 4,
     comment:
       "Great build quality and comfortable to wear. Battery life is excellent. Only minor complaint is that they're a bit heavy for long sessions.",
-    date: "2024-01-10",
-    verified: true,
+    created_at: "2024-01-10",
   },
   {
     id: 3,
-    user: "Emily Davis",
+    user_id: 3,
+    product_id: 1,
+    order_id: 3,
     rating: 5,
     comment:
       "Best purchase I've made this year. The audio is crystal clear and the ANC is top-notch. Highly recommend!",
-    date: "2024-01-08",
-    verified: false,
+    created_at: "2024-01-08",
   },
 ];
 
@@ -200,7 +205,6 @@ const ProductDetail: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
-  const [quantity, setQuantity] = useState<number>(1);
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<TabType>("description");
   const [showImageModal, setShowImageModal] = useState<boolean>(false);
@@ -213,7 +217,12 @@ const ProductDetail: React.FC = () => {
     message: "",
     type: "success",
   });
-  const { addToCart } = useShoppingCart();
+  const {
+    addToCart,
+    increaseCartQuantity,
+    decreaseCartQuantity,
+    getItemQuantity,
+  } = useShoppingCart();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -358,44 +367,21 @@ const ProductDetail: React.FC = () => {
 
   const handleAddToCart = (): void => {
     if (!product) return;
-    if (quantity > product.stockQuantity) {
+    if (getItemQuantity(product.id) >= product.stockQuantity) {
       showNotification(
         `Cannot add more than available stock (${product.stockQuantity})`,
         "error"
       );
       return;
     }
-    // Add to cart using context
-    for (let i = 0; i < quantity; i++) {
-      addToCart({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        img_url: product.images[0] || null,
-        stockQuantity: product.stockQuantity,
-      });
-    }
-    showNotification(
-      `${quantity} ${product.name}(s) added to cart!`,
-      "success"
-    );
-  };
-
-  const handleQuantityChange = (newQuantity: number): void => {
-    if (product && newQuantity >= 1 && newQuantity <= product.stockQuantity) {
-      setQuantity(newQuantity);
-    }
-  };
-
-  const toggleFavorite = (): void => {
-    // Simulate API call
-    setTimeout(() => {
-      setIsFavorite(!isFavorite);
-      showNotification(
-        isFavorite ? "Removed from favorites" : "Added to favorites!",
-        isFavorite ? "info" : "success"
-      );
-    }, 300);
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      img_url: product.images[0] || null,
+      stockQuantity: product.stockQuantity,
+    });
+    showNotification(`${product.name} added to cart!`, "success");
   };
 
   const handleShare = async (): Promise<void> => {
@@ -651,16 +637,24 @@ const ProductDetail: React.FC = () => {
                 <span className="text-gray-700 font-medium">Quantity:</span>
                 <div className="flex items-center border border-gray-300 rounded-lg">
                   <button
-                    onClick={() => handleQuantityChange(quantity - 1)}
-                    disabled={quantity <= 1}
+                    onClick={() => decreaseCartQuantity(product.id)}
+                    disabled={getItemQuantity(product.id) <= 1}
                     className="p-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
-                  <span className="px-4 py-2 font-medium">{quantity}</span>
+                  <span className="px-4 py-2 font-medium">
+                    {getItemQuantity(product.id)}
+                  </span>
                   <button
-                    onClick={() => handleQuantityChange(quantity + 1)}
-                    disabled={quantity >= product.stockQuantity}
+                    onClick={() => {
+                      if (getItemQuantity(product.id) < product.stockQuantity) {
+                        increaseCartQuantity(product.id);
+                      }
+                    }}
+                    disabled={
+                      getItemQuantity(product.id) >= product.stockQuantity
+                    }
                     className="p-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus className="w-4 h-4" />
@@ -681,7 +675,18 @@ const ProductDetail: React.FC = () => {
               </button>
 
               <button
-                onClick={toggleFavorite}
+                onClick={() => {
+                  // Simulate API call
+                  setTimeout(() => {
+                    setIsFavorite(!isFavorite);
+                    showNotification(
+                      isFavorite
+                        ? "Removed from favorites"
+                        : "Added to favorites!",
+                      isFavorite ? "info" : "success"
+                    );
+                  }, 300);
+                }}
                 className={`p-3 rounded-lg border transition-colors ${
                   isFavorite
                     ? "bg-red-50 border-red-200 text-red-600"
