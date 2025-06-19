@@ -16,8 +16,8 @@ import {
   X,
   Eye,
 } from "lucide-react";
-import axios from "axios";
 import { useParams } from "react-router-dom";
+import axios from "axios";
 
 // Types
 interface Product {
@@ -26,6 +26,7 @@ interface Product {
   price: number;
   originalPrice?: number;
   rating: number;
+  reviews: number;
   images: string[];
   category: string;
   brand: string;
@@ -38,7 +39,6 @@ interface Product {
   barcode?: string;
   createdAt?: string;
   specifications: Record<string, string | number>;
-  favorites?: any[];
 }
 
 interface Review {
@@ -53,12 +53,151 @@ interface Review {
 type TabType = "description" | "specifications" | "reviews";
 type NotificationType = "success" | "error" | "info";
 
-const ProductDetail: React.FC = () => {
-  const { productId } = useParams();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+// Static Data
+const staticProduct: Product = {
+  id: 1,
+  name: "Wireless Bluetooth Headphones Pro Max",
+  price: 299.99,
+  originalPrice: 399.99,
+  rating: 4.5,
+  reviews: 1247,
+  images: [
+    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=600&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=600&h=600&fit=crop",
+    "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=600&h=600&fit=crop",
+  ],
+  category: "Electronics",
+  brand: "AudioTech",
+  inStock: true,
+  discount: 25,
+  isNew: true,
+  isFavorite: false,
+  stockQuantity: 15,
+  description:
+    "Experience premium sound quality with our flagship wireless headphones. Featuring advanced noise cancellation technology, 40-hour battery life, and crystal-clear audio reproduction. Perfect for music enthusiasts, professionals, and everyday use. The ergonomic design ensures comfortable wear for extended periods, while the premium materials provide durability and style.",
+  specifications: {
+    "Driver Size": "40mm",
+    "Frequency Response": "20Hz - 20kHz",
+    "Battery Life": "40 hours",
+    "Charging Time": "2 hours",
+    Weight: "280g",
+    Connectivity: "Bluetooth 5.0",
+    "Noise Cancellation": "Active ANC",
+    Microphone: "Built-in",
+    Warranty: "2 years",
+  },
+};
 
+const staticReviews: Review[] = [
+  {
+    id: 1,
+    user: "Sarah Johnson",
+    rating: 5,
+    comment:
+      "Absolutely amazing headphones! The sound quality is incredible and the noise cancellation works perfectly. I use them daily for work calls and music.",
+    date: "2024-01-15",
+    verified: true,
+  },
+  {
+    id: 2,
+    user: "Mike Chen",
+    rating: 4,
+    comment:
+      "Great build quality and comfortable to wear. Battery life is excellent. Only minor complaint is that they're a bit heavy for long sessions.",
+    date: "2024-01-10",
+    verified: true,
+  },
+  {
+    id: 3,
+    user: "Emily Davis",
+    rating: 5,
+    comment:
+      "Best purchase I've made this year. The audio is crystal clear and the ANC is top-notch. Highly recommend!",
+    date: "2024-01-08",
+    verified: false,
+  },
+];
+
+const staticRelatedProducts: Product[] = [
+  {
+    id: 2,
+    name: "Wireless Earbuds Pro",
+    price: 199.99,
+    originalPrice: 249.99,
+    rating: 4.3,
+    reviews: 892,
+    images: [
+      "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop",
+    ],
+    category: "Electronics",
+    brand: "AudioTech",
+    inStock: true,
+    discount: 20,
+    stockQuantity: 25,
+    description: "Compact wireless earbuds with great sound",
+    specifications: {},
+  },
+  {
+    id: 3,
+    name: "Gaming Headset RGB",
+    price: 149.99,
+    rating: 4.1,
+    reviews: 445,
+    images: [
+      "https://images.unsplash.com/photo-1599669454699-248893623440?w=400&h=400&fit=crop",
+    ],
+    category: "Electronics",
+    brand: "GameTech",
+    inStock: true,
+    stockQuantity: 18,
+    description: "Professional gaming headset with RGB lighting",
+    specifications: {},
+  },
+  {
+    id: 4,
+    name: "Studio Monitor Headphones",
+    price: 399.99,
+    rating: 4.7,
+    reviews: 234,
+    images: [
+      "https://images.unsplash.com/photo-1524678606370-a47ad25cb82a?w=400&h=400&fit=crop",
+    ],
+    category: "Electronics",
+    brand: "StudioPro",
+    inStock: false,
+    stockQuantity: 0,
+    description: "Professional studio monitoring headphones",
+    specifications: {},
+  },
+  {
+    id: 5,
+    name: "Noise Cancelling Headphones",
+    price: 249.99,
+    originalPrice: 299.99,
+    rating: 4.4,
+    reviews: 678,
+    images: [
+      "https://images.unsplash.com/photo-1487215078519-e21cc028cb29?w=400&h=400&fit=crop",
+    ],
+    category: "Electronics",
+    brand: "QuietTech",
+    inStock: true,
+    discount: 17,
+    stockQuantity: 12,
+    description: "Advanced noise cancelling technology",
+    specifications: {},
+  },
+];
+
+const ProductDetail: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [reviews] = useState<Review[]>(staticReviews);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
@@ -77,24 +216,117 @@ const ProductDetail: React.FC = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       setLoading(true);
-      try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/public/products/${productId}`
-        );
-        setProduct(res.data);
-        setIsFavorite(res.data.isFavorite || false);
-        // Fetch reviews
-        const reviewsRes = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/products/${productId}/reviews`
-        );
-        setReviews(reviewsRes.data);
-      } catch (err) {
-        setProduct(null);
+      setError(null);
+      if (!id) {
+        setError("No product ID provided.");
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+      try {
+        const res = await axios.get(`${API_BASE_URL}/public/products/${id}`);
+        const data = res.data;
+        // Transform images
+        let images: string[] = [];
+        if (
+          data.images &&
+          Array.isArray(data.images) &&
+          data.images.length > 0
+        ) {
+          images = data.images.map((img: any) =>
+            img.img_url.startsWith("http")
+              ? img.img_url
+              : `${API_BASE_URL}${img.img_url}`
+          );
+        }
+        // Transform specifications
+        let specifications: Record<string, string | number> = {};
+        if (
+          data.product_specifications &&
+          Array.isArray(data.product_specifications)
+        ) {
+          data.product_specifications.forEach((spec: any) => {
+            if (spec.specification && spec.specification.name) {
+              specifications[spec.specification.name] = spec.value;
+            }
+          });
+        }
+        // Compose product object
+        const prod: Product = {
+          id: data.id,
+          name: data.name,
+          price: data.price,
+          originalPrice: data.original_price,
+          rating: data.rating || 0,
+          reviews: data.reviews ? data.reviews.length : 0,
+          images,
+          category: data.category?.name || "Uncategorized",
+          brand: data.brand || "Unknown",
+          inStock: data.stock_quantity > 0,
+          discount: data.discount || 0,
+          isNew: data.is_new || false,
+          isFavorite: false, // TODO: fetch favorite status if needed
+          stockQuantity: data.stock_quantity,
+          description: data.description || "",
+          barcode: data.barcode,
+          createdAt: data.created_at,
+          specifications,
+        };
+        setProduct(prod);
+        setIsFavorite(false); // or fetch favorite status
+        // Fetch related products
+        if (data.category && data.category.id) {
+          const relRes = await axios.get(`${API_BASE_URL}/public/products`, {
+            params: { category_id: data.category.id, limit: 8 },
+          });
+          const relItems = relRes.data.items.filter(
+            (p: any) => p.id !== data.id
+          );
+          setRelatedProducts(
+            relItems.map((item: any) => ({
+              id: item.id,
+              name: item.name,
+              price: item.price,
+              originalPrice: item.original_price,
+              rating: item.rating || 0,
+              reviews: item.reviews ? item.reviews.length : 0,
+              images:
+                item.images && item.images.length > 0
+                  ? item.images.map((img: any) =>
+                      img.img_url.startsWith("http")
+                        ? img.img_url
+                        : `${API_BASE_URL}${img.img_url}`
+                    )
+                  : [
+                      "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop",
+                    ],
+              category: item.category?.name || "Uncategorized",
+              brand: item.brand || "Unknown",
+              inStock: item.stock_quantity > 0,
+              discount: item.discount || 0,
+              isNew: item.is_new || false,
+              isFavorite: false,
+              stockQuantity: item.stock_quantity,
+              description: item.description || "",
+              barcode: item.barcode,
+              createdAt: item.created_at,
+              specifications: {},
+            }))
+          );
+        } else {
+          setRelatedProducts([]);
+        }
+      } catch (err: any) {
+        setError("Failed to load product details.");
+      } finally {
+        setLoading(false);
+      }
     };
-    if (productId) fetchProduct();
-  }, [productId]);
+    fetchProduct();
+  }, [id, API_BASE_URL]);
+
+  useEffect(() => {
+    if (product) setIsFavorite(product.isFavorite || false);
+  }, [product]);
 
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat("en-US", {
@@ -139,23 +371,15 @@ const ProductDetail: React.FC = () => {
     }
   };
 
-  const toggleFavorite = async (): Promise<void> => {
-    if (!product) return;
-    try {
-      if (!isFavorite) {
-        await axios.post(`${import.meta.env.VITE_API_BASE_URL}/favorites`, {
-          product_id: product.id,
-        });
-        setIsFavorite(true);
-        showNotification("Added to favorites!", "success");
-      } else {
-        // Optionally implement remove favorite endpoint
-        setIsFavorite(false);
-        showNotification("Removed from favorites", "info");
-      }
-    } catch (err) {
-      showNotification("Error updating favorite", "error");
-    }
+  const toggleFavorite = (): void => {
+    // Simulate API call
+    setTimeout(() => {
+      setIsFavorite(!isFavorite);
+      showNotification(
+        isFavorite ? "Removed from favorites" : "Added to favorites!",
+        isFavorite ? "info" : "success"
+      );
+    }, 300);
   };
 
   const handleShare = async (): Promise<void> => {
@@ -238,12 +462,31 @@ const ProductDetail: React.FC = () => {
     );
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (!product) return <div>Product not found.</div>;
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading product...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600">{error || "Product not found."}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {notification.show && <div>{notification.message}</div>}
+      {renderNotification()}
 
       {/* Header */}
       <div className="bg-white shadow-sm">
@@ -485,34 +728,54 @@ const ProductDetail: React.FC = () => {
             )}
 
             {activeTab === "specifications" && (
-              <div>
-                <h4>Specifications</h4>
-                <table>
-                  <tbody>
-                    {Object.entries(product.specifications).map(
-                      ([key, value]) => (
-                        <tr key={key}>
-                          <td>{key}</td>
-                          <td>{value}</td>
-                        </tr>
-                      )
-                    )}
-                  </tbody>
-                </table>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Object.entries(product.specifications).map(([key, value]) => (
+                  <div
+                    key={key}
+                    className="flex justify-between py-2 border-b border-gray-100"
+                  >
+                    <span className="font-medium text-gray-900">{key}:</span>
+                    <span className="text-gray-600">{String(value)}</span>
+                  </div>
+                ))}
               </div>
             )}
 
             {activeTab === "reviews" && (
-              <div>
-                <h4>Reviews</h4>
+              <div className="space-y-6">
                 {reviews.length > 0 ? (
-                  reviews.map((r) => (
-                    <div key={r.id}>
-                      <strong>{r.rating}★</strong> {r.comment}
+                  reviews.map((review) => (
+                    <div
+                      key={review.id}
+                      className="bg-white p-6 rounded-lg shadow-sm border"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <span className="font-medium text-gray-900">
+                            {review.user}
+                          </span>
+                          {review.verified && (
+                            <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
+                              Verified Purchase
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          {review.date}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mb-3">
+                        {renderStars(review.rating)}
+                      </div>
+                      <p className="text-gray-700">{review.comment}</p>
                     </div>
                   ))
                 ) : (
-                  <p>No reviews yet.</p>
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">
+                      No reviews yet. Be the first to review this product!
+                    </p>
+                  </div>
                 )}
               </div>
             )}
@@ -520,7 +783,50 @@ const ProductDetail: React.FC = () => {
         </div>
 
         {/* Related Products */}
-        {/* ... existing related products code ... */}
+        {relatedProducts.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              Related Products
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {relatedProducts.map((relatedProduct) => (
+                <div
+                  key={relatedProduct.id}
+                  onClick={() => handleRelatedProductClick(relatedProduct)}
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                >
+                  <img
+                    src={relatedProduct.images[0]}
+                    alt={relatedProduct.name}
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="p-4">
+                    <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
+                      {relatedProduct.name}
+                    </h3>
+                    <div className="flex items-center gap-2 mb-2">
+                      {renderStars(relatedProduct.rating)}
+                      <span className="text-sm text-gray-500">
+                        ({relatedProduct.reviews})
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-gray-900">
+                        {formatCurrency(relatedProduct.price)}
+                      </span>
+                      {relatedProduct.originalPrice &&
+                        relatedProduct.originalPrice > relatedProduct.price && (
+                          <span className="text-sm text-gray-500 line-through">
+                            {formatCurrency(relatedProduct.originalPrice)}
+                          </span>
+                        )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Image Modal */}
