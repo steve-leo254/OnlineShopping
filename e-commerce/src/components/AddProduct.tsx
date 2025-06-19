@@ -12,6 +12,8 @@ import {
   Star,
   Image as ImageIcon,
   PlusCircle,
+  Settings,
+  List,
 } from "lucide-react";
 import CategoryForm from "./AddCategory"; // Import the CategoryForm component
 
@@ -374,8 +376,6 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                   Category
                 </label>
                 <div className="flex items-center gap-2">
-                  {" "}
-                  {/* Added for button next to select */}
                   <select
                     name="category_id"
                     value={formData.category_id ?? ""}
@@ -577,44 +577,79 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
             </div>
           </div>
 
-          {/* Multiple image URLs */}
-          <div>
-            <label>Product Images (URLs):</label>
-            <input
-              type="text"
-              placeholder="Image URL"
-              onBlur={(e) => handleAddImage(e.target.value)}
-            />
-            <div>
-              {formData.images.map((url) => (
-                <div key={url}>
-                  <img
-                    src={url}
-                    alt="preview"
-                    style={{ width: 60, height: 60 }}
-                  />
-                  <button type="button" onClick={() => handleRemoveImage(url)}>
-                    Remove
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Specifications */}
+          {/* Enhanced Specifications Section */}
           {specifications.length > 0 && (
-            <div>
-              <h4>Specifications</h4>
-              {specifications.map((spec) => (
-                <div key={spec.id}>
-                  <label>{spec.name}</label>
-                  <input
-                    type="text"
-                    value={specValues[spec.id] || ""}
-                    onChange={(e) => handleSpecChange(spec.id, e.target.value)}
-                  />
+            <div className="bg-gradient-to-br from-indigo-50 to-cyan-50 rounded-2xl p-6 border border-indigo-100">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="p-2 bg-indigo-100 rounded-xl">
+                  <Settings className="w-5 h-5 text-indigo-600" />
                 </div>
-              ))}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Product Specifications
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Define the technical details and attributes for this product
+                  </p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {specifications.map((spec, index) => (
+                  <div 
+                    key={spec.id} 
+                    className="group relative bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 hover:border-indigo-300"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 mt-1">
+                        <div className="w-8 h-8 bg-gradient-to-br from-indigo-100 to-cyan-100 rounded-lg flex items-center justify-center">
+                          <List className="w-4 h-4 text-indigo-600" />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <label className="block text-sm font-semibold text-gray-800 mb-2">
+                          {spec.name}
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={specValues[spec.id] || ""}
+                            onChange={(e) => handleSpecChange(spec.id, e.target.value)}
+                            className="w-full px-4 py-3 text-gray-700 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all duration-200 placeholder-gray-400"
+                            placeholder={`Enter ${spec.name.toLowerCase()}...`}
+                          />
+                          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                            <div className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-md">
+                              {spec.value_type}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Subtle animation indicator */}
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-t-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Specifications Summary */}
+              <div className="mt-6 p-4 bg-white/70 rounded-xl border border-indigo-200">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="w-2 h-2 bg-indigo-400 rounded-full"></div>
+                  <span>
+                    {Object.values(specValues).filter(val => val !== "").length} of {specifications.length} specifications completed
+                  </span>
+                </div>
+                <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-indigo-500 to-cyan-500 h-2 rounded-full transition-all duration-300"
+                    style={{ 
+                      width: `${(Object.values(specValues).filter(val => val !== "").length / specifications.length) * 100}%` 
+                    }}
+                  ></div>
+                </div>
+              </div>
             </div>
           )}
 
