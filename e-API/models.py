@@ -9,6 +9,7 @@ from sqlalchemy import (
     Enum,
     Boolean,
     Text,
+    Table,
 )
 from database import Base
 from sqlalchemy.orm import relationship
@@ -56,6 +57,12 @@ class Users(Base):
     products = relationship("Products", back_populates="user")
     addresses = relationship("Address", back_populates="user")
     transactions = relationship("Transaction", back_populates="user")
+    favorites = relationship(
+        "Favorite", back_populates="user", cascade="all, delete-orphan"
+    )
+    reviews = relationship(
+        "Review", back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class Categories(Base):
@@ -64,6 +71,9 @@ class Categories(Base):
     name = Column(String(50), unique=True, nullable=False)
     description = Column(String(200))
     products = relationship("Products", back_populates="category")
+    specifications = relationship(
+        "Specification", back_populates="category", cascade="all, delete-orphan"
+    )
 
 
 class Products(Base):
@@ -73,20 +83,15 @@ class Products(Base):
     cost = Column(Numeric(precision=14, scale=2), nullable=False)
     price = Column(Numeric(precision=14, scale=2), nullable=False)
     original_price = Column(Numeric(precision=14, scale=2), nullable=True)  # New field
-    img_url = Column(String(200), nullable=True)
     stock_quantity = Column(Numeric(precision=14, scale=2), nullable=False)
     description = Column(String(1000), nullable=True)
     rating = Column(
         Numeric(precision=3, scale=2), nullable=True, default=0.0
     )  # New field (0.00 to 5.00)
-    reviews = Column(
-        Integer, nullable=False, default=0
-    )  # New field - number of reviews
     discount = Column(
         Numeric(precision=5, scale=2), nullable=True, default=0.0
     )  # New field - discount percentage
     is_new = Column(Boolean, default=True, nullable=False)  # New field
-    is_favorite = Column(Boolean, default=True, nullable=False)  # New field
     created_at = Column(DateTime, default=func.now())
     barcode = Column(Numeric(precision=12), unique=True)
     brand = Column(String(100), nullable=True)
@@ -95,6 +100,18 @@ class Products(Base):
     user = relationship("Users", back_populates="products")
     category = relationship("Categories", back_populates="products")
     order_details = relationship("OrderDetails", back_populates="product")
+    images = relationship(
+        "ProductImage", back_populates="product", cascade="all, delete-orphan"
+    )
+    product_specifications = relationship(
+        "ProductSpecification", back_populates="product", cascade="all, delete-orphan"
+    )
+    favorites = relationship(
+        "Favorite", back_populates="product", cascade="all, delete-orphan"
+    )
+    reviews = relationship(
+        "Review", back_populates="product", cascade="all, delete-orphan"
+    )
 
 
 class Orders(Base):
@@ -167,3 +184,64 @@ class Transaction(Base):
 
     user = relationship("Users", back_populates="transactions")
     order = relationship("Orders", back_populates="transactions")
+
+
+# New table for multiple product images
+class ProductImage(Base):
+    __tablename__ = "product_images"
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    img_url = Column(String(200), nullable=False)
+    product = relationship("Products", back_populates="images")
+
+
+# New table for specifications linked to categories
+class Specification(Base):
+    __tablename__ = "specifications"
+    id = Column(Integer, primary_key=True, index=True)
+    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
+    name = Column(String(100), nullable=False)
+    value_type = Column(
+        String(50), nullable=False
+    )  # e.g., 'string', 'number', 'boolean'
+    category = relationship("Categories", back_populates="specifications")
+    product_specifications = relationship(
+        "ProductSpecification", back_populates="specification"
+    )
+
+
+# New table for product-specific specification values
+class ProductSpecification(Base):
+    __tablename__ = "product_specifications"
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    specification_id = Column(Integer, ForeignKey("specifications.id"), nullable=False)
+    value = Column(String(255), nullable=False)
+    product = relationship("Products", back_populates="product_specifications")
+    specification = relationship(
+        "Specification", back_populates="product_specifications"
+    )
+
+
+# New table for favorites (wishlist)
+class Favorite(Base):
+    __tablename__ = "favorites"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    user = relationship("Users", back_populates="favorites")
+    product = relationship("Products", back_populates="favorites")
+
+
+# New table for reviews
+class Review(Base):
+    __tablename__ = "reviews"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    order_id = Column(Integer, ForeignKey("orders.order_id"), nullable=False)
+    rating = Column(Integer, nullable=False)
+    comment = Column(String(1000), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    user = relationship("Users", back_populates="reviews")
+    product = relationship("Products", back_populates="reviews")

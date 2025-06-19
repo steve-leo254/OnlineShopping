@@ -61,17 +61,102 @@ class ProductsBase(BaseModel):
     cost: float
     price: float
     original_price: Optional[float] = None  # New field
-    img_url: str
     stock_quantity: float
     barcode: int
     category_id: Optional[int]
     brand: Optional[str]
     description: Optional[str]
     rating: Optional[float] = 0.0  # New field
-    reviews: int = 0  # New field
     discount: Optional[float] = 0.0  # New field
     is_new: bool = False  # New field
-    is_favorite: bool = False  # New field
+
+
+class ProductImageBase(BaseModel):
+    img_url: str
+
+
+class ProductImageCreate(ProductImageBase):
+    pass
+
+
+class ProductImageResponse(ProductImageBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+
+class SpecificationBase(BaseModel):
+    name: str
+    value_type: str
+
+
+class SpecificationCreate(SpecificationBase):
+    category_id: int
+
+
+class SpecificationResponse(SpecificationBase):
+    id: int
+    category_id: int
+
+    class Config:
+        from_attributes = True
+
+
+class ProductSpecificationBase(BaseModel):
+    value: str
+
+
+class ProductSpecificationCreate(ProductSpecificationBase):
+    specification_id: int
+
+
+class ProductSpecificationResponse(ProductSpecificationBase):
+    id: int
+    product_id: int
+    specification_id: int
+    specification: Optional[SpecificationResponse]
+
+    class Config:
+        from_attributes = True
+
+
+class FavoriteBase(BaseModel):
+    product_id: int
+
+
+class FavoriteCreate(FavoriteBase):
+    user_id: int
+
+
+class FavoriteResponse(FavoriteBase):
+    id: int
+    user_id: int
+
+    class Config:
+        from_attributes = True
+
+
+class ReviewBase(BaseModel):
+    rating: int
+    comment: Optional[str] = None
+
+
+class ReviewCreate(ReviewBase):
+    user_id: int
+    product_id: int
+    order_id: int
+
+
+class ReviewResponse(ReviewBase):
+    id: int
+    user_id: int
+    product_id: int
+    order_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 class ProductResponse(ProductsBase):
@@ -79,6 +164,13 @@ class ProductResponse(ProductsBase):
     created_at: datetime
     user_id: int
     category: Optional[CategoryResponse]
+    images: Optional[List[ProductImageResponse]] = []
+    product_specifications: Optional[List[ProductSpecificationResponse]] = []
+    favorites: Optional[List[FavoriteResponse]] = []
+    reviews: Optional[List[ReviewResponse]] = []
+
+    class Config:
+        from_attributes = True
 
 
 class CartItem(BaseModel):
@@ -142,17 +234,14 @@ class UpdateProduct(BaseModel):
     price: Optional[float]
     cost: Optional[float]
     original_price: Optional[float] = None  # New field
-    img_url: Optional[str]
     stock_quantity: Optional[float]
     barcode: Optional[int]
     category_id: Optional[int]
     brand: Optional[str]
     description: Optional[str]
     rating: Optional[float] = None  # New field
-    reviews: Optional[int] = None  # New field
     discount: Optional[float] = None  # New field
     is_new: Optional[bool] = None  # New field
-    is_favorite: Optional[bool] = None  # New field
 
 
 class PaginatedProductResponse(BaseModel):
@@ -355,3 +444,22 @@ class PaginatedUserResponse(BaseModel):
     page: int
     limit: int
     pages: int
+
+
+# For flat product creation request
+class ProductCreateRequest(BaseModel):
+    # All product fields (except id, user_id, created_at, etc.)
+    name: str
+    cost: float
+    price: float
+    original_price: Optional[float] = None
+    stock_quantity: float
+    barcode: int
+    category_id: Optional[int]
+    brand: Optional[str]
+    description: Optional[str]
+    rating: Optional[float] = 0.0
+    discount: Optional[float] = 0.0
+    is_new: bool = False
+    images: Optional[List[ProductImageCreate]] = None
+    specifications: Optional[List[ProductSpecificationCreate]] = None
