@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import axios from 'axios';
-import { toast } from 'react-toastify';
-import { useAuth } from '../context/AuthContext';
-import { X, Tag, BookOpen } from 'lucide-react'; // Added BookOpen for description
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { useAuth } from "../context/AuthContext";
+import { X, Tag, BookOpen } from "lucide-react"; // Added BookOpen for description
 
 // Define the category type to match your API
 type CategoryForm = {
@@ -10,99 +10,189 @@ type CategoryForm = {
   description: string;
 };
 
+// Types for specification
+type Specification = {
+  id: number;
+  name: string;
+  value_type: string;
+};
+
+type SpecForm = {
+  name: string;
+  value_type: string;
+};
+
 interface CategoryFormProps {
   onClose: () => void;
   onCategoryAdded: () => void;
 }
 
-const CategoryForm: React.FC<CategoryFormProps> = ({ onClose, onCategoryAdded }) => {
+const CategoryForm: React.FC<CategoryFormProps> = ({
+  onClose,
+  onCategoryAdded,
+}) => {
   const { token, role } = useAuth();
   const [formData, setFormData] = useState<CategoryForm>({
-    name: '',
-    description: '',
+    name: "",
+    description: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{name?: string, description?: string}>({});
+  const [errors, setErrors] = useState<{ name?: string; description?: string }>(
+    {}
+  );
+  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [specs, setSpecs] = useState<Specification[]>([]);
+  const [specForm, setSpecForm] = useState<SpecForm>({
+    name: "",
+    value_type: "string",
+  });
+  const [isSpecLoading, setIsSpecLoading] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name as keyof typeof errors]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: undefined
+        [name]: undefined,
       }));
     }
   };
 
   const validateForm = () => {
-    const newErrors: {name?: string, description?: string} = {};
-    
+    const newErrors: { name?: string; description?: string } = {};
+
     if (!formData.name.trim()) {
-      newErrors.name = 'Category name is required';
+      newErrors.name = "Category name is required";
     } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Category name must be at least 2 characters';
+      newErrors.name = "Category name must be at least 2 characters";
     }
-    
+
     if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
+      newErrors.description = "Description is required";
     } else if (formData.description.trim().length < 10) {
-      newErrors.description = 'Description must be at least 10 characters';
+      newErrors.description = "Description must be at least 10 characters";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  // Fetch specifications for a category
+  const fetchSpecs = async (catId: number) => {
+    setIsSpecLoading(true);
+    try {
+      const res = await axios.get(
+        `${
+          import.meta.env.VITE_API_BASE_URL
+        }/categories/${catId}/specifications`
+      );
+      setSpecs(res.data);
+    } catch (err) {
+      setSpecs([]);
+    } finally {
+      setIsSpecLoading(false);
+    }
+  };
+
+  // After category is created, fetch its specs
+  useEffect(() => {
+    if (categoryId) fetchSpecs(categoryId);
+  }, [categoryId]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
- if (!token || (role !== 'admin' && role !== 'SUPERADMIN')) {
-  toast.error('Admin access required');
-  return;
-}
+
+    if (!token || (role !== "admin" && role !== "SUPERADMIN")) {
+      toast.error("Admin access required");
+      return;
+    }
 
     if (!validateForm()) {
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       // Send category data to API - following the same pattern as AddProduct
       const categoryData = { ...formData };
-      await axios.post(`${import.meta.env.VITE_API_BASE_URL}/categories`, categoryData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/categories`,
+        categoryData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-      toast.success('Category created successfully!');
-      
-      // Reset form on success
-      setFormData({ name: '', description: '' });
+      toast.success("Category created successfully!");
+      setCategoryId(res.data.id);
+      setFormData({ name: "", description: "" });
       setErrors({});
-      
-      onCategoryAdded(); // Call callback to notify parent about new category
-      onClose(); // Close the modal/popup
-
+      onCategoryAdded();
+      // Don't close modal, show spec management
     } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || 'Failed to create category. Please try again.';
+      const errorMessage =
+        err.response?.data?.detail ||
+        "Failed to create category. Please try again.";
       toast.error(errorMessage);
-      console.error('Error creating category:', err);
+      console.error("Error creating category:", err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleReset = () => {
-    setFormData({ name: '', description: '' });
+    setFormData({ name: "", description: "" });
     setErrors({});
+  };
+
+  // Add specification
+  const handleSpecInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setSpecForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddSpec = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!categoryId) return;
+    if (!specForm.name.trim()) {
+      toast.error("Specification name required");
+      return;
+    }
+    try {
+      await axios.post(
+        `${
+          import.meta.env.VITE_API_BASE_URL
+        }/categories/${categoryId}/specifications`,
+        { ...specForm, category_id: categoryId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSpecForm({ name: "", value_type: "string" });
+      fetchSpecs(categoryId);
+      toast.success("Specification added");
+    } catch (err) {
+      toast.error("Failed to add specification");
+    }
+  };
+
+  // Delete specification
+  const handleDeleteSpec = async (specId: number) => {
+    // You need to implement a DELETE endpoint in your API for this to work
+    // For now, just remove from UI
+    setSpecs((prev) => prev.filter((s) => s.id !== specId));
+    // Optionally: await axios.delete(...)
   };
 
   return (
@@ -111,7 +201,9 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ onClose, onCategoryAdded })
       <div className="absolute -top-10 -left-10 w-48 h-48 bg-blue-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
       <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
 
-      <div className="relative z-10"> {/* Ensure content is above background */}
+      <div className="relative z-10">
+        {" "}
+        {/* Ensure content is above background */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-5 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
@@ -120,9 +212,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ onClose, onCategoryAdded })
                 <Tag className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-bold">
-                  Add New Category
-                </h3>
+                <h3 className="text-xl font-bold">Add New Category</h3>
                 <p className="text-sm text-blue-100">
                   Define a new category for your products
                 </p>
@@ -142,8 +232,8 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ onClose, onCategoryAdded })
             <div className="p-6 space-y-6">
               {/* Category Name Field */}
               <div>
-                <label 
-                  htmlFor="name" 
+                <label
+                  htmlFor="name"
                   className="block mb-2 text-sm font-medium text-gray-800"
                 >
                   Category Name <span className="text-red-500">*</span>
@@ -157,9 +247,9 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ onClose, onCategoryAdded })
                     value={formData.name}
                     onChange={handleInputChange}
                     className={`pl-10 pr-4 py-2.5 bg-gray-50 border text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full transition-all duration-200 ${
-                      errors.name 
-                        ? 'border-red-500 ring-red-200' 
-                        : 'border-gray-300'
+                      errors.name
+                        ? "border-red-500 ring-red-200"
+                        : "border-gray-300"
                     }`}
                     placeholder="e.g., Electronics, Fashion, Home Goods"
                     maxLength={50}
@@ -168,8 +258,16 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ onClose, onCategoryAdded })
                 </div>
                 {errors.name && (
                   <p className="mt-1 text-sm text-red-600 flex items-center">
-                    <svg className="w-4 h-4 mr-1 inline" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    <svg
+                      className="w-4 h-4 mr-1 inline"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     {errors.name}
                   </p>
@@ -181,8 +279,8 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ onClose, onCategoryAdded })
 
               {/* Description Field */}
               <div>
-                <label 
-                  htmlFor="description" 
+                <label
+                  htmlFor="description"
                   className="block mb-2 text-sm font-medium text-gray-800"
                 >
                   Description <span className="text-red-500">*</span>
@@ -196,9 +294,9 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ onClose, onCategoryAdded })
                     value={formData.description}
                     onChange={handleInputChange}
                     className={`pl-10 pr-4 py-2.5 bg-gray-50 border text-gray-900 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full transition-all duration-200 resize-none ${
-                      errors.description 
-                        ? 'border-red-500 ring-red-200' 
-                        : 'border-gray-300'
+                      errors.description
+                        ? "border-red-500 ring-red-200"
+                        : "border-gray-300"
                     }`}
                     placeholder="Briefly describe the category, e.g., 'A collection of high-quality electronic gadgets and accessories.'"
                     maxLength={500}
@@ -207,8 +305,16 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ onClose, onCategoryAdded })
                 </div>
                 {errors.description && (
                   <p className="mt-1 text-sm text-red-600 flex items-center">
-                    <svg className="w-4 h-4 mr-1 inline" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    <svg
+                      className="w-4 h-4 mr-1 inline"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     {errors.description}
                   </p>
@@ -232,14 +338,32 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ onClose, onCategoryAdded })
                   type="submit"
                   disabled={isSubmitting}
                   className={`text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center flex items-center justify-center transition-all duration-200 ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : 'shadow-md hover:shadow-lg'
+                    isSubmitting
+                      ? "opacity-50 cursor-not-allowed"
+                      : "shadow-md hover:shadow-lg"
                   }`}
                 >
                   {isSubmitting ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
                       </svg>
                       Creating...
                     </>
@@ -266,6 +390,81 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ onClose, onCategoryAdded })
           </form>
         </div>
       </div>
+
+      {/* Specification Management Section */}
+      {categoryId && (
+        <div className="mt-8 bg-white rounded-xl shadow-lg border border-gray-100 p-6">
+          <h4 className="text-lg font-semibold mb-4">Manage Specifications</h4>
+          <form
+            onSubmit={handleAddSpec}
+            className="flex flex-wrap gap-4 items-end mb-4"
+          >
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={specForm.name}
+                onChange={handleSpecInputChange}
+                className="border px-3 py-2 rounded-lg"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Value Type
+              </label>
+              <select
+                name="value_type"
+                value={specForm.value_type}
+                onChange={handleSpecInputChange}
+                className="border px-3 py-2 rounded-lg"
+              >
+                <option value="string">String</option>
+                <option value="number">Number</option>
+                <option value="boolean">Boolean</option>
+              </select>
+            </div>
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+            >
+              Add
+            </button>
+          </form>
+          <div>
+            {isSpecLoading ? (
+              <p>Loading specifications...</p>
+            ) : specs.length === 0 ? (
+              <p className="text-gray-500">No specifications yet.</p>
+            ) : (
+              <ul className="divide-y divide-gray-200">
+                {specs.map((spec) => (
+                  <li
+                    key={spec.id}
+                    className="flex items-center justify-between py-2"
+                  >
+                    <span>
+                      {spec.name}{" "}
+                      <span className="text-xs text-gray-400">
+                        ({spec.value_type})
+                      </span>
+                    </span>
+                    <button
+                      onClick={() => handleDeleteSpec(spec.id)}
+                      className="text-red-500 hover:underline text-xs"
+                    >
+                      Delete
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* CSS Animations for Blob */}
       <style>{`

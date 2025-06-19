@@ -74,11 +74,107 @@ class ProductsBase(BaseModel):
     is_favorite: bool = False  # New field
 
 
+class ProductImageBase(BaseModel):
+    img_url: str
+
+
+class ProductImageCreate(ProductImageBase):
+    pass
+
+
+class ProductImageResponse(ProductImageBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+
+class SpecificationBase(BaseModel):
+    name: str
+    value_type: str
+
+
+class SpecificationCreate(SpecificationBase):
+    category_id: int
+
+
+class SpecificationResponse(SpecificationBase):
+    id: int
+    category_id: int
+
+    class Config:
+        from_attributes = True
+
+
+class ProductSpecificationBase(BaseModel):
+    value: str
+
+
+class ProductSpecificationCreate(ProductSpecificationBase):
+    product_id: int
+    specification_id: int
+
+
+class ProductSpecificationResponse(ProductSpecificationBase):
+    id: int
+    product_id: int
+    specification_id: int
+    specification: Optional[SpecificationResponse]
+
+    class Config:
+        from_attributes = True
+
+
+class FavoriteBase(BaseModel):
+    product_id: int
+
+
+class FavoriteCreate(FavoriteBase):
+    user_id: int
+
+
+class FavoriteResponse(FavoriteBase):
+    id: int
+    user_id: int
+
+    class Config:
+        from_attributes = True
+
+
+class ReviewBase(BaseModel):
+    rating: int
+    comment: Optional[str] = None
+
+
+class ReviewCreate(ReviewBase):
+    user_id: int
+    product_id: int
+    order_id: int
+
+
+class ReviewResponse(ReviewBase):
+    id: int
+    user_id: int
+    product_id: int
+    order_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class ProductResponse(ProductsBase):
     id: int
     created_at: datetime
     user_id: int
     category: Optional[CategoryResponse]
+    images: Optional[List[ProductImageResponse]] = []
+    product_specifications: Optional[List[ProductSpecificationResponse]] = []
+    favorites: Optional[List[FavoriteResponse]] = []
+    reviews: Optional[List[ReviewResponse]] = []
+
+    class Config:
+        from_attributes = True
 
 
 class CartItem(BaseModel):

@@ -17,6 +17,16 @@ from pydantic_models import (
     PaginatedOrderWithUserResponse,
     UpdateOrderStatusRequest,
     CreateUserRequest,
+    ProductImageCreate,
+    ProductImageResponse,
+    SpecificationCreate,
+    SpecificationResponse,
+    ProductSpecificationCreate,
+    ProductSpecificationResponse,
+    FavoriteCreate,
+    FavoriteResponse,
+    ReviewCreate,
+    ReviewResponse,
 )
 from typing import Annotated, List, Optional
 import models
@@ -112,11 +122,11 @@ async def upload_image(user: user_dependency, file: UploadFile = File(...)):
         if not file.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="Only image files are allowed")
 
-        # Validate file size (e.g., max 5MB)
-        max_size = 5 * 1024 * 1024  # 5MB in bytes
+        # Validate file size (e.g., max 20MB)
+        max_size = 20 * 1024 * 1024  # 20MB in bytes
         content = await file.read()
         if len(content) > max_size:
-            raise HTTPException(status_code=400, detail="File size exceeds 5MB limit")
+            raise HTTPException(status_code=400, detail="File size exceeds 20MB limit")
 
         # Generate unique filename
         file_extension = file.filename.split(".")[-1].lower()
@@ -236,7 +246,11 @@ async def create_category(
 
 @app.post("/products", status_code=status.HTTP_201_CREATED)
 async def add_product(
-    user: user_dependency, db: db_dependency, create_product: ProductsBase
+    user: user_dependency,
+    db: db_dependency,
+    create_product: ProductsBase,
+    images: Optional[List[ProductImageCreate]] = None,
+    specifications: Optional[List[ProductSpecificationCreate]] = None,
 ):
     require_admin(user)
     try:
@@ -244,6 +258,23 @@ async def add_product(
         db.add(add_product)
         db.commit()
         db.refresh(add_product)
+        # Add images
+        if images:
+            for img in images:
+                db_image = models.ProductImage(
+                    product_id=add_product.id, img_url=img.img_url
+                )
+                db.add(db_image)
+        # Add specifications
+        if specifications:
+            for spec in specifications:
+                db_spec = models.ProductSpecification(
+                    product_id=add_product.id,
+                    specification_id=spec.specification_id,
+                    value=spec.value,
+                )
+                db.add(db_spec)
+        db.commit()
         return {"message": "Product added successfully"}
     except SQLAlchemyError as e:
         db.rollback()
@@ -1024,6 +1055,141 @@ async def get_current_user(db: db_dependency, user: dict = Depends(get_active_us
     except Exception as e:
         logger.error(f"Error retrieving user info: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+# --- Product Images ---
+@app.post("/products/{product_id}/images", response_model=ProductImageResponse)
+async def add_product_image(
+    product_id: int, image: ProductImageCreate, db: db_dependency, user: user_dependency
+):
+    require_admin(user)
+    db_image = models.ProductImage(product_id=product_id, img_url=image.img_url)
+    db.add(db_image)
+    db.commit()
+    db.refresh(db_image)
+    return db_image
+
+
+@app.get("/products/{product_id}/images", response_model=List[ProductImageResponse])
+async def get_product_images(product_id: int, db: db_dependency):
+    images = (
+        db.query(models.ProductImage)
+        .filter(models.ProductImage.product_id == product_id)
+        .all()
+    )
+    return images
+
+
+# --- Category Specifications ---
+@app.post(
+    "/categories/{category_id}/specifications", response_model=SpecificationResponse
+)
+async def add_category_specification(
+    category_id: int,
+    spec: SpecificationCreate,
+    db: db_dependency,
+    user: user_dependency,
+):
+    require_admin(user)
+    db_spec = models.Specification(
+        category_id=category_id, name=spec.name, value_type=spec.value_type
+    )
+    db.add(db_spec)
+    db.commit()
+    db.refresh(db_spec)
+    return db_spec
+
+
+@app.get(
+    "/categories/{category_id}/specifications",
+    response_model=List[SpecificationResponse],
+)
+async def get_category_specifications(category_id: int, db: db_dependency):
+    specs = (
+        db.query(models.Specification)
+        .filter(models.Specification.category_id == category_id)
+        .all()
+    )
+    return specs
+
+
+# --- Product Specification Values ---
+@app.post(
+    "/products/{product_id}/specifications", response_model=ProductSpecificationResponse
+)
+async def add_product_specification(
+    product_id: int,
+    spec: ProductSpecificationCreate,
+    db: db_dependency,
+    user: user_dependency,
+):
+    require_admin(user)
+    db_spec = models.ProductSpecification(
+        product_id=product_id, specification_id=spec.specification_id, value=spec.value
+    )
+    db.add(db_spec)
+    db.commit()
+    db.refresh(db_spec)
+    return db_spec
+
+
+@app.get(
+    "/products/{product_id}/specifications",
+    response_model=List[ProductSpecificationResponse],
+)
+async def get_product_specifications(product_id: int, db: db_dependency):
+    specs = (
+        db.query(models.ProductSpecification)
+        .filter(models.ProductSpecification.product_id == product_id)
+        .all()
+    )
+    return specs
+
+
+# --- Favorites (Wishlist) ---
+@app.post("/favorites", response_model=FavoriteResponse)
+async def add_favorite(
+    favorite: FavoriteCreate, db: db_dependency, user: user_dependency
+):
+    db_fav = models.Favorite(user_id=user.get("id"), product_id=favorite.product_id)
+    db.add(db_fav)
+    db.commit()
+    db.refresh(db_fav)
+    return db_fav
+
+
+@app.get("/favorites", response_model=List[FavoriteResponse])
+async def get_favorites(db: db_dependency, user: user_dependency):
+    favs = (
+        db.query(models.Favorite)
+        .filter(models.Favorite.user_id == user.get("id"))
+        .all()
+    )
+    return favs
+
+
+# --- Reviews ---
+@app.post("/reviews", response_model=ReviewResponse)
+async def add_review(review: ReviewCreate, db: db_dependency, user: user_dependency):
+    db_review = models.Review(
+        user_id=user.get("id"),
+        product_id=review.product_id,
+        order_id=review.order_id,
+        rating=review.rating,
+        comment=review.comment,
+    )
+    db.add(db_review)
+    db.commit()
+    db.refresh(db_review)
+    return db_review
+
+
+@app.get("/products/{product_id}/reviews", response_model=List[ReviewResponse])
+async def get_product_reviews(product_id: int, db: db_dependency):
+    reviews = (
+        db.query(models.Review).filter(models.Review.product_id == product_id).all()
+    )
+    return reviews
 
 
 if __name__ == "__main__":
