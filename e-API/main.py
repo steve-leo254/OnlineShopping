@@ -27,6 +27,7 @@ from pydantic_models import (
     FavoriteResponse,
     ReviewCreate,
     ReviewResponse,
+    ProductCreateRequest,
 )
 from typing import Annotated, List, Optional
 import models
@@ -246,29 +247,26 @@ async def create_category(
 
 @app.post("/products", status_code=status.HTTP_201_CREATED)
 async def add_product(
-    user: user_dependency,
-    db: db_dependency,
-    create_product: ProductsBase,
-    images: Optional[List[ProductImageCreate]] = None,
-    specifications: Optional[List[ProductSpecificationCreate]] = None,
+    user: user_dependency, db: db_dependency, payload: ProductCreateRequest
 ):
     require_admin(user)
     try:
         # Only use fields that exist in the Products model
-        add_product = models.Products(**create_product.dict(), user_id=user.get("id"))
+        product_fields = payload.dict(exclude={"images", "specifications"})
+        add_product = models.Products(**product_fields, user_id=user.get("id"))
         db.add(add_product)
         db.commit()
         db.refresh(add_product)
         # Add images
-        if images:
-            for img in images:
+        if payload.images:
+            for img in payload.images:
                 db_image = models.ProductImage(
                     product_id=add_product.id, img_url=img.img_url
                 )
                 db.add(db_image)
         # Add specifications
-        if specifications:
-            for spec in specifications:
+        if payload.specifications:
+            for spec in payload.specifications:
                 db_spec = models.ProductSpecification(
                     product_id=add_product.id,
                     specification_id=spec.specification_id,
