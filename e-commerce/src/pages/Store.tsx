@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Search,
-  Grid,
-  List,
+  
   Star,
   Heart,
   Eye,
@@ -134,7 +133,7 @@ const Store = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("featured");
-  const [viewMode, setViewMode] = useState<string>("grid");
+  const [viewMode] = useState<string>("grid");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null
   );
@@ -425,7 +424,7 @@ const Store = () => {
                     </select>
                   </div>
                   <div className="flex bg-gray-100 rounded-lg p-1">
-                    <button
+                    {/* <button
                       onClick={() => setViewMode("grid")}
                       className={`p-2 rounded-md transition-colors bg-gray-200 ${
                         viewMode === "grid"
@@ -444,7 +443,7 @@ const Store = () => {
                       }`}
                     >
                       <List className="w-4 h-4" />
-                    </button>
+                    </button> */}
                   </div>
                 </div>
               </div>

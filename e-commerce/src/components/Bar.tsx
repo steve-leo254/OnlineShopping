@@ -36,20 +36,21 @@ const Bar: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Left Section - Logo & Navigation */}
-            <div className="flex items-center space-x-8">
+            <div className="flex items-center space-x-4 sm:space-x-8">
               {/* Logo */}
               <div className="flex-shrink-0">
                 <Link
                   to="https://www.instagram.com/flowtechs_ltd"
-                  className="flex items-center space-x-3"
+                  className="flex items-center space-x-2 sm:space-x-3"
                 >
                   <img
-                    className="h-10 w-auto transition-transform duration-200 hover:scale-105"
+                    className="h-8 w-auto sm:h-10 transition-transform duration-200 hover:scale-105"
                     src="/logomoto.png"
                     alt="Flowtechs Logo"
                   />
-                  <span className="text-2xl font-semibold whitespace-nowrap text-white">FlowTech</span>
-                  
+                  <span className="text-lg sm:text-xl md:text-2xl font-semibold whitespace-nowrap text-white">
+                    FlowTech
+                  </span>
                 </Link>
               </div>
 
@@ -82,7 +83,7 @@ const Bar: React.FC = () => {
             </div>
 
             {/* Right Section - Cart, Account, Mobile Menu */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               {/* Cart Button */}
               <div className="relative">
                 <button
@@ -93,7 +94,7 @@ const Bar: React.FC = () => {
                 >
                   <span className="sr-only">Shopping Cart</span>
                   <svg
-                    className="w-6 h-6 transition-transform duration-200 group-hover:scale-110"
+                    className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-200 group-hover:scale-110"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -106,7 +107,7 @@ const Bar: React.FC = () => {
                     />
                   </svg>
                   {cartQuantity > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-pulse shadow-lg">
+                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center animate-pulse shadow-lg">
                       {cartQuantity > 99 ? "99+" : cartQuantity}
                     </span>
                   )}
@@ -121,11 +122,11 @@ const Bar: React.FC = () => {
                     id="userDropdownButton1"
                     data-dropdown-toggle="userDropdown1"
                     type="button"
-                    className="flex items-center space-x-2 p-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 group"
+                    className="flex items-center space-x-1 sm:space-x-2 p-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200 group"
                   >
-                    <div className="w-8 h-8 bg-gradient-to-br from-white/20 to-white/30 backdrop-blur rounded-full flex items-center justify-center border border-white/20">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-white/20 to-white/30 backdrop-blur rounded-full flex items-center justify-center border border-white/20">
                       <svg
-                        className="w-4 h-4 text-white"
+                        className="w-3 h-3 sm:w-4 sm:h-4 text-white"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -142,7 +143,7 @@ const Bar: React.FC = () => {
                       Account
                     </span>
                     <svg
-                      className="w-4 h-4 transition-transform duration-200 group-hover:rotate-180"
+                      className="w-3 h-3 sm:w-4 sm:h-4 transition-transform duration-200 group-hover:rotate-180"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -323,10 +324,10 @@ const Bar: React.FC = () => {
               ) : (
                 <Link
                   to="/login"
-                  className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur text-white text-sm font-medium rounded-lg hover:bg-white/20 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md border border-white/20"
+                  className="inline-flex items-center px-3 py-2 sm:px-4 bg-white/10 backdrop-blur text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-white/20 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md border border-white/20"
                 >
                   <svg
-                    className="w-4 h-4 mr-2"
+                    className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -338,7 +339,8 @@ const Bar: React.FC = () => {
                       d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
                     />
                   </svg>
-                  Sign In
+                  <span className="hidden xs:inline">Sign In</span>
+                  <span className="xs:hidden">In</span>
                 </Link>
               )}
 
@@ -352,7 +354,7 @@ const Bar: React.FC = () => {
               >
                 <span className="sr-only">Open main menu</span>
                 <svg
-                  className="w-6 h-6"
+                  className="w-5 h-5 sm:w-6 sm:h-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -402,7 +404,7 @@ const Bar: React.FC = () => {
         id="logoutModal"
         tabIndex={-1}
         aria-hidden="true"
-        className="hidden fixed inset-0 z-50 overflow-y-auto overflow-x-hidden flex items-center justify-center p-4"
+        className="fixed inset-0 z-50 overflow-y-auto overflow-x-hidden flex items-center justify-center p-4"
       >
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"></div>
         <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-auto p-6 transform transition-all">
