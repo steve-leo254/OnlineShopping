@@ -39,20 +39,17 @@ const Bar: React.FC = () => {
             <div className="flex items-center space-x-8">
               {/* Logo */}
               <div className="flex-shrink-0">
-  <Link
-    to="/"
-    className="flex items-center space-x-3"
-  >
-    <img
-      className="h-10 w-auto transition-transform duration-200 hover:scale-105"
-      src="/logomoto.png"
-      alt="Flowtechs Logo"
-    />
-    <span className="hidden sm:inline text-xl md:text-2xl font-semibold whitespace-nowrap text-white">
-      FlowTech
-    </span>
-  </Link>
-</div>
+                <Link to="/" className="flex items-center space-x-3">
+                  <img
+                    className="h-10 w-auto transition-transform duration-200 hover:scale-105"
+                    src="/logomoto.png"
+                    alt="Flowtechs Logo"
+                  />
+                  <span className="hidden sm:inline text-xl md:text-2xl font-semibold whitespace-nowrap text-white">
+                    FlowTech
+                  </span>
+                </Link>
+              </div>
 
               {/* Desktop Navigation Links */}
               <div className="hidden md:block">
