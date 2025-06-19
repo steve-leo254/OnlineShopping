@@ -57,7 +57,7 @@ function App() {
               <Route path="/pending-reviews" element={<ReviewPage />} />
               <Route path="/wishlist" element={<WishList />} />
               <Route index element={<Home />} />
-              <Route path="/product-details" element={<ProductDetail />} />
+              <Route path="/product-details/:id" element={<ProductDetail />} />
               <Route path="/store" element={<Store />} />
               <Route path="/shopping-cart" element={<ShoppingCart />} />
               <Route path="/about" element={<AboutPage />} />
