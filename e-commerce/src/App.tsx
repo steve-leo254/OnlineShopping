@@ -21,11 +21,13 @@ import AccountProfile from "./pages/MyProfile";
 import SuperAdminDashboard from "./pages/AdminPage";
 import SuperAdminRegister from "./pages/SuperAdmin";
 import AddressBook from "./components/AddressBook";
-import ProductDetail from "./components/Productsdetail";
+import ProductDetail from "./pages/Productsdetail";
 import EmailVerification from "./pages/EmailVerification";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ProtectedRoute from "./assets/PrivateRoutes";
+import ReviewPage from "./pages/pending-views";
+import WishList from "./pages/WishList";
 
 function App() {
   return (
@@ -52,7 +54,10 @@ function App() {
             <Route path="/SuperAdmin" element={<SuperAdminRegister />} />
 
             <Route element={<Layout />}>
+              <Route path="/pending-reviews" element={<ReviewPage />} />
+              <Route path="/wishlist" element={<WishList />} />
               <Route index element={<Home />} />
+              <Route path="/product-details" element={<ProductDetail />} />
               <Route path="/store" element={<Store />} />
               <Route path="/shopping-cart" element={<ShoppingCart />} />
               <Route path="/about" element={<AboutPage />} />
@@ -68,7 +73,7 @@ function App() {
                   path="/order-details/:orderId"
                   element={<OrderDetails />}
                 />
-                <Route path="/productdetail" element={<ProductDetail />} />
+
                 <Route path="/orders-overview" element={<OrdersOverview />} />
                 <Route
                   path="/orders-management"
