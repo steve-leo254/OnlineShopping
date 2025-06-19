@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { useShoppingCart } from "../context/ShoppingCartContext";
 
 // Types
 interface Product {
@@ -195,7 +196,7 @@ const ProductDetail: React.FC = () => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [reviews] = useState<Review[]>(staticReviews);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
@@ -212,6 +213,7 @@ const ProductDetail: React.FC = () => {
     message: "",
     type: "success",
   });
+  const { addToCart } = useShoppingCart();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -273,6 +275,15 @@ const ProductDetail: React.FC = () => {
         };
         setProduct(prod);
         setIsFavorite(false); // or fetch favorite status
+        // Fetch reviews from backend
+        try {
+          const res = await axios.get(
+            `${API_BASE_URL}/products/${data.id}/reviews`
+          );
+          setReviews(res.data);
+        } catch {
+          setReviews([]);
+        }
         // Fetch related products
         if (data.category && data.category.id) {
           const relRes = await axios.get(`${API_BASE_URL}/public/products`, {
@@ -347,7 +358,6 @@ const ProductDetail: React.FC = () => {
 
   const handleAddToCart = (): void => {
     if (!product) return;
-
     if (quantity > product.stockQuantity) {
       showNotification(
         `Cannot add more than available stock (${product.stockQuantity})`,
@@ -355,14 +365,20 @@ const ProductDetail: React.FC = () => {
       );
       return;
     }
-
-    // Simulate API call
-    setTimeout(() => {
-      showNotification(
-        `${quantity} ${product.name}(s) added to cart!`,
-        "success"
-      );
-    }, 500);
+    // Add to cart using context
+    for (let i = 0; i < quantity; i++) {
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        img_url: product.images[0] || null,
+        stockQuantity: product.stockQuantity,
+      });
+    }
+    showNotification(
+      `${quantity} ${product.name}(s) added to cart!`,
+      "success"
+    );
   };
 
   const handleQuantityChange = (newQuantity: number): void => {
@@ -752,16 +768,11 @@ const ProductDetail: React.FC = () => {
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <span className="font-medium text-gray-900">
-                            {review.user}
+                            {`User #${review.user_id}`}
                           </span>
-                          {review.verified && (
-                            <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
-                              Verified Purchase
-                            </span>
-                          )}
                         </div>
                         <span className="text-sm text-gray-500">
-                          {review.date}
+                          {new Date(review.created_at).toLocaleDateString()}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 mb-3">
