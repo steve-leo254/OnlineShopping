@@ -1,9 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { toast } from 'react-toastify';
-import { useAuth } from '../context/AuthContext';
-import { X, Save, Loader2, Tag, DollarSign, Package, Star, Image as ImageIcon, PlusCircle } from 'lucide-react';
-import CategoryForm from './AddCategory'; // Import the CategoryForm component
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { useAuth } from "../context/AuthContext";
+import {
+  X,
+  Save,
+  Loader2,
+  Tag,
+  DollarSign,
+  Package,
+  Star,
+  Image as ImageIcon,
+  PlusCircle,
+  Settings,
+  List,
+} from "lucide-react";
+import CategoryForm from "./AddCategory"; // Import the CategoryForm component
 
 // Define types based on your Pydantic models
 type Category = {
@@ -17,17 +29,15 @@ type ProductForm = {
   cost: number;
   price: number;
   original_price: number;
-  img_url: string;
+  images: string[];
   stock_quantity: number;
   barcode: number;
   category_id: number | null;
   brand: string;
   description: string;
   rating: number;
-  reviews: number;
   discount: number;
   is_new: boolean;
-  is_favorite: boolean;
 };
 
 interface AddProductProps {
@@ -37,36 +47,39 @@ interface AddProductProps {
 const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
   const { token, role } = useAuth();
   const [formData, setFormData] = useState<ProductForm>({
-    name: '',
+    name: "",
     cost: 0,
     price: 0,
     original_price: 0,
-    img_url: '',
+    images: [],
     stock_quantity: 0,
     barcode: 0,
     category_id: null,
-    brand: '',
-    description: '',
+    brand: "",
+    description: "",
     rating: 0,
-    reviews: 0,
     discount: 0,
     is_new: false,
-    is_favorite: false,
   });
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [showCategoryModal, setShowCategoryModal] = useState<boolean>(false); // State for category modal
+  type Specification = { id: number; name: string; value_type: string };
+  const [specifications, setSpecifications] = useState<Specification[]>([]);
+  const [specValues, setSpecValues] = useState<Record<number, string>>({});
 
   // Fetch categories on mount and when a new category is added
   const fetchCategories = async () => {
     try {
-      const response = await axios.get<Category[]>(`${import.meta.env.VITE_API_BASE_URL}/public/categories`);
+      const response = await axios.get<Category[]>(
+        `${import.meta.env.VITE_API_BASE_URL}/public/categories`
+      );
       setCategories(response.data);
     } catch (err) {
-      toast.error('Failed to fetch categories');
-      console.error('Error fetching categories:', err);
+      toast.error("Failed to fetch categories");
+      console.error("Error fetching categories:", err);
     }
   };
 
@@ -77,139 +90,208 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
   // Calculate selling price whenever original_price or discount changes
   useEffect(() => {
     if (formData.original_price > 0) {
-      const discountAmount = (formData.original_price * formData.discount) / 100;
+      const discountAmount =
+        (formData.original_price * formData.discount) / 100;
       const calculatedPrice = formData.original_price - discountAmount;
-      
-      setFormData(prev => ({
+
+      setFormData((prev) => ({
         ...prev,
-        price: Math.round(calculatedPrice * 100) / 100 // Round to 2 decimal places
+        price: Math.round(calculatedPrice * 100) / 100, // Round to 2 decimal places
       }));
     }
   }, [formData.original_price, formData.discount]);
 
+  // Fetch specifications when category changes
+  useEffect(() => {
+    if (formData.category_id) {
+      axios
+        .get(
+          `${import.meta.env.VITE_API_BASE_URL}/categories/${
+            formData.category_id
+          }/specifications`
+        )
+        .then((res) => setSpecifications(res.data))
+        .catch(() => setSpecifications([]));
+    } else {
+      setSpecifications([]);
+    }
+  }, [formData.category_id]);
+
   // Handle form input changes
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]:
-        type === 'checkbox'
+        type === "checkbox"
           ? (e.target as HTMLInputElement).checked
-          : name === 'cost' || name === 'price' || name === 'original_price' || name === 'stock_quantity' || name === 'barcode' || name === 'rating' || name === 'reviews' || name === 'discount'
+          : name === "cost" ||
+            name === "price" ||
+            name === "original_price" ||
+            name === "stock_quantity" ||
+            name === "barcode" ||
+            name === "rating" ||
+            name === "discount"
           ? Number(value) || 0
-          : name === 'category_id'
-          ? value ? Number(value) : null
+          : name === "category_id"
+          ? value
+            ? Number(value)
+            : null
           : value,
     }));
   };
 
   // Handle image file selection
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        toast.error('Please select an image file (jpg, png, gif)');
-        return;
+    const files = Array.from(e.target.files || []);
+    const validFiles = files.filter((file) => {
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please select an image file (jpg, png, gif)");
+        return false;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image size must be less than 5MB');
-        return;
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error("Image size must be less than 20MB");
+        return false;
       }
-      setImageFile(file);
-      // Generate preview
+      return true;
+    });
+    setImageFiles((prev) => [...prev, ...validFiles]);
+    validFiles.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        setImagePreviews((prev) => [...prev, reader.result as string]);
       };
       reader.readAsDataURL(file);
-    } else {
-      setImageFile(null);
-      setImagePreview(null);
-    }
+    });
+  };
+
+  const handleRemoveImageFile = (index: number) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Handle image uploads (for simplicity, just URLs for now)
+  const handleAddImage = (url: string) => {
+    setFormData((prev) => ({ ...prev, images: [...prev.images, url] }));
+  };
+
+  const handleRemoveImage = (url: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((img) => img !== url),
+    }));
+  };
+
+  // Handle specification value changes
+  const handleSpecChange = (specId: number, value: string) => {
+    setSpecValues((prev) => ({ ...prev, [specId]: value }));
   };
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!token || (role !== "admin" && role !== "SUPERADMIN")) {
+      toast.error("Admin access required");
+      return;
+    }
 
-    if (!token || (role !== 'admin' && role !== 'SUPERADMIN')) {
-     toast.error('Admin access required');
-     return;
-   }
-
-   
     // Client-side validation
     if (!formData.name) {
-      toast.error('Product name is required');
+      toast.error("Product name is required");
       return;
     }
     if (formData.cost <= 0) {
-      toast.error('Cost must be greater than 0');
+      toast.error("Cost must be greater than 0");
       return;
     }
     if (formData.price <= 0) {
-      toast.error('Price must be greater than 0');
+      toast.error("Price must be greater than 0");
       return;
     }
     if (formData.original_price <= 0) {
-      toast.error('Original price must be greater than 0');
+      toast.error("Original price must be greater than 0");
       return;
     }
     if (formData.stock_quantity < 0) {
-      toast.error('Stock quantity cannot be negative');
+      toast.error("Stock quantity cannot be negative");
       return;
     }
     if (formData.barcode <= 0) {
-      toast.error('Barcode must be a positive number');
+      toast.error("Barcode must be a positive number");
       return;
     }
     if (formData.rating < 0 || formData.rating > 5) {
-      toast.error('Rating must be between 0 and 5');
-      return;
-    }
-    if (formData.reviews < 0) {
-      toast.error('Reviews cannot be negative');
+      toast.error("Rating must be between 0 and 5");
       return;
     }
     if (formData.discount < 0 || formData.discount > 100) {
-      toast.error('Discount must be between 0 and 100');
+      toast.error("Discount must be between 0 and 100");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      let img_url = formData.img_url;
-      if (imageFile) {
-        // Upload image
+      let uploadedImageUrls: string[] = [];
+      // Upload all selected image files
+      for (let i = 0; i < imageFiles.length; i++) {
         const formDataImage = new FormData();
-        formDataImage.append('file', imageFile);
-        const imageResponse = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/upload-image`, formDataImage, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-        img_url = imageResponse.data.img_url;
+        formDataImage.append("file", imageFiles[i]);
+        const imageResponse = await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL}/upload-image`,
+          formDataImage,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+        uploadedImageUrls.push(imageResponse.data.img_url);
       }
 
-      // Create product
-      const productData = { ...formData, img_url };
-      await axios.post(`${import.meta.env.VITE_API_BASE_URL}/products`, productData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      // Prepare images array for API (uploaded + manual URLs)
+      const allImageUrls = [...uploadedImageUrls, ...formData.images].filter(
+        (url) => url
+      );
+      const images = allImageUrls.map((url) => ({ img_url: url }));
+
+      // Prepare specifications array for API
+      const specificationsArr = Object.entries(specValues)
+        .filter(([_, value]) => value !== "")
+        .map(([specification_id, value]) => ({
+          specification_id: Number(specification_id),
+          value,
+        }));
+
+      // Create product (flat body)
+      await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/products`,
+        {
+          ...formData,
+          images: images.length > 0 ? images : undefined,
+          specifications:
+            specificationsArr.length > 0 ? specificationsArr : undefined,
         },
-      });
-      toast.success('Product added successfully');
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      toast.success("Product added successfully");
       onClose();
     } catch (err: any) {
       const errorMessage =
-        err.response?.data?.detail || 'Failed to add product. Please try again.';
+        err.response?.data?.detail ||
+        "Failed to add product. Please try again.";
       toast.error(errorMessage);
-      console.error('Error adding product:', err);
+      console.error("Error adding product:", err);
     } finally {
       setIsLoading(false);
     }
@@ -217,7 +299,8 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
 
   const handleCategoryAdded = () => {
     fetchCategories(); // Re-fetch categories to update the dropdown
-    setShowCategoryModal(false); // Close the modal
+    // Do NOT close the modal here; let the user add specifications
+    // setShowCategoryModal(false);
   };
 
   return (
@@ -231,7 +314,9 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
             </div>
             <div>
               <h2 className="text-xl font-bold text-white">Add New Product</h2>
-              <p className="text-blue-100 text-sm">Fill in the details to create a new product</p>
+              <p className="text-blue-100 text-sm">
+                Fill in the details to create a new product
+              </p>
             </div>
           </div>
           <button
@@ -245,12 +330,18 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
 
       {/* Form Container */}
       <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-        <form onSubmit={handleSubmit} className="space-y-8" encType='multipart/form-data'>
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-8"
+          encType="multipart/form-data"
+        >
           {/* Basic Information */}
           <div className="bg-gray-50 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-4">
               <Tag className="w-5 h-5 text-blue-600" />
-              <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Basic Information
+              </h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="lg:col-span-2">
@@ -284,10 +375,10 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category
                 </label>
-                <div className="flex items-center gap-2"> {/* Added for button next to select */}
+                <div className="flex items-center gap-2">
                   <select
                     name="category_id"
-                    value={formData.category_id ?? ''}
+                    value={formData.category_id ?? ""}
                     onChange={handleChange}
                     className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   >
@@ -342,7 +433,9 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
           <div className="bg-green-50 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-4">
               <DollarSign className="w-5 h-5 text-green-600" />
-              <h3 className="text-lg font-semibold text-gray-900">Pricing & Stock</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Pricing & Stock
+              </h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
@@ -433,95 +526,138 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
           <div className="bg-purple-50 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-4">
               <ImageIcon className="w-5 h-5 text-purple-600" />
-              <h3 className="text-lg font-semibold text-gray-900">Product Image</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Product Images
+              </h3>
             </div>
             <div className="flex flex-col lg:flex-row gap-6">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Choose Image
+                  Choose Images
                 </label>
                 <div className="relative">
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/gif"
+                    multiple
                     onChange={handleImageChange}
                     className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Max file size: 5MB. Supported formats: JPG, PNG, GIF
+                  Max file size: 20MB per image. Supported formats: JPG, PNG,
+                  GIF
                 </p>
               </div>
-              {imagePreview && (
+              {imagePreviews.length > 0 && (
                 <div className="lg:w-48">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Preview
                   </label>
-                  <div className="relative">
-                    <img
-                      src={imagePreview}
-                      alt="Product preview"
-                      className="w-full h-32 lg:h-40 object-cover rounded-xl border-2 border-gray-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setImageFile(null);
-                        setImagePreview(null);
-                      }}
-                      className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+                  <div className="flex flex-wrap gap-2">
+                    {imagePreviews.map((preview, idx) => (
+                      <div key={idx} className="relative inline-block">
+                        <img
+                          src={preview}
+                          alt={`Product preview ${idx + 1}`}
+                          className="w-20 h-20 object-cover rounded-xl border-2 border-gray-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImageFile(idx)}
+                          className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Rating & Reviews */}
-          <div className="bg-yellow-50 rounded-2xl p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Star className="w-5 h-5 text-yellow-600" />
-              <h3 className="text-lg font-semibold text-gray-900">Rating & Reviews</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Rating (0-5)
-                </label>
-                <input
-                  type="number"
-                  name="rating"
-                  value={formData.rating}
-                  onChange={handleChange}
-                  min="0"
-                  max="5"
-                  step="0.1"
-                  className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200"
-                  placeholder="4.5"
-                />
+          {/* Enhanced Specifications Section */}
+          {specifications.length > 0 && (
+            <div className="bg-gradient-to-br from-indigo-50 to-cyan-50 rounded-2xl p-6 border border-indigo-100">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="p-2 bg-indigo-100 rounded-xl">
+                  <Settings className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Product Specifications
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Define the technical details and attributes for this product
+                  </p>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Number of Reviews
-                </label>
-                <input
-                  type="number"
-                  name="reviews"
-                  value={formData.reviews}
-                  onChange={handleChange}
-                  min="0"
-                  className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200"
-                  placeholder="150"
-                />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {specifications.map((spec, index) => (
+                  <div 
+                    key={spec.id} 
+                    className="group relative bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 hover:border-indigo-300"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 mt-1">
+                        <div className="w-8 h-8 bg-gradient-to-br from-indigo-100 to-cyan-100 rounded-lg flex items-center justify-center">
+                          <List className="w-4 h-4 text-indigo-600" />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <label className="block text-sm font-semibold text-gray-800 mb-2">
+                          {spec.name}
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={specValues[spec.id] || ""}
+                            onChange={(e) => handleSpecChange(spec.id, e.target.value)}
+                            className="w-full px-4 py-3 text-gray-700 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all duration-200 placeholder-gray-400"
+                            placeholder={`Enter ${spec.name.toLowerCase()}...`}
+                          />
+                          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                            <div className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-md">
+                              {spec.value_type}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Subtle animation indicator */}
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-t-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Specifications Summary */}
+              <div className="mt-6 p-4 bg-white/70 rounded-xl border border-indigo-200">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="w-2 h-2 bg-indigo-400 rounded-full"></div>
+                  <span>
+                    {Object.values(specValues).filter(val => val !== "").length} of {specifications.length} specifications completed
+                  </span>
+                </div>
+                <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-indigo-500 to-cyan-500 h-2 rounded-full transition-all duration-300"
+                    style={{ 
+                      width: `${(Object.values(specValues).filter(val => val !== "").length / specifications.length) * 100}%` 
+                    }}
+                  ></div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Product Status */}
           <div className="bg-blue-50 rounded-2xl p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Product Status</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Product Status
+            </h3>
             <div className="flex flex-wrap gap-6">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -531,17 +667,9 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                   onChange={handleChange}
                   className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                 />
-                <span className="text-sm font-medium text-gray-700">New Product</span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="is_favorite"
-                  checked={formData.is_favorite}
-                  onChange={handleChange}
-                  className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                />
-                <span className="text-sm font-medium text-gray-700">Featured Product</span>
+                <span className="text-sm font-medium text-gray-700">
+                  New Product
+                </span>
               </label>
             </div>
           </div>
@@ -552,7 +680,9 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
               type="submit"
               disabled={isLoading}
               className={`w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 ${
-                isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:from-blue-700 hover:to-purple-700'
+                isLoading
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:from-blue-700 hover:to-purple-700"
               }`}
             >
               {isLoading ? (
