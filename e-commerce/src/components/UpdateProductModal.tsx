@@ -53,6 +53,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
   productToEdit,
 }) => {
   const { token, role } = useAuth();
+  const imgEndpoint = import.meta.env.VITE_API_BASE_URL;
   const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState<ProductForm>({
     name: "",
@@ -371,6 +372,12 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (existingImages.length > 0) {
+      console.log("existingImages", existingImages);
+    }
+  }, [existingImages]);
+
   if (!isOpen) return null;
 
   return (
@@ -618,7 +625,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                         <div key={img.id} className="relative inline-block">
                           <img
                             src={
-                              img.img_url.startsWith("/uploads")
+                              img.img_url.startsWith("http")
                                 ? img.img_url
                                 : `${imgEndpoint}${img.img_url}`
                             }
