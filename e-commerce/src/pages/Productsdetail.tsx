@@ -16,7 +16,7 @@ import {
   X,
   Eye,
 } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 
@@ -198,6 +198,7 @@ const staticRelatedProducts: Product[] = [
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
@@ -415,7 +416,7 @@ const ProductDetail: React.FC = () => {
   };
 
   const handleRelatedProductClick = (relatedProduct: Product): void => {
-    showNotification(`Viewing ${relatedProduct.name}`, "info");
+    navigate(`/product-details/${relatedProduct.id}`);
   };
 
   const handleBackToProducts = (): void => {
