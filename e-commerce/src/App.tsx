@@ -49,6 +49,7 @@ function App() {
             <Route path="/verify-email" element={<EmailVerification />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/SuperAdmin" element={<SuperAdminRegister />} />
 
             <Route element={<Layout />}>
               <Route index element={<Home />} />
@@ -74,7 +75,6 @@ function App() {
                   element={<OrdersManagement />}
                 />
 
-                <Route path="/SuperAdmin" element={<SuperAdminRegister />} />
                 <Route path="/MyProfile" element={<AccountProfile />} />
                 <Route path="/address-book" element={<AddressBook />} />
               </Route>
