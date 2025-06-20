@@ -1,8 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { Star, Heart, Eye, ShoppingCart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "../cart/formatCurrency";
 import { useShoppingCart } from "../context/ShoppingCartContext";
+import { useAuth } from "../context/AuthContext";
+import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 
 interface Product {
   id: string;
@@ -27,15 +30,27 @@ interface ProductCardProps {
   product: Product;
   favorites: Set<string>;
   toggleFavorite: (productId: string) => void;
+  onFavoriteChange?: () => void;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
   product,
   favorites,
   toggleFavorite,
+  onFavoriteChange,
 }) => {
   const navigate = useNavigate();
   const { addToCart, getItemQuantity } = useShoppingCart();
+  const { token, isAuthenticated } = useAuth();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  let userId: number | null = null;
+  if (token) {
+    try {
+      const decoded: any = jwtDecode(token);
+      userId = decoded.id;
+    } catch {}
+  }
 
   const handleAddToCart = () => {
     addToCart({
@@ -45,6 +60,36 @@ const ProductCard: React.FC<ProductCardProps> = ({
       img_url: product.img_url,
       stockQuantity: product.stockQuantity,
     });
+  };
+
+  const handleFavoriteClick = async () => {
+    if (!isAuthenticated || !token || !userId) return;
+    setIsProcessing(true);
+    const isFav = favorites.has(product.id) || product.isFavorite;
+    // Optimistically update UI
+    toggleFavorite(product.id);
+    try {
+      if (!isFav) {
+        // Add to favorites
+        await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL}/favorites`,
+          { product_id: parseInt(product.id), user_id: userId },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } else {
+        // Remove from favorites: need favorite id, so assume API supports DELETE by product_id
+        await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/favorites`, {
+          data: { product_id: parseInt(product.id) },
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+      if (onFavoriteChange) onFavoriteChange();
+    } catch (err) {
+      // Revert optimistic update on error
+      toggleFavorite(product.id);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -73,7 +118,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
         </div>
         <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <button
-            onClick={() => toggleFavorite(product.id)}
+            onClick={handleFavoriteClick}
+            disabled={isProcessing}
             className={`p-2 rounded-full shadow-lg transition-colors ${
               favorites.has(product.id) || product.isFavorite
                 ? "bg-red-500 text-white"
