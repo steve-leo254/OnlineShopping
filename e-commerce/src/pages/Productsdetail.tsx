@@ -243,7 +243,7 @@ const ProductDetail: React.FC = () => {
       try {
         const res = await axios.get(`${API_BASE_URL}/public/products/${id}`);
         const data = res.data;
-
+        
         // Transform images
         let images: string[] = [];
         if (
@@ -257,7 +257,7 @@ const ProductDetail: React.FC = () => {
               : `${API_BASE_URL}${img.img_url}`
           );
         }
-
+        
         // Transform specifications
         let specifications: Record<string, string | number> = {};
         if (
@@ -270,7 +270,7 @@ const ProductDetail: React.FC = () => {
             }
           });
         }
-
+  
         // Fetch reviews first to calculate rating
         let fetchedReviews: Review[] = [];
         try {
@@ -282,10 +282,10 @@ const ProductDetail: React.FC = () => {
         } catch {
           setReviews([]);
         }
-
+  
         // Calculate rating from reviews
         const calculatedRating = calculateAverageRating(fetchedReviews);
-
+        
         // Compose product object with calculated rating
         const prod: Product = {
           id: data.id,
@@ -307,11 +307,11 @@ const ProductDetail: React.FC = () => {
           createdAt: data.created_at,
           specifications,
         };
-
+        
         setProduct(prod);
         setIsFavorite(false);
-
-        // Fetch related products
+  
+        // Fetch related products with ratings
         if (data.category && data.category.id) {
           const relRes = await axios.get(`${API_BASE_URL}/public/products`, {
             params: { category_id: data.category.id, limit: 8 },
@@ -319,37 +319,59 @@ const ProductDetail: React.FC = () => {
           const relItems = relRes.data.items.filter(
             (p: any) => p.id !== data.id
           );
-          setRelatedProducts(
-            relItems.map((item: any) => ({
-              id: item.id,
-              name: item.name,
-              price: item.price,
-              originalPrice: item.original_price,
-              rating: item.rating || 0, // You might want to calculate this too
-              reviews: item.reviews ? item.reviews.length : 0,
-              images:
-                item.images && item.images.length > 0
-                  ? item.images.map((img: any) =>
-                      img.img_url.startsWith("http")
-                        ? img.img_url
-                        : `${API_BASE_URL}${img.img_url}`
-                    )
-                  : [
-                      "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop",
-                    ],
-              category: item.category?.name || "Uncategorized",
-              brand: item.brand || "Unknown",
-              inStock: item.stock_quantity > 0,
-              discount: item.discount || 0,
-              isNew: item.is_new || false,
-              isFavorite: false,
-              stockQuantity: item.stock_quantity,
-              description: item.description || "",
-              barcode: item.barcode,
-              createdAt: item.created_at,
-              specifications: {},
-            }))
+          
+          // Fetch reviews for each related product to calculate ratings
+          const relatedProductsWithRatings = await Promise.all(
+            relItems.map(async (item: any) => {
+              let itemRating = 0;
+              let itemReviewCount = 0;
+              
+              try {
+                const itemReviewsRes = await axios.get(
+                  `${API_BASE_URL}/products/${item.id}/reviews`
+                );
+                const itemReviews = itemReviewsRes.data;
+                itemRating = calculateAverageRating(itemReviews);
+                itemReviewCount = itemReviews.length;
+              } catch {
+                // If reviews fetch fails, keep default values
+                itemRating = 0;
+                itemReviewCount = 0;
+              }
+              
+              return {
+                id: item.id,
+                name: item.name,
+                price: item.price,
+                originalPrice: item.original_price,
+                rating: itemRating, // Use calculated rating
+                reviews: itemReviewCount, // Use actual review count
+                images:
+                  item.images && item.images.length > 0
+                    ? item.images.map((img: any) =>
+                        img.img_url.startsWith("http")
+                          ? img.img_url
+                          : `${API_BASE_URL}${img.img_url}`
+                      )
+                    : [
+                        "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop",
+                      ],
+                category: item.category?.name || "Uncategorized",
+                brand: item.brand || "Unknown",
+                inStock: item.stock_quantity > 0,
+                discount: item.discount || 0,
+                isNew: item.is_new || false,
+                isFavorite: false,
+                stockQuantity: item.stock_quantity,
+                description: item.description || "",
+                barcode: item.barcode,
+                createdAt: item.created_at,
+                specifications: {},
+              };
+            })
           );
+          
+          setRelatedProducts(relatedProductsWithRatings);
         } else {
           setRelatedProducts([]);
         }
