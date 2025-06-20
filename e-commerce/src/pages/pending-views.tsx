@@ -12,6 +12,7 @@ import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { useUserStats } from "../context/UserStatsContext";
+import { formatCurrency } from "../cart/formatCurrency";
 
 // Type definitions
 interface User {
@@ -114,7 +115,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
             </h3>
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold text-gray-900">
-                ${product.price}
+                {formatCurrency(product.price)}
               </span>
               <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
                 Recent Purchase
