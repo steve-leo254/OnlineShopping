@@ -75,6 +75,37 @@ const transformProduct = (apiProduct: ApiProduct): Product => {
       : new Date().getTime() - new Date(apiProduct.created_at).getTime() <
         30 * 24 * 60 * 60 * 1000;
 
+  // Handle rating: could be a number or an array of review objects
+  let ratingValue = 4.5;
+  if (typeof apiProduct.rating === "number") {
+    ratingValue = apiProduct.rating;
+  } else if (
+    Array.isArray(apiProduct.rating) &&
+    apiProduct.rating &&
+    apiProduct.rating.length > 0
+  ) {
+    // If it's an array of review objects, calculate average
+    const ratings = apiProduct.rating
+      .map((r: any) => (typeof r.rating === "number" ? r.rating : null))
+      .filter((r: number | null) => r !== null) as number[];
+    if (ratings.length > 0) {
+      ratingValue =
+        ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length;
+    }
+  }
+
+  // Handle reviews count: if reviews is an array, use its length
+  let reviewsCount = 100;
+  if (typeof apiProduct.reviews === "number") {
+    reviewsCount = apiProduct.reviews;
+  } else if (
+    Array.isArray(apiProduct.reviews) &&
+    apiProduct.reviews &&
+    apiProduct.reviews.length > 0
+  ) {
+    reviewsCount = apiProduct.reviews.length;
+  }
+
   return {
     id: apiProduct.id,
     name: apiProduct.name,
@@ -84,8 +115,8 @@ const transformProduct = (apiProduct: ApiProduct): Product => {
       (apiProduct.price > (apiProduct.cost ?? 0)
         ? apiProduct.price
         : apiProduct.cost ?? 0),
-    rating: apiProduct.rating || 4.5,
-    reviews: apiProduct.reviews || 100,
+    rating: ratingValue,
+    reviews: reviewsCount,
     img_url: apiProduct.img_url
       ? `${import.meta.env.VITE_API_BASE_URL}${apiProduct.img_url}`
       : "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop",
