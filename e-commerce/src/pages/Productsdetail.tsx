@@ -22,6 +22,7 @@ import { useShoppingCart } from "../context/ShoppingCartContext";
 import { useAuth } from "../context/AuthContext";
 import { useUserStats } from "../context/UserStatsContext";
 import { useFavorites } from "../context/FavoritesContext";
+import { toast } from "react-toastify";
 
 // Types
 interface Product {
@@ -89,20 +90,12 @@ const ProductDetail: React.FC = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<TabType>("description");
   const [showImageModal, setShowImageModal] = useState<boolean>(false);
-  const [notification, setNotification] = useState<{
-    show: boolean;
-    message: string;
-    type: NotificationType;
-  }>({
-    show: false,
-    message: "",
-    type: "success",
-  });
   const {
     addToCart,
     increaseCartQuantity,
     decreaseCartQuantity,
     getItemQuantity,
+    removeFromCart,
   } = useShoppingCart();
   const { isAuthenticated, token } = useAuth();
   const { refreshStats } = useUserStats();
@@ -268,22 +261,11 @@ const ProductDetail: React.FC = () => {
     fetchProduct();
   }, [id, API_BASE_URL, isAuthenticated, token]);
 
-  const showNotification = (
-    message: string,
-    type: NotificationType = "success"
-  ): void => {
-    setNotification({ show: true, message, type });
-    setTimeout(() => {
-      setNotification((prev) => ({ ...prev, show: false }));
-    }, 4000);
-  };
-
   const handleAddToCart = (): void => {
     if (!product) return;
     if (getItemQuantity(product.id) >= product.stockQuantity) {
-      showNotification(
-        `Cannot add more than available stock (${product.stockQuantity})`,
-        "error"
+      toast.error(
+        `Cannot add more than available stock (${product.stockQuantity})`
       );
       return;
     }
@@ -294,7 +276,13 @@ const ProductDetail: React.FC = () => {
       img_url: product.images[0] || null,
       stockQuantity: product.stockQuantity,
     });
-    showNotification(`${product.name} added to cart!`, "success");
+    toast.success(`${product.name} added to cart!`);
+  };
+
+  const handleRemoveFromCart = (): void => {
+    if (!product) return;
+    removeFromCart(product.id);
+    toast.info(`${product.name} removed from cart.`);
   };
 
   const handleShare = async (): Promise<void> => {
@@ -311,7 +299,7 @@ const ProductDetail: React.FC = () => {
         console.log("Error sharing:", error);
       }
     } else {
-      showNotification("Product link copied to clipboard!", "info");
+      toast.info("Product link copied to clipboard!");
     }
   };
 
@@ -332,7 +320,7 @@ const ProductDetail: React.FC = () => {
   };
 
   const handleBackToProducts = (): void => {
-    showNotification("Navigating back to products", "info");
+    toast.info("Navigating back to products");
   };
 
   const renderStars = (rating: number) => {
@@ -362,36 +350,9 @@ const ProductDetail: React.FC = () => {
     );
   };
 
-  const renderNotification = () => {
-    if (!notification.show) return null;
-
-    const bgColor = {
-      success: "bg-green-500",
-      error: "bg-red-500",
-      info: "bg-blue-500",
-    }[notification.type];
-
-    return (
-      <div
-        className={`fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2`}
-      >
-        {notification.type === "success" && <CheckCircle className="w-5 h-5" />}
-        {notification.type === "error" && <X className="w-5 h-5" />}
-        {notification.type === "info" && <Eye className="w-5 h-5" />}
-        <span>{notification.message}</span>
-        <button
-          onClick={() => setNotification((prev) => ({ ...prev, show: false }))}
-          className="ml-2"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-    );
-  };
-
   const handleFavoriteToggle = async () => {
     if (!isAuthenticated || !token || !product) {
-      showNotification("You must be logged in to use favorites.", "error");
+      toast.error("You must be logged in to use favorites.");
       return;
     }
     setIsProcessingFavorite(true);
@@ -399,14 +360,14 @@ const ProductDetail: React.FC = () => {
     try {
       if (!isFav) {
         await addFavorite(product.id.toString());
-        showNotification("Added to favorites!", "success");
+        toast.success("Added to favorites!");
       } else {
         await removeFavorite(product.id.toString());
-        showNotification("Removed from favorites", "info");
+        toast.info("Removed from favorites");
       }
       refreshStats();
     } catch (err) {
-      showNotification("Failed to update favorites.", "error");
+      toast.error("Failed to update favorites.");
     } finally {
       setIsProcessingFavorite(false);
     }
@@ -436,8 +397,6 @@ const ProductDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {renderNotification()}
-
       {/* Header */}
 
       {/* Product Details */}
@@ -603,14 +562,24 @@ const ProductDetail: React.FC = () => {
 
             {/* Action Buttons */}
             <div className="flex gap-4">
-              <button
-                onClick={handleAddToCart}
-                disabled={!product.inStock}
-                className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-              >
-                <ShoppingCart className="w-5 h-5" />
-                Add to Cart
-              </button>
+              {getItemQuantity(product.id) > 0 ? (
+                <button
+                  onClick={handleRemoveFromCart}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-medium shadow-lg shadow-red-200 hover:shadow-red-300 transition-colors flex items-center justify-center gap-2"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  Remove from Cart
+                </button>
+              ) : (
+                <button
+                  onClick={handleAddToCart}
+                  disabled={!product.inStock}
+                  className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  Add to Cart
+                </button>
+              )}
 
               <button
                 onClick={handleFavoriteToggle}
@@ -731,7 +700,8 @@ const ProductDetail: React.FC = () => {
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-gray-500">
-                      No reviews yet. Be the first to review by completing an order!
+                      No reviews yet. Be the first to review by completing an
+                      order!
                     </p>
                   </div>
                 )}
