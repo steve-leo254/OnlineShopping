@@ -225,6 +225,13 @@ const ProductDetail: React.FC = () => {
     getItemQuantity,
   } = useShoppingCart();
 
+  const calculateAverageRating = (reviews: Review[]): number => {
+    if (!reviews || reviews.length === 0) return 0;
+    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+    return totalRating / reviews.length;
+  };
+  
+
   useEffect(() => {
     const fetchProduct = async () => {
       setLoading(true);
@@ -237,6 +244,7 @@ const ProductDetail: React.FC = () => {
       try {
         const res = await axios.get(`${API_BASE_URL}/public/products/${id}`);
         const data = res.data;
+        
         // Transform images
         let images: string[] = [];
         if (
@@ -250,6 +258,7 @@ const ProductDetail: React.FC = () => {
               : `${API_BASE_URL}${img.img_url}`
           );
         }
+        
         // Transform specifications
         let specifications: Record<string, string | number> = {};
         if (
@@ -262,38 +271,47 @@ const ProductDetail: React.FC = () => {
             }
           });
         }
-        // Compose product object
+  
+        // Fetch reviews first to calculate rating
+        let fetchedReviews: Review[] = [];
+        try {
+          const reviewsRes = await axios.get(
+            `${API_BASE_URL}/products/${data.id}/reviews`
+          );
+          fetchedReviews = reviewsRes.data;
+          setReviews(fetchedReviews);
+        } catch {
+          setReviews([]);
+        }
+  
+        // Calculate rating from reviews
+        const calculatedRating = calculateAverageRating(fetchedReviews);
+        
+        // Compose product object with calculated rating
         const prod: Product = {
           id: data.id,
           name: data.name,
           price: data.price,
           originalPrice: data.original_price,
-          rating: data.rating || 0,
-          reviews: data.reviews ? data.reviews.length : 0,
+          rating: calculatedRating, // Use calculated rating
+          reviews: fetchedReviews.length, // Use actual review count
           images,
           category: data.category?.name || "Uncategorized",
           brand: data.brand || "Unknown",
           inStock: data.stock_quantity > 0,
           discount: data.discount || 0,
           isNew: data.is_new || false,
-          isFavorite: false, // TODO: fetch favorite status if needed
+          isFavorite: false,
           stockQuantity: data.stock_quantity,
           description: data.description || "",
           barcode: data.barcode,
           createdAt: data.created_at,
           specifications,
         };
+        
         setProduct(prod);
-        setIsFavorite(false); // or fetch favorite status
-        // Fetch reviews from backend
-        try {
-          const res = await axios.get(
-            `${API_BASE_URL}/products/${data.id}/reviews`
-          );
-          setReviews(res.data);
-        } catch {
-          setReviews([]);
-        }
+        setIsFavorite(false);
+  
         // Fetch related products
         if (data.category && data.category.id) {
           const relRes = await axios.get(`${API_BASE_URL}/public/products`, {
@@ -308,7 +326,7 @@ const ProductDetail: React.FC = () => {
               name: item.name,
               price: item.price,
               originalPrice: item.original_price,
-              rating: item.rating || 0,
+              rating: item.rating || 0, // You might want to calculate this too
               reviews: item.reviews ? item.reviews.length : 0,
               images:
                 item.images && item.images.length > 0
@@ -424,19 +442,31 @@ const ProductDetail: React.FC = () => {
   };
 
   const renderStars = (rating: number) => {
+    const numericRating = Number(rating) || 0;
+    
     return (
       <div className="flex items-center">
-        {[...Array(5)].map((_, i) => (
-          <Star
-            key={i}
-            className={`w-4 h-4 ${
-              i < rating ? "text-yellow-400 fill-current" : "text-gray-300"
-            }`}
-          />
-        ))}
+        {[...Array(5)].map((_, i) => {
+          const isFullStar = i < Math.floor(numericRating);
+          const isHalfStar = i === Math.floor(numericRating) && numericRating % 1 >= 0.5;
+          
+          return (
+            <Star
+              key={i}
+              className={`w-4 h-4 ${
+                isFullStar 
+                  ? "text-yellow-400 fill-yellow-400" 
+                  : isHalfStar
+                  ? "text-yellow-400 fill-yellow-200"
+                  : "text-gray-300"
+              }`}
+            />
+          );
+        })}
       </div>
     );
   };
+  
 
   const renderNotification = () => {
     if (!notification.show) return null;
