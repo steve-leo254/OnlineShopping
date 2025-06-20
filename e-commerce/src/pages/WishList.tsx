@@ -2,28 +2,31 @@ import React, { useState, useEffect } from "react";
 import { Heart, ShoppingCart, X, Star, Eye, Share2 } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import { useFetchProducts } from "../components/UseFetchProducts";
 
-interface Product {
+interface ApiProduct {
   id: string;
   name: string;
   price: number;
-  originalPrice?: number;
-  image: string;
-  rating: number;
-  category: string;
+  original_price?: number;
+  rating?: number;
+  category?: string | { id: string; name: string };
+  images?: { img_url: string }[];
+  // ...other fields
 }
 
 interface Favorite {
   id: number;
   product_id: number;
   user_id: number;
-  product: Product;
 }
 
 const WishList: React.FC = () => {
   const { token, isAuthenticated } = useAuth();
-  const [wishlistItems, setWishlistItems] = useState<Favorite[]>([]);
+  const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<number[]>([]); // for removing
 
+  // Fetch favorite product IDs on mount
   useEffect(() => {
     const fetchFavorites = async () => {
       if (!isAuthenticated || !token) return;
@@ -34,17 +37,34 @@ const WishList: React.FC = () => {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        setWishlistItems(res.data);
+        setFavoriteProductIds(
+          res.data.map((fav: Favorite) => fav.product_id.toString())
+        );
+        setFavoriteIds(res.data.map((fav: Favorite) => fav.id));
       } catch (err) {
-        setWishlistItems([]);
+        setFavoriteProductIds([]);
+        setFavoriteIds([]);
       }
     };
     fetchFavorites();
   }, [isAuthenticated, token]);
 
-  const removeFromWishlist = async (favoriteId: number) => {
-    setWishlistItems((prev) => prev.filter((item) => item.id !== favoriteId));
-    if (!isAuthenticated || !token) return;
+  // Fetch all products (could be optimized to fetch only needed ones)
+  const { products, isLoading } = useFetchProducts();
+
+  // Filter products to only those in favorites
+  const wishlistProducts: ApiProduct[] = products.filter((p) =>
+    favoriteProductIds.includes(p.id)
+  );
+
+  const removeFromWishlist = async (productId: string) => {
+    // Find the favoriteId for this product
+    const favIndex = wishlistProducts.findIndex((p) => p.id === productId);
+    const favoriteId = favoriteIds[favIndex];
+    // Optimistically update UI
+    setFavoriteProductIds((prev) => prev.filter((id) => id !== productId));
+    setFavoriteIds((prev) => prev.filter((_, idx) => idx !== favIndex));
+    if (!isAuthenticated || !token || !favoriteId) return;
     try {
       await axios.delete(
         `${import.meta.env.VITE_API_BASE_URL}/favorites/${favoriteId}`,
@@ -57,7 +77,7 @@ const WishList: React.FC = () => {
     }
   };
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: ApiProduct) => {
     // Simulate adding to cart
     console.log(`Added ${product.name} to cart`);
   };
@@ -76,7 +96,7 @@ const WishList: React.FC = () => {
             </h1>
           </div>
           <p className="text-gray-600 text-sm sm:text-base lg:text-lg px-4">
-            {wishlistItems.length} items saved for later
+            {wishlistProducts.length} items saved for later
           </p>
         </div>
 
@@ -88,7 +108,7 @@ const WishList: React.FC = () => {
         </div>
 
         {/* Empty State */}
-        {wishlistItems.length === 0 && (
+        {wishlistProducts.length === 0 && (
           <div className="text-center py-12 sm:py-16 lg:py-20 xl:py-24 px-4">
             <div className="relative mb-6 sm:mb-8">
               {/* Floating hearts animation */}
@@ -143,16 +163,24 @@ const WishList: React.FC = () => {
 
         {/* Wishlist Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 xl:gap-8 px-2 sm:px-0">
-          {wishlistItems.map((fav) => (
+          {wishlistProducts.map((product) => (
             <div
-              key={fav.id}
+              key={product.id}
               className="group bg-white rounded-xl sm:rounded-2xl lg:rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-gray-200"
             >
               {/* Image Container */}
               <div className="relative overflow-hidden">
                 <img
-                  src={fav.product.image}
-                  alt={fav.product.name}
+                  src={
+                    Array.isArray(product.images) && product.images.length > 0
+                      ? product.images[0].img_url.startsWith("http")
+                        ? product.images[0].img_url
+                        : `${import.meta.env.VITE_API_BASE_URL}${
+                            product.images[0].img_url
+                          }`
+                      : "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop"
+                  }
+                  alt={product.name}
                   className="w-full h-40 sm:h-48 lg:h-56 xl:h-64 object-cover group-hover:scale-105 transition-transform duration-500"
                 />
 
@@ -170,18 +198,18 @@ const WishList: React.FC = () => {
 
                 {/* Remove Button - Always visible on mobile, hover on desktop */}
                 <button
-                  onClick={() => removeFromWishlist(fav.id)}
+                  onClick={() => removeFromWishlist(product.id)}
                   className="absolute top-2 right-2 sm:top-3 sm:right-3 lg:top-4 lg:right-4 p-1.5 sm:p-2 bg-white rounded-full shadow-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 hover:scale-110 z-10"
                 >
                   <X className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
                 </button>
 
                 {/* Discount Badge */}
-                {fav.product.originalPrice && (
+                {product.original_price && (
                   <div className="absolute top-2 left-2 sm:top-3 sm:left-3 lg:top-4 lg:left-4 bg-gradient-to-r from-red-500 to-pink-500 text-white px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs font-medium">
                     {Math.round(
-                      ((fav.product.originalPrice - fav.product.price) /
-                        fav.product.originalPrice) *
+                      ((product.original_price - product.price) /
+                        product.original_price) *
                         100
                     )}
                     % OFF
@@ -193,27 +221,33 @@ const WishList: React.FC = () => {
               <div className="p-3 sm:p-4 lg:p-5 xl:p-6">
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 sm:py-1 rounded-full truncate flex-shrink-0">
-                    {fav.product.category}
+                    {typeof product.category === "string"
+                      ? product.category
+                      : product.category &&
+                        typeof product.category === "object" &&
+                        "name" in product.category
+                      ? product.category.name
+                      : ""}
                   </span>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-current" />
                     <span className="text-xs sm:text-sm text-gray-600">
-                      {fav.product.rating}
+                      {product.rating}
                     </span>
                   </div>
                 </div>
 
                 <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 mb-2 sm:mb-3 line-clamp-2 leading-tight">
-                  {fav.product.name}
+                  {product.name}
                 </h3>
 
                 <div className="flex items-center gap-2 mb-3 sm:mb-4">
                   <span className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold text-gray-900">
-                    ${fav.product.price.toFixed(2)}
+                    ${product.price.toFixed(2)}
                   </span>
-                  {fav.product.originalPrice && (
+                  {product.original_price && (
                     <span className="text-xs sm:text-sm lg:text-base text-gray-500 line-through">
-                      ${fav.product.originalPrice.toFixed(2)}
+                      ${product.original_price.toFixed(2)}
                     </span>
                   )}
                 </div>
@@ -221,7 +255,7 @@ const WishList: React.FC = () => {
                 {/* Actions */}
                 <div className="flex gap-2 sm:gap-3">
                   <button
-                    onClick={() => addToCart(fav.product)}
+                    onClick={() => addToCart(product)}
                     className="flex-1 flex items-center justify-center gap-1 sm:gap-2 py-2 sm:py-2.5 lg:py-3 px-2 sm:px-3 lg:px-4 rounded-lg lg:rounded-xl font-medium transition-all duration-300 bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:shadow-lg hover:scale-105 text-xs sm:text-sm lg:text-base"
                   >
                     <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -244,7 +278,7 @@ const WishList: React.FC = () => {
         </div>
 
         {/* Bottom Actions */}
-        {wishlistItems.length > 0 && (
+        {wishlistProducts.length > 0 && (
           <div className="mt-6 sm:mt-8 lg:mt-12 text-center px-4">
             <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 max-w-md sm:max-w-none mx-auto">
               <button className="w-full sm:w-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-full font-medium hover:scale-105 transition-transform duration-300 shadow-lg text-sm sm:text-base">
