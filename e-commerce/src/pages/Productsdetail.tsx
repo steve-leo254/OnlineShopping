@@ -19,6 +19,7 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useShoppingCart } from "../context/ShoppingCartContext";
+import { useAuth } from "../context/AuthContext";
 
 // Types
 interface Product {
@@ -102,6 +103,7 @@ const ProductDetail: React.FC = () => {
     decreaseCartQuantity,
     getItemQuantity,
   } = useShoppingCart();
+  const { isAuthenticated, token } = useAuth();
 
   const calculateAverageRating = (reviews: Review[]): number => {
     if (!reviews || reviews.length === 0) return 0;
@@ -387,6 +389,45 @@ const ProductDetail: React.FC = () => {
     );
   };
 
+  // Add to favorites handler
+  const handleFavoriteToggle = async () => {
+    if (!isAuthenticated || !token || !product) {
+      showNotification("You must be logged in to use favorites.", "error");
+      return;
+    }
+    try {
+      if (!isFavorite) {
+        // Add to favorites
+        await axios.post(
+          `${API_BASE_URL}/favorites`,
+          { product_id: product.id }, // Only send product_id
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setIsFavorite(true);
+        showNotification("Added to favorites!", "success");
+      } else {
+        // Remove from favorites: fetch favorite id first
+        const favRes = await axios.get(`${API_BASE_URL}/favorites`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const fav = Array.isArray(favRes.data)
+          ? favRes.data.find((f: any) => f.product_id === product.id)
+          : null;
+        if (fav) {
+          await axios.delete(`${API_BASE_URL}/favorites/${fav.id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setIsFavorite(false);
+          showNotification("Removed from favorites", "info");
+        } else {
+          showNotification("Favorite not found.", "error");
+        }
+      }
+    } catch (err) {
+      showNotification("Failed to update favorites.", "error");
+    }
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -588,18 +629,7 @@ const ProductDetail: React.FC = () => {
               </button>
 
               <button
-                onClick={() => {
-                  // Simulate API call
-                  setTimeout(() => {
-                    setIsFavorite(!isFavorite);
-                    showNotification(
-                      isFavorite
-                        ? "Removed from favorites"
-                        : "Added to favorites!",
-                      isFavorite ? "info" : "success"
-                    );
-                  }, 300);
-                }}
+                onClick={handleFavoriteToggle}
                 className={`p-3 rounded-lg border transition-colors ${
                   isFavorite
                     ? "bg-red-50 border-red-200 text-red-600"
