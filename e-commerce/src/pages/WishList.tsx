@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "../cart/formatCurrency";
 import { useUserStats } from "../context/UserStatsContext";
+import { useFavorites } from "../context/FavoritesContext";
 
 interface ApiProduct {
   id: string;
@@ -29,63 +30,39 @@ interface Favorite {
 const WishList: React.FC = () => {
   const { token, isAuthenticated } = useAuth();
   const { addToCart, getItemQuantity } = useShoppingCart();
-  const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>([]);
-  const [favoriteIds, setFavoriteIds] = useState<number[]>([]); // for removing
-  const [wishlistProducts, setWishlistProducts] = useState<ApiProduct[]>([]);
   const navigate = useNavigate();
   const { refreshStats } = useUserStats();
+  const { favorites, removeFavorite } = useFavorites();
+  const [wishlistProducts, setWishlistProducts] = useState<ApiProduct[]>([]);
 
-  // Fetch favorite product IDs on mount
+  // Fetch product details for favorite IDs from context
   useEffect(() => {
-    const fetchFavorites = async () => {
-      if (!isAuthenticated || !token) return;
+    const fetchWishlistProducts = async () => {
+      if (!isAuthenticated || !token || favorites.size === 0) {
+        setWishlistProducts([]);
+        return;
+      }
       try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/favorites`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+        const ids = Array.from(favorites);
+        const productsRes = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/public/products?ids=${ids.join(
+            ","
+          )}`
         );
-        const ids = res.data.map((fav: Favorite) => fav.product_id.toString());
-        setFavoriteProductIds(ids);
-        setFavoriteIds(res.data.map((fav: Favorite) => fav.id));
-        // Fetch all products by IDs in one request
-        if (ids.length > 0) {
-          const productsRes = await axios.get(
-            `${
-              import.meta.env.VITE_API_BASE_URL
-            }/public/products?ids=${ids.join(",")}`
-          );
-          setWishlistProducts(productsRes.data.items);
-        } else {
-          setWishlistProducts([]);
-        }
-      } catch (err) {
-        setFavoriteProductIds([]);
-        setFavoriteIds([]);
+        setWishlistProducts(productsRes.data.items);
+      } catch {
         setWishlistProducts([]);
       }
     };
-    fetchFavorites();
-  }, [isAuthenticated, token]);
+    fetchWishlistProducts();
+  }, [favorites, isAuthenticated, token]);
 
-  const removeFromWishlist = async (productId: string) => {
-    const favIndex = wishlistProducts.findIndex((p) => p.id === productId);
-    const favoriteId = favoriteIds[favIndex];
-    setFavoriteProductIds((prev) => prev.filter((id) => id !== productId));
-    setFavoriteIds((prev) => prev.filter((_, idx) => idx !== favIndex));
-    setWishlistProducts((prev) => prev.filter((p) => p.id !== productId));
-    if (!isAuthenticated || !token || !favoriteId) return;
+  const handleRemove = async (productId: string) => {
     try {
-      await axios.delete(
-        `${import.meta.env.VITE_API_BASE_URL}/favorites/${favoriteId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      await removeFavorite(productId);
       toast.success("Removed from wishlist!");
       refreshStats();
-    } catch (err) {
+    } catch {
       toast.error("Failed to remove from wishlist.");
     }
   };
@@ -227,7 +204,7 @@ const WishList: React.FC = () => {
 
                 {/* Remove Button - Always visible on mobile, hover on desktop */}
                 <button
-                  onClick={() => removeFromWishlist(product.id)}
+                  onClick={() => handleRemove(product.id)}
                   className="absolute top-2 right-2 sm:top-3 sm:right-3 lg:top-4 lg:right-4 p-1.5 sm:p-2 bg-white rounded-full shadow-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 hover:scale-110 z-10"
                 >
                   <X className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
