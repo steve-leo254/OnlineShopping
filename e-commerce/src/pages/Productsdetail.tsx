@@ -51,6 +51,7 @@ interface Review {
   rating: number;
   comment: string;
   created_at: string;
+  username?: string;
 }
 
 type TabType = "description" | "specifications" | "reviews";
@@ -58,11 +59,10 @@ type NotificationType = "success" | "error" | "info";
 
 // Static Data
 
-
-const CURRENCY_FORMATTER = new Intl.NumberFormat('en-KE', {
-  currency: 'KES',
-  style: 'currency',
-  currencyDisplay: 'symbol',
+const CURRENCY_FORMATTER = new Intl.NumberFormat("en-KE", {
+  currency: "KES",
+  style: "currency",
+  currencyDisplay: "symbol",
   minimumFractionDigits: 0,
   maximumFractionDigits: 0,
 });
@@ -70,8 +70,8 @@ const CURRENCY_FORMATTER = new Intl.NumberFormat('en-KE', {
 export function formatCurrency(number: number) {
   // Format the number and replace all "KSh" or "KSH" (with or without space) with "Ksh "
   return CURRENCY_FORMATTER.format(number)
-    .replace(/KSh|KSH/gi, 'Ksh')
-    .replace(/\s*Ksh/, ' Ksh'); // Ensure a space before Ksh
+    .replace(/KSh|KSH/gi, "Ksh")
+    .replace(/\s*Ksh/, " Ksh"); // Ensure a space before Ksh
 }
 
 const ProductDetail: React.FC = () => {
@@ -121,7 +121,7 @@ const ProductDetail: React.FC = () => {
       try {
         const res = await axios.get(`${API_BASE_URL}/public/products/${id}`);
         const data = res.data;
-        
+
         // Transform images
         let images: string[] = [];
         if (
@@ -135,7 +135,7 @@ const ProductDetail: React.FC = () => {
               : `${API_BASE_URL}${img.img_url}`
           );
         }
-        
+
         // Transform specifications
         let specifications: Record<string, string | number> = {};
         if (
@@ -148,7 +148,7 @@ const ProductDetail: React.FC = () => {
             }
           });
         }
-  
+
         // Fetch reviews first to calculate rating
         let fetchedReviews: Review[] = [];
         try {
@@ -160,10 +160,10 @@ const ProductDetail: React.FC = () => {
         } catch {
           setReviews([]);
         }
-  
+
         // Calculate rating from reviews
         const calculatedRating = calculateAverageRating(fetchedReviews);
-        
+
         // Compose product object with calculated rating
         const prod: Product = {
           id: data.id,
@@ -185,10 +185,10 @@ const ProductDetail: React.FC = () => {
           createdAt: data.created_at,
           specifications,
         };
-        
+
         setProduct(prod);
         setIsFavorite(false);
-  
+
         // Fetch related products with ratings
         if (data.category && data.category.id) {
           const relRes = await axios.get(`${API_BASE_URL}/public/products`, {
@@ -197,13 +197,13 @@ const ProductDetail: React.FC = () => {
           const relItems = relRes.data.items.filter(
             (p: any) => p.id !== data.id
           );
-          
+
           // Fetch reviews for each related product to calculate ratings
           const relatedProductsWithRatings = await Promise.all(
             relItems.map(async (item: any) => {
               let itemRating = 0;
               let itemReviewCount = 0;
-              
+
               try {
                 const itemReviewsRes = await axios.get(
                   `${API_BASE_URL}/products/${item.id}/reviews`
@@ -216,7 +216,7 @@ const ProductDetail: React.FC = () => {
                 itemRating = 0;
                 itemReviewCount = 0;
               }
-              
+
               return {
                 id: item.id,
                 name: item.name,
@@ -248,7 +248,7 @@ const ProductDetail: React.FC = () => {
               };
             })
           );
-          
+
           setRelatedProducts(relatedProductsWithRatings);
         } else {
           setRelatedProducts([]);
@@ -414,7 +414,6 @@ const ProductDetail: React.FC = () => {
       {renderNotification()}
 
       {/* Header */}
-     
 
       {/* Product Details */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -508,9 +507,10 @@ const ProductDetail: React.FC = () => {
               {/* Rating */}
               <div className="flex items-center gap-2 mb-4">
                 {renderStars(product.rating)}
-                <span className="text-gray-600">
-                  ({product.reviews} reviews)
+                <span className="text-gray-700 font-semibold">
+                  {product.rating.toFixed(1)}
                 </span>
+                <span className="text-gray-600">({product.reviews})</span>
               </div>
 
               {/* Price */}
@@ -686,7 +686,9 @@ const ProductDetail: React.FC = () => {
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <span className="font-medium text-gray-900">
-                            {`User #${review.user_id}`}
+                            {review.username
+                              ? review.username
+                              : `User #${review.user_id}`}
                           </span>
                         </div>
                         <span className="text-sm text-gray-500">
@@ -735,6 +737,9 @@ const ProductDetail: React.FC = () => {
                     </h3>
                     <div className="flex items-center gap-2 mb-2">
                       {renderStars(relatedProduct.rating)}
+                      <span className="text-gray-700 font-semibold">
+                        {relatedProduct.rating.toFixed(1)}
+                      </span>
                       <span className="text-sm text-gray-500">
                         ({relatedProduct.reviews})
                       </span>
