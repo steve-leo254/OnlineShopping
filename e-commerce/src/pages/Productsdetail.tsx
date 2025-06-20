@@ -21,6 +21,7 @@ import axios from "axios";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { useAuth } from "../context/AuthContext";
 import { useUserStats } from "../context/UserStatsContext";
+import { useFavorites } from "../context/FavoritesContext";
 
 // Types
 interface Product {
@@ -86,9 +87,6 @@ const ProductDetail: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
-  const [isFavorite, setIsFavorite] = useState<boolean>(false);
-  const [isProcessingFavorite, setIsProcessingFavorite] =
-    useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<TabType>("description");
   const [showImageModal, setShowImageModal] = useState<boolean>(false);
   const [notification, setNotification] = useState<{
@@ -108,6 +106,9 @@ const ProductDetail: React.FC = () => {
   } = useShoppingCart();
   const { isAuthenticated, token } = useAuth();
   const { refreshStats } = useUserStats();
+  const { isFavorite, addFavorite, removeFavorite } = useFavorites();
+  const [isProcessingFavorite, setIsProcessingFavorite] =
+    useState<boolean>(false);
 
   const calculateAverageRating = (reviews: Review[]): number => {
     if (!reviews || reviews.length === 0) return 0;
@@ -194,23 +195,6 @@ const ProductDetail: React.FC = () => {
 
         setProduct(prod);
 
-        // Check if product is in user's favorites
-        if (isAuthenticated && token) {
-          try {
-            const favRes = await axios.get(`${API_BASE_URL}/favorites`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            const fav = Array.isArray(favRes.data)
-              ? favRes.data.find((f: any) => f.product_id === prod.id)
-              : null;
-            setIsFavorite(!!fav);
-          } catch {
-            setIsFavorite(false);
-          }
-        } else {
-          setIsFavorite(false);
-        }
-
         // Fetch related products with ratings
         if (data.category && data.category.id) {
           const relRes = await axios.get(`${API_BASE_URL}/public/products`, {
@@ -283,10 +267,6 @@ const ProductDetail: React.FC = () => {
     };
     fetchProduct();
   }, [id, API_BASE_URL, isAuthenticated, token]);
-
-  useEffect(() => {
-    if (product) setIsFavorite(product.isFavorite || false);
-  }, [product]);
 
   const showNotification = (
     message: string,
@@ -409,44 +389,23 @@ const ProductDetail: React.FC = () => {
     );
   };
 
-  // Add to favorites handler
   const handleFavoriteToggle = async () => {
     if (!isAuthenticated || !token || !product) {
       showNotification("You must be logged in to use favorites.", "error");
       return;
     }
     setIsProcessingFavorite(true);
-    const prevFavorite = isFavorite;
-    setIsFavorite(!isFavorite); // Optimistic UI update
+    const isFav = isFavorite(product.id.toString());
     try {
-      if (!prevFavorite) {
-        // Add to favorites
-        await axios.post(
-          `${API_BASE_URL}/favorites`,
-          { product_id: product.id },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+      if (!isFav) {
+        await addFavorite(product.id.toString());
         showNotification("Added to favorites!", "success");
       } else {
-        // Remove from favorites: fetch favorite id first
-        const favRes = await axios.get(`${API_BASE_URL}/favorites`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const fav = Array.isArray(favRes.data)
-          ? favRes.data.find((f: any) => f.product_id === product.id)
-          : null;
-        if (fav) {
-          await axios.delete(`${API_BASE_URL}/favorites/${fav.id}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          showNotification("Removed from favorites", "info");
-        } else {
-          showNotification("Favorite not found.", "error");
-        }
+        await removeFavorite(product.id.toString());
+        showNotification("Removed from favorites", "info");
       }
-      refreshStats(); // Update context after success
+      refreshStats();
     } catch (err) {
-      setIsFavorite(prevFavorite); // Revert on error
       showNotification("Failed to update favorites.", "error");
     } finally {
       setIsProcessingFavorite(false);
@@ -657,21 +616,25 @@ const ProductDetail: React.FC = () => {
                 onClick={handleFavoriteToggle}
                 disabled={isProcessingFavorite}
                 className={`p-3 rounded-lg border transition-colors flex items-center justify-center ${
-                  isFavorite
+                  isFavorite(product.id.toString())
                     ? "bg-red-500 border-red-200 text-white shadow-red-200"
                     : "bg-white border-gray-300 text-gray-600 hover:text-red-600"
                 } ${
                   isProcessingFavorite ? "opacity-60 cursor-not-allowed" : ""
                 }`}
                 title={
-                  isFavorite ? "Remove from favorites" : "Add to favorites"
+                  isFavorite(product.id.toString())
+                    ? "Remove from favorites"
+                    : "Add to favorites"
                 }
               >
                 <Heart
                   className={`w-5 h-5 transition-all duration-200 ${
                     isProcessingFavorite ? "animate-pulse" : ""
                   }`}
-                  fill={isFavorite ? "currentColor" : "none"}
+                  fill={
+                    isFavorite(product.id.toString()) ? "currentColor" : "none"
+                  }
                 />
               </button>
             </div>
