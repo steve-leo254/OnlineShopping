@@ -5,6 +5,7 @@ import CartDropdown from "./CartDropdown";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import { Heart } from "lucide-react";
 
 declare global {
   interface Window {
@@ -21,6 +22,8 @@ const Bar: React.FC = () => {
   const [pendingReviewsCount, setPendingReviewsCount] = useState<number>(0);
   // Active orders count state
   const [activeOrdersCount, setActiveOrdersCount] = useState<number>(0);
+  // Wishlist count state
+  const [wishlistCount, setWishlistCount] = useState<number>(0);
 
   // Initialize Flowbite (if available) on component mount
   useEffect(() => {
@@ -33,6 +36,7 @@ const Bar: React.FC = () => {
     if (!isAuthenticated || !token) {
       setPendingReviewsCount(0);
       setActiveOrdersCount(0);
+      setWishlistCount(0);
       return;
     }
     let isMounted = true;
@@ -92,8 +96,20 @@ const Bar: React.FC = () => {
         if (isMounted) setActiveOrdersCount(0);
       }
     };
+    const fetchWishlistCount = async () => {
+      try {
+        const favRes = await axios.get(`${API_BASE_URL}/favorites`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (isMounted)
+          setWishlistCount(Array.isArray(favRes.data) ? favRes.data.length : 0);
+      } catch {
+        if (isMounted) setWishlistCount(0);
+      }
+    };
     fetchPendingReviewsCount();
     fetchActiveOrdersCount();
+    fetchWishlistCount();
     return () => {
       isMounted = false;
     };
@@ -327,6 +343,18 @@ const Bar: React.FC = () => {
                             {pendingReviewsCount > 99
                               ? "99+"
                               : pendingReviewsCount}
+                          </span>
+                        )}
+                      </Link>
+                      <Link
+                        to="/wishlist"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-pink-600 transition-colors duration-200 relative"
+                      >
+                        <Heart className="w-4 h-4 mr-3 text-pink-500" />
+                        Wishlist
+                        {wishlistCount > 0 && (
+                          <span className="absolute left-5 -top-1 bg-pink-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center animate-pulse shadow-lg">
+                            {wishlistCount > 99 ? "99+" : wishlistCount}
                           </span>
                         )}
                       </Link>
