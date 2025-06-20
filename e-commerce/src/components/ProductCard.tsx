@@ -62,7 +62,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
     });
   };
 
-  const handleFavoriteClick = async () => {
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent event bubbling
     if (!isAuthenticated || !token || !userId) return;
     setIsProcessing(true);
     const isFav = favorites.has(product.id) || product.isFavorite;
@@ -92,6 +93,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
+  const handleViewClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent event bubbling
+    navigate(`/product-details/${product.id}`);
+  };
+
   return (
     <div className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 flex flex-col h-full">
       <div className="relative overflow-hidden aspect-square">
@@ -104,7 +110,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
               "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop";
           }}
         />
-        <div className="absolute top-3 left-3 flex flex-col gap-1">
+        
+        {/* Product Badges - Fixed z-index */}
+        <div className="absolute top-3 left-3 flex flex-col gap-1 z-20">
           {product.isNew && (
             <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
               New
@@ -116,18 +124,21 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </span>
           )}
         </div>
-        <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        
+        {/* Action Buttons - Fixed positioning and z-index */}
+        <div className="absolute top-3 right-3 flex flex-col gap-2 z-30">
           <button
             onClick={handleFavoriteClick}
             disabled={isProcessing}
-            className={`p-2 rounded-full shadow-lg transition-colors ${
+            className={`w-10 h-10 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center backdrop-blur-sm hover:scale-110 ${
               favorites.has(product.id) || product.isFavorite
                 ? "bg-red-500 text-white"
-                : "bg-white text-gray-600 hover:text-red-500"
+                : "bg-white/90 text-gray-600 hover:text-red-500 hover:bg-white"
             }`}
+            title={favorites.has(product.id) || product.isFavorite ? "Remove from favorites" : "Add to favorites"}
           >
             <Heart
-              className="w-4 h-4"
+              className="w-5 h-5"
               fill={
                 favorites.has(product.id) || product.isFavorite
                   ? "currentColor"
@@ -136,18 +147,22 @@ const ProductCard: React.FC<ProductCardProps> = ({
             />
           </button>
           <button
-            onClick={() => navigate(`/product-details/${product.id}`)}
-            className="p-2 bg-white text-gray-600 hover:text-blue-600 rounded-full shadow-lg transition-colors"
+            onClick={handleViewClick}
+            className="w-10 h-10 bg-white/90 backdrop-blur-sm text-gray-600 hover:text-blue-600 hover:bg-white rounded-full shadow-lg transition-all duration-200 flex items-center justify-center hover:scale-110"
+            title="View product details"
           >
-            <Eye className="w-4 h-4" />
+            <Eye className="w-5 h-5" />
           </button>
         </div>
+        
+        {/* Out of Stock Overlay */}
         {!product.inStock && (
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
             <span className="text-white font-medium">Out of Stock</span>
           </div>
         )}
       </div>
+      
       <div className="p-4 flex-1 flex flex-col justify-between h-full">
         <div className="flex-1">
           <div className="flex items-center justify-between mb-2">
