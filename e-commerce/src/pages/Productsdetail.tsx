@@ -574,10 +574,18 @@ const ProductDetail: React.FC = () => {
                 <button
                   onClick={handleAddToCart}
                   disabled={!product.inStock}
-                  className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                  className={`flex-1 w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 text-sm relative overflow-hidden ${
+                    !product.inStock
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-200 hover:shadow-blue-300 transform hover:scale-[1.02] active:scale-[0.98]"
+                  }`}
                 >
-                  <ShoppingCart className="w-5 h-5" />
-                  Add to Cart
+                  <ShoppingCart className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-semibold">Add to Cart</span>
+                  {/* Ripple effect */}
+                  {product.inStock && (
+                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+                  )}
                 </button>
               )}
 
