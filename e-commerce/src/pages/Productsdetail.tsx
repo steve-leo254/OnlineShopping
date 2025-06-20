@@ -731,7 +731,7 @@ const ProductDetail: React.FC = () => {
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-gray-500">
-                      No reviews yet. Be the first to review this product!
+                      No reviews yet. Be the first to review by completing an order!
                     </p>
                   </div>
                 )}
