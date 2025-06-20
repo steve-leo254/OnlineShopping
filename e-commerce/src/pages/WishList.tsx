@@ -25,6 +25,7 @@ const WishList: React.FC = () => {
   const { token, isAuthenticated } = useAuth();
   const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]); // for removing
+  const [wishlistProducts, setWishlistProducts] = useState<ApiProduct[]>([]);
 
   // Fetch favorite product IDs on mount
   useEffect(() => {
@@ -37,33 +38,35 @@ const WishList: React.FC = () => {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        setFavoriteProductIds(
-          res.data.map((fav: Favorite) => fav.product_id.toString())
-        );
+        const ids = res.data.map((fav: Favorite) => fav.product_id.toString());
+        setFavoriteProductIds(ids);
         setFavoriteIds(res.data.map((fav: Favorite) => fav.id));
+        // Fetch all products by IDs in one request
+        if (ids.length > 0) {
+          const productsRes = await axios.get(
+            `${
+              import.meta.env.VITE_API_BASE_URL
+            }/public/products?ids=${ids.join(",")}`
+          );
+          setWishlistProducts(productsRes.data.items);
+        } else {
+          setWishlistProducts([]);
+        }
       } catch (err) {
         setFavoriteProductIds([]);
         setFavoriteIds([]);
+        setWishlistProducts([]);
       }
     };
     fetchFavorites();
   }, [isAuthenticated, token]);
 
-  // Fetch all products (could be optimized to fetch only needed ones)
-  const { products, isLoading } = useFetchProducts();
-
-  // Filter products to only those in favorites
-  const wishlistProducts: ApiProduct[] = products.filter((p) =>
-    favoriteProductIds.includes(p.id)
-  );
-
   const removeFromWishlist = async (productId: string) => {
-    // Find the favoriteId for this product
     const favIndex = wishlistProducts.findIndex((p) => p.id === productId);
     const favoriteId = favoriteIds[favIndex];
-    // Optimistically update UI
     setFavoriteProductIds((prev) => prev.filter((id) => id !== productId));
     setFavoriteIds((prev) => prev.filter((_, idx) => idx !== favIndex));
+    setWishlistProducts((prev) => prev.filter((p) => p.id !== productId));
     if (!isAuthenticated || !token || !favoriteId) return;
     try {
       await axios.delete(
