@@ -162,8 +162,22 @@ async def browse_products(
     page: int = 1,
     limit: int = 8,
     category_id: int = None,  # Add category_id parameter
+    ids: str = None,  # Add ids parameter for batch fetch
 ):
     try:
+        # Batch fetch by IDs
+        if ids:
+            id_list = [int(i) for i in ids.split(",") if i.isdigit()]
+            query = db.query(models.Products).filter(models.Products.id.in_(id_list))
+            total = query.count()
+            products = query.all()
+            return {
+                "items": products,
+                "total": total,
+                "page": 1,
+                "limit": len(products),
+                "pages": 1,
+            }
         skip = (page - 1) * limit
         query = db.query(models.Products)
 
@@ -1165,6 +1179,20 @@ async def get_favorites(db: db_dependency, user: user_dependency):
         .all()
     )
     return favs
+
+
+@app.delete("/favorites/{favorite_id}", status_code=status.HTTP_200_OK)
+async def delete_favorite(favorite_id: int, db: db_dependency, user: user_dependency):
+    fav = db.query(models.Favorite).filter(models.Favorite.id == favorite_id).first()
+    if not fav:
+        raise HTTPException(status_code=404, detail="Favorite not found")
+    if fav.user_id != user.get("id"):
+        raise HTTPException(
+            status_code=403, detail="Not authorized to delete this favorite"
+        )
+    db.delete(fav)
+    db.commit()
+    return {"message": "Favorite removed successfully"}
 
 
 # --- Reviews ---
