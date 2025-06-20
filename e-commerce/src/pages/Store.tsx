@@ -194,7 +194,6 @@ const Store = () => {
   );
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500000]);
   const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [categories, setCategories] = useState<Category[]>([]);
   const [isFiltering, setIsFiltering] = useState<boolean>(false);
 
@@ -270,18 +269,6 @@ const Store = () => {
     } finally {
       setIsFiltering(false);
     }
-  };
-
-  const toggleFavorite = (productId: string) => {
-    const newFavorites = new Set(favorites);
-    if (newFavorites.has(productId)) {
-      newFavorites.delete(productId);
-      toast.info("Removed from favorites");
-    } else {
-      newFavorites.add(productId);
-      toast.success("Added to favorites!");
-    }
-    setFavorites(newFavorites);
   };
 
   const fetchCategories = useCallback(async () => {
@@ -562,12 +549,7 @@ const Store = () => {
 
             <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {displayedProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  favorites={favorites}
-                  toggleFavorite={toggleFavorite}
-                />
+                <ProductCard key={product.id} product={product} />
               ))}
             </div>
 
