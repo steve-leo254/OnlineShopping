@@ -86,6 +86,8 @@ const ProductDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  const [isProcessingFavorite, setIsProcessingFavorite] =
+    useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<TabType>("description");
   const [showImageModal, setShowImageModal] = useState<boolean>(false);
   const [notification, setNotification] = useState<{
@@ -189,7 +191,23 @@ const ProductDetail: React.FC = () => {
         };
 
         setProduct(prod);
-        setIsFavorite(false);
+
+        // Check if product is in user's favorites
+        if (isAuthenticated && token) {
+          try {
+            const favRes = await axios.get(`${API_BASE_URL}/favorites`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            const fav = Array.isArray(favRes.data)
+              ? favRes.data.find((f: any) => f.product_id === prod.id)
+              : null;
+            setIsFavorite(!!fav);
+          } catch {
+            setIsFavorite(false);
+          }
+        } else {
+          setIsFavorite(false);
+        }
 
         // Fetch related products with ratings
         if (data.category && data.category.id) {
@@ -262,7 +280,7 @@ const ProductDetail: React.FC = () => {
       }
     };
     fetchProduct();
-  }, [id, API_BASE_URL]);
+  }, [id, API_BASE_URL, isAuthenticated, token]);
 
   useEffect(() => {
     if (product) setIsFavorite(product.isFavorite || false);
@@ -395,15 +413,17 @@ const ProductDetail: React.FC = () => {
       showNotification("You must be logged in to use favorites.", "error");
       return;
     }
+    setIsProcessingFavorite(true);
+    const prevFavorite = isFavorite;
+    setIsFavorite(!isFavorite); // Optimistic UI update
     try {
-      if (!isFavorite) {
+      if (!prevFavorite) {
         // Add to favorites
         await axios.post(
           `${API_BASE_URL}/favorites`,
-          { product_id: product.id }, // Only send product_id
+          { product_id: product.id },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        setIsFavorite(true);
         showNotification("Added to favorites!", "success");
       } else {
         // Remove from favorites: fetch favorite id first
@@ -417,14 +437,16 @@ const ProductDetail: React.FC = () => {
           await axios.delete(`${API_BASE_URL}/favorites/${fav.id}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
-          setIsFavorite(false);
           showNotification("Removed from favorites", "info");
         } else {
           showNotification("Favorite not found.", "error");
         }
       }
     } catch (err) {
+      setIsFavorite(prevFavorite); // Revert on error
       showNotification("Failed to update favorites.", "error");
+    } finally {
+      setIsProcessingFavorite(false);
     }
   };
 
@@ -630,14 +652,23 @@ const ProductDetail: React.FC = () => {
 
               <button
                 onClick={handleFavoriteToggle}
-                className={`p-3 rounded-lg border transition-colors ${
+                disabled={isProcessingFavorite}
+                className={`p-3 rounded-lg border transition-colors flex items-center justify-center ${
                   isFavorite
-                    ? "bg-red-50 border-red-200 text-red-600"
+                    ? "bg-red-500 border-red-200 text-white shadow-red-200"
                     : "bg-white border-gray-300 text-gray-600 hover:text-red-600"
+                } ${
+                  isProcessingFavorite ? "opacity-60 cursor-not-allowed" : ""
                 }`}
+                title={
+                  isFavorite ? "Remove from favorites" : "Add to favorites"
+                }
               >
                 <Heart
-                  className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`}
+                  className={`w-5 h-5 transition-all duration-200 ${
+                    isProcessingFavorite ? "animate-pulse" : ""
+                  }`}
+                  fill={isFavorite ? "currentColor" : "none"}
                 />
               </button>
             </div>
