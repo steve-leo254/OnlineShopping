@@ -1216,7 +1216,16 @@ async def get_product_reviews(product_id: int, db: db_dependency):
     reviews = (
         db.query(models.Review).filter(models.Review.product_id == product_id).all()
     )
-    return reviews
+    # Attach username to each review
+    result = []
+    for review in reviews:
+        user = db.query(models.Users).filter(models.Users.id == review.user_id).first()
+        review_dict = review.__dict__.copy()
+        review_dict["username"] = user.username if user else None
+        # Remove SQLAlchemy state if present
+        review_dict.pop("_sa_instance_state", None)
+        result.append(review_dict)
+    return result
 
 
 if __name__ == "__main__":
