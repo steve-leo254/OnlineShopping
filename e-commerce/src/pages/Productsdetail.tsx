@@ -57,144 +57,22 @@ type TabType = "description" | "specifications" | "reviews";
 type NotificationType = "success" | "error" | "info";
 
 // Static Data
-const staticProduct: Product = {
-  id: 1,
-  name: "Wireless Bluetooth Headphones Pro Max",
-  price: 299.99,
-  originalPrice: 399.99,
-  rating: 4.5,
-  reviews: 1247,
-  images: [
-    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=600&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=600&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=600&h=600&fit=crop",
-  ],
-  category: "Electronics",
-  brand: "AudioTech",
-  inStock: true,
-  discount: 25,
-  isNew: true,
-  isFavorite: false,
-  stockQuantity: 15,
-  description:
-    "Experience premium sound quality with our flagship wireless headphones. Featuring advanced noise cancellation technology, 40-hour battery life, and crystal-clear audio reproduction. Perfect for music enthusiasts, professionals, and everyday use. The ergonomic design ensures comfortable wear for extended periods, while the premium materials provide durability and style.",
-  specifications: {
-    "Driver Size": "40mm",
-    "Frequency Response": "20Hz - 20kHz",
-    "Battery Life": "40 hours",
-    "Charging Time": "2 hours",
-    Weight: "280g",
-    Connectivity: "Bluetooth 5.0",
-    "Noise Cancellation": "Active ANC",
-    Microphone: "Built-in",
-    Warranty: "2 years",
-  },
-};
 
-const staticReviews: Review[] = [
-  {
-    id: 1,
-    user_id: 1,
-    product_id: 1,
-    order_id: 1,
-    rating: 5,
-    comment:
-      "Absolutely amazing headphones! The sound quality is incredible and the noise cancellation works perfectly. I use them daily for work calls and music.",
-    created_at: "2024-01-15",
-  },
-  {
-    id: 2,
-    user_id: 2,
-    product_id: 1,
-    order_id: 2,
-    rating: 4,
-    comment:
-      "Great build quality and comfortable to wear. Battery life is excellent. Only minor complaint is that they're a bit heavy for long sessions.",
-    created_at: "2024-01-10",
-  },
-  {
-    id: 3,
-    user_id: 3,
-    product_id: 1,
-    order_id: 3,
-    rating: 5,
-    comment:
-      "Best purchase I've made this year. The audio is crystal clear and the ANC is top-notch. Highly recommend!",
-    created_at: "2024-01-08",
-  },
-];
 
-const staticRelatedProducts: Product[] = [
-  {
-    id: 2,
-    name: "Wireless Earbuds Pro",
-    price: 199.99,
-    originalPrice: 249.99,
-    rating: 4.3,
-    reviews: 892,
-    images: [
-      "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&h=400&fit=crop",
-    ],
-    category: "Electronics",
-    brand: "AudioTech",
-    inStock: true,
-    discount: 20,
-    stockQuantity: 25,
-    description: "Compact wireless earbuds with great sound",
-    specifications: {},
-  },
-  {
-    id: 3,
-    name: "Gaming Headset RGB",
-    price: 149.99,
-    rating: 4.1,
-    reviews: 445,
-    images: [
-      "https://images.unsplash.com/photo-1599669454699-248893623440?w=400&h=400&fit=crop",
-    ],
-    category: "Electronics",
-    brand: "GameTech",
-    inStock: true,
-    stockQuantity: 18,
-    description: "Professional gaming headset with RGB lighting",
-    specifications: {},
-  },
-  {
-    id: 4,
-    name: "Studio Monitor Headphones",
-    price: 399.99,
-    rating: 4.7,
-    reviews: 234,
-    images: [
-      "https://images.unsplash.com/photo-1524678606370-a47ad25cb82a?w=400&h=400&fit=crop",
-    ],
-    category: "Electronics",
-    brand: "StudioPro",
-    inStock: false,
-    stockQuantity: 0,
-    description: "Professional studio monitoring headphones",
-    specifications: {},
-  },
-  {
-    id: 5,
-    name: "Noise Cancelling Headphones",
-    price: 249.99,
-    originalPrice: 299.99,
-    rating: 4.4,
-    reviews: 678,
-    images: [
-      "https://images.unsplash.com/photo-1487215078519-e21cc028cb29?w=400&h=400&fit=crop",
-    ],
-    category: "Electronics",
-    brand: "QuietTech",
-    inStock: true,
-    discount: 17,
-    stockQuantity: 12,
-    description: "Advanced noise cancelling technology",
-    specifications: {},
-  },
-];
+const CURRENCY_FORMATTER = new Intl.NumberFormat('en-KE', {
+  currency: 'KES',
+  style: 'currency',
+  currencyDisplay: 'symbol',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
+export function formatCurrency(number: number) {
+  // Format the number and replace all "KSh" or "KSH" (with or without space) with "Ksh "
+  return CURRENCY_FORMATTER.format(number)
+    .replace(/KSh|KSH/gi, 'Ksh')
+    .replace(/\s*Ksh/, ' Ksh'); // Ensure a space before Ksh
+}
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -387,13 +265,6 @@ const ProductDetail: React.FC = () => {
   useEffect(() => {
     if (product) setIsFavorite(product.isFavorite || false);
   }, [product]);
-
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
 
   const showNotification = (
     message: string,

@@ -49,6 +49,7 @@ interface ApiProduct {
   is_favorite?: boolean;
   description?: string;
   created_at: string;
+  images?: { img_url: string }[];
 }
 
 interface Product {
@@ -58,6 +59,7 @@ interface Product {
   originalPrice: number;
   rating: number;
   reviews: number;
+  images: string[];
   img_url: string;
   category: string;
   brand: string;
@@ -118,6 +120,21 @@ const transformProduct = (apiProduct: ApiProduct): Product => {
     reviewsCount = apiProduct.reviews.length;
   }
 
+  // Build images array from API
+  let images: string[] = [];
+  if (apiProduct.images && Array.isArray(apiProduct.images) && apiProduct.images.length > 0) {
+    images = apiProduct.images.map(img =>
+      img.img_url.startsWith("http")
+        ? img.img_url
+        : `${import.meta.env.VITE_API_BASE_URL}${img.img_url}`
+    );
+  }
+
+  // Fallback: if no images, use uploads folder
+  if (images.length === 0) {
+    images = ["http://127.0.0.1:8000/uploads/"];
+  }
+
   return {
     id: apiProduct.id,
     name: apiProduct.name,
@@ -129,9 +146,8 @@ const transformProduct = (apiProduct: ApiProduct): Product => {
         : apiProduct.cost ?? 0),
     rating: ratingValue,
     reviews: reviewsCount,
-    img_url: apiProduct.img_url
-      ? `${import.meta.env.VITE_API_BASE_URL}${apiProduct.img_url}`
-      : "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop",
+    images,
+    img_url: images[0],
     category: apiProduct.category?.name || "Uncategorized",
     brand: apiProduct.brand || "Unknown",
     inStock: apiProduct.stock_quantity > 0,
