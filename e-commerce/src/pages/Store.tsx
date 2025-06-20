@@ -569,8 +569,6 @@ const Store = () => {
                   product={product}
                   favorites={favorites}
                   toggleFavorite={toggleFavorite}
-                  getItemQuantity={getItemQuantity}
-                  handleAddToCart={handleAddToCart}
                 />
               ))}
             </div>
