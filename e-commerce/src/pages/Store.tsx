@@ -14,10 +14,21 @@ import { useFetchProducts } from "../components/UseFetchProducts";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
 import { toast } from "react-toastify"; // Import toast
+import { useNavigate } from "react-router-dom";
 
 interface Category {
   id: string | null;
   name: string;
+}
+
+interface ReviewObject {
+  rating: number;
+  comment: string;
+  id: string;
+  user_id: string;
+  product_id: string;
+  order_id: string;
+  created_at: string;
 }
 
 interface ApiProduct {
@@ -26,8 +37,8 @@ interface ApiProduct {
   price: number;
   original_price?: number;
   cost?: number;
-  rating?: number;
-  reviews?: number;
+  rating?: number | ReviewObject[];
+  reviews?: number | ReviewObject[];
   img_url?: string;
   category?: { id: string; name: string };
   brand?: string;
@@ -173,6 +184,8 @@ const Store = () => {
   const [isFiltering, setIsFiltering] = useState<boolean>(false);
 
   const productsPerPage = 8;
+
+  const navigate = useNavigate();
 
   // Debounce search term
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -578,7 +591,12 @@ const Store = () => {
                           }
                         />
                       </button>
-                      <button className="p-2 bg-white text-gray-600 hover:text-blue-600 rounded-full shadow-lg transition-colors">
+                      <button
+                        onClick={() =>
+                          navigate(`/product-details/${product.id}`)
+                        }
+                        className="p-2 bg-white text-gray-600 hover:text-blue-600 rounded-full shadow-lg transition-colors"
+                      >
                         <Eye className="w-4 h-4" />
                       </button>
                     </div>
