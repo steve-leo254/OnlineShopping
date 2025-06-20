@@ -138,7 +138,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
                 >
                   <Star
                     size={20}
-                    className={`$ {
+                    className={`${
                       star <= (hoverRating || rating)
                         ? "fill-yellow-400 text-yellow-400"
                         : "text-gray-300 hover:text-yellow-200"
