@@ -8,6 +8,7 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { useUserStats } from "../context/UserStatsContext";
 import { useFavorites } from "../context/FavoritesContext";
+import { toast } from "react-toastify";
 
 interface Product {
   id: string;
@@ -38,7 +39,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   onFavoriteChange,
 }) => {
   const navigate = useNavigate();
-  const { addToCart, getItemQuantity } = useShoppingCart();
+  const { addToCart, getItemQuantity, removeFromCart } = useShoppingCart();
   const { token, isAuthenticated } = useAuth();
   const { refreshStats } = useUserStats();
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
@@ -61,6 +62,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       img_url: product.img_url,
       stockQuantity: product.stockQuantity,
     });
+    toast.success(`${product.name} added to cart!`);
   };
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
@@ -90,6 +92,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   const handleCardClick = () => {
     navigate(`/product-details/${product.id}`);
+  };
+
+  const handleRemoveFromCart = () => {
+    removeFromCart(parseInt(product.id));
+    toast.info(`${product.name} removed from cart.`);
   };
 
   const isInCart = getItemQuantity(parseInt(product.id)) > 0;
@@ -271,37 +278,45 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         </div>
 
-        {/* Add to Cart Button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleAddToCart();
-          }}
-          disabled={isOutOfStock || isMaxQuantity}
-          className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 text-sm relative overflow-hidden ${
-            isOutOfStock || isMaxQuantity
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-              : isInCart
-              ? "bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-200 hover:shadow-green-300"
-              : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-200 hover:shadow-blue-300 transform hover:scale-[1.02] active:scale-[0.98]"
-          }`}
-        >
-          <ShoppingCart className="w-5 h-5 flex-shrink-0" />
-          <span className="font-semibold">
-            {isOutOfStock
-              ? "Out of Stock"
-              : isMaxQuantity
-              ? "Max Quantity Reached"
-              : isInCart
-              ? "Added to Cart"
-              : "Add to Cart"}
-          </span>
-
-          {/* Ripple effect */}
-          {!isOutOfStock && !isMaxQuantity && (
-            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-          )}
-        </button>
+        {/* Add to Cart or Remove Button */}
+        {isInCart ? (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRemoveFromCart();
+            }}
+            className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 text-sm relative overflow-hidden bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-200 hover:shadow-red-300`}
+          >
+            <ShoppingCart className="w-5 h-5 flex-shrink-0" />
+            <span className="font-semibold">Remove from Cart</span>
+          </button>
+        ) : (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAddToCart();
+            }}
+            disabled={isOutOfStock || isMaxQuantity}
+            className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 text-sm relative overflow-hidden ${
+              isOutOfStock || isMaxQuantity
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-200 hover:shadow-blue-300 transform hover:scale-[1.02] active:scale-[0.98]"
+            }`}
+          >
+            <ShoppingCart className="w-5 h-5 flex-shrink-0" />
+            <span className="font-semibold">
+              {isOutOfStock
+                ? "Out of Stock"
+                : isMaxQuantity
+                ? "Max Quantity Reached"
+                : "Add to Cart"}
+            </span>
+            {/* Ripple effect */}
+            {!isOutOfStock && !isMaxQuantity && (
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
