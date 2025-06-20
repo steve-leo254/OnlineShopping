@@ -1181,6 +1181,20 @@ async def get_favorites(db: db_dependency, user: user_dependency):
     return favs
 
 
+@app.delete("/favorites/{favorite_id}", status_code=status.HTTP_200_OK)
+async def delete_favorite(favorite_id: int, db: db_dependency, user: user_dependency):
+    fav = db.query(models.Favorite).filter(models.Favorite.id == favorite_id).first()
+    if not fav:
+        raise HTTPException(status_code=404, detail="Favorite not found")
+    if fav.user_id != user.get("id"):
+        raise HTTPException(
+            status_code=403, detail="Not authorized to delete this favorite"
+        )
+    db.delete(fav)
+    db.commit()
+    return {"message": "Favorite removed successfully"}
+
+
 # --- Reviews ---
 @app.post("/reviews", response_model=ReviewResponse)
 async def add_review(review: ReviewCreate, db: db_dependency, user: user_dependency):

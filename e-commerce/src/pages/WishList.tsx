@@ -4,6 +4,8 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { useFetchProducts } from "../components/UseFetchProducts";
 import { useShoppingCart } from "../context/ShoppingCartContext";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 interface ApiProduct {
   id: string;
@@ -28,6 +30,7 @@ const WishList: React.FC = () => {
   const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]); // for removing
   const [wishlistProducts, setWishlistProducts] = useState<ApiProduct[]>([]);
+  const navigate = useNavigate();
 
   // Fetch favorite product IDs on mount
   useEffect(() => {
@@ -77,9 +80,28 @@ const WishList: React.FC = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+      toast.success("Removed from wishlist!");
     } catch (err) {
-      // Optionally revert UI or show error
+      toast.error("Failed to remove from wishlist.");
     }
+  };
+
+  // Helper to calculate average rating from reviews
+  const getAverageRating = (product: ApiProduct) => {
+    if (
+      Array.isArray((product as any).reviews) &&
+      (product as any).reviews.length > 0
+    ) {
+      const reviews = (product as any).reviews;
+      const total = reviews.reduce(
+        (sum: number, r: any) => sum + (r.rating || 0),
+        0
+      );
+      return (total / reviews.length).toFixed(1);
+    }
+    return product.rating?.toFixed
+      ? product.rating.toFixed(1)
+      : product.rating || "-";
   };
 
   return (
@@ -232,7 +254,7 @@ const WishList: React.FC = () => {
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-current" />
                     <span className="text-xs sm:text-sm text-gray-600">
-                      {product.rating}
+                      {getAverageRating(product)}
                     </span>
                   </div>
                 </div>
@@ -255,7 +277,7 @@ const WishList: React.FC = () => {
                 {/* Actions */}
                 <div className="flex gap-2 sm:gap-3">
                   <button
-                    onClick={() =>
+                    onClick={() => {
                       addToCart({
                         id:
                           typeof product.id === "string"
@@ -273,8 +295,9 @@ const WishList: React.FC = () => {
                                 }`
                             : null,
                         stockQuantity: (product as any).stock_quantity || 1,
-                      })
-                    }
+                      });
+                      toast.success(`${product.name} added to cart!`);
+                    }}
                     className="flex-1 flex items-center justify-center gap-1 sm:gap-2 py-2 sm:py-2.5 lg:py-3 px-2 sm:px-3 lg:px-4 rounded-lg lg:rounded-xl font-medium transition-all duration-300 bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:shadow-lg hover:scale-105 text-xs sm:text-sm lg:text-base"
                   >
                     <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -283,7 +306,10 @@ const WishList: React.FC = () => {
 
                   {/* Mobile action buttons */}
                   <div className="flex gap-1 sm:hidden">
-                    <button className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                    <button
+                      className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                      onClick={() => navigate(`/product-details/${product.id}`)}
+                    >
                       <Eye className="w-3 h-3 text-gray-600" />
                     </button>
                     <button className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
