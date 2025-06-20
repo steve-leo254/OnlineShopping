@@ -6,6 +6,7 @@ import { useShoppingCart } from "../context/ShoppingCartContext";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import { useUserStats } from "../context/UserStatsContext";
 
 interface Product {
   id: string;
@@ -42,6 +43,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const navigate = useNavigate();
   const { addToCart, getItemQuantity } = useShoppingCart();
   const { token, isAuthenticated } = useAuth();
+  const { refreshStats } = useUserStats();
   const [isProcessing, setIsProcessing] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -68,7 +70,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     if (!isAuthenticated || !token || !userId) return;
     setIsProcessing(true);
     const isFav = favorites.has(product.id) || product.isFavorite;
-    
+
     toggleFavorite(product.id);
     try {
       if (!isFav) {
@@ -78,12 +80,26 @@ const ProductCard: React.FC<ProductCardProps> = ({
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
-        await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/favorites`, {
-          data: { product_id: parseInt(product.id) },
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const favRes = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/favorites`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const fav = Array.isArray(favRes.data)
+          ? favRes.data.find((f: any) => f.product_id === parseInt(product.id))
+          : null;
+        if (fav) {
+          await axios.delete(
+            `${import.meta.env.VITE_API_BASE_URL}/favorites/${fav.id}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+        }
       }
       if (onFavoriteChange) onFavoriteChange();
+      refreshStats();
     } catch (err) {
       toggleFavorite(product.id);
     } finally {
@@ -103,10 +119,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const isInCart = getItemQuantity(parseInt(product.id)) > 0;
   const isFavorited = favorites.has(product.id) || product.isFavorite;
   const isOutOfStock = !product.inStock;
-  const isMaxQuantity = getItemQuantity(parseInt(product.id)) >= product.stockQuantity;
+  const isMaxQuantity =
+    getItemQuantity(parseInt(product.id)) >= product.stockQuantity;
 
   return (
-    <div 
+    <div
       onClick={handleCardClick}
       className="group relative bg-white rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-gray-200 flex flex-col cursor-pointer transform hover:-translate-y-1 will-change-transform"
     >
@@ -117,7 +134,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           src={product.img_url}
           alt={product.name}
           className={`w-full h-full object-cover transition-all duration-700 ${
-            imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
+            imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105"
           } group-hover:scale-110`}
           onLoad={() => setImageLoaded(true)}
           onError={(e) => {
@@ -126,12 +143,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
             setImageLoaded(true);
           }}
         />
-        
+
         {/* Image Loading Skeleton */}
         {!imageLoaded && (
           <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
         )}
-        
+
         {/* Badges Container */}
         <div className="absolute top-4 left-4 flex flex-col gap-2 z-20">
           {product.isNew && (
@@ -145,7 +162,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             </div>
           )}
         </div>
-        
+
         {/* Action Buttons - Always visible on mobile, hover on desktop */}
         <div className="absolute top-4 right-4 flex flex-col gap-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 z-30">
           <button
@@ -160,12 +177,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
           >
             <Heart
               className={`w-4 h-4 md:w-5 md:h-5 transition-all duration-200 ${
-                isProcessing ? 'animate-pulse' : ''
+                isProcessing ? "animate-pulse" : ""
               }`}
               fill={isFavorited ? "currentColor" : "none"}
             />
           </button>
-          
+
           <button
             onClick={handleViewClick}
             className="w-10 h-10 md:w-12 md:h-12 bg-white/90 backdrop-blur-md text-gray-600 hover:text-blue-600 hover:bg-white rounded-full shadow-lg shadow-gray-200 transition-all duration-300 flex items-center justify-center hover:scale-110 active:scale-95"
@@ -174,7 +191,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             <Eye className="w-4 h-4 md:w-5 md:h-5" />
           </button>
         </div>
-        
+
         {/* Out of Stock Overlay */}
         {isOutOfStock && (
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent flex items-center justify-center z-10">
@@ -184,7 +201,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         )}
       </div>
-      
+
       {/* Content */}
       <div className="p-6 flex flex-col flex-1 space-y-4">
         {/* Header */}
@@ -197,26 +214,27 @@ const ProductCard: React.FC<ProductCardProps> = ({
               {product.brand}
             </span>
           </div>
-          
+
           <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-200 line-clamp-2 text-base leading-tight">
             {product.name}
           </h3>
         </div>
-        
+
         {/* Rating & Reviews */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1">
             {[...Array(5)].map((_, i) => {
               const rating = product.rating || 0;
               const isFilled = i < Math.floor(rating);
-              const isHalfFilled = i === Math.floor(rating) && rating % 1 >= 0.5;
-              
+              const isHalfFilled =
+                i === Math.floor(rating) && rating % 1 >= 0.5;
+
               return (
                 <div key={i} className="relative">
                   <Star
                     className={`w-4 h-4 ${
-                      isFilled 
-                        ? "text-yellow-400 fill-yellow-400" 
+                      isFilled
+                        ? "text-yellow-400 fill-yellow-400"
                         : "text-gray-300 fill-gray-300"
                     }`}
                   />
@@ -224,7 +242,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
                     <Star
                       className="absolute inset-0 w-4 h-4 text-yellow-400 fill-yellow-400"
                       style={{
-                        clipPath: 'polygon(0 0, 50% 0, 50% 100%, 0 100%)'
+                        clipPath: "polygon(0 0, 50% 0, 50% 100%, 0 100%)",
                       }}
                     />
                   )}
@@ -233,27 +251,31 @@ const ProductCard: React.FC<ProductCardProps> = ({
             })}
           </div>
           <span className="text-sm font-semibold text-gray-900">
-            {product.rating ? product.rating.toFixed(1) : '0.0'}
+            {product.rating ? product.rating.toFixed(1) : "0.0"}
           </span>
           <span className="text-xs text-gray-500">
             ({(product.reviews || 0).toLocaleString()})
           </span>
         </div>
-        
+
         {/* Stock Info */}
         <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${
-            product.stockQuantity > 10 ? 'bg-green-400' : 
-            product.stockQuantity > 0 ? 'bg-yellow-400' : 'bg-red-400'
-          }`} />
+          <div
+            className={`w-2 h-2 rounded-full ${
+              product.stockQuantity > 10
+                ? "bg-green-400"
+                : product.stockQuantity > 0
+                ? "bg-yellow-400"
+                : "bg-red-400"
+            }`}
+          />
           <span className="text-xs text-gray-600">
-            {product.stockQuantity > 0 
-              ? `${product.stockQuantity} in stock` 
-              : 'Out of stock'
-            }
+            {product.stockQuantity > 0
+              ? `${product.stockQuantity} in stock`
+              : "Out of stock"}
           </span>
         </div>
-        
+
         {/* Pricing */}
         <div className="space-y-2">
           <div className="flex items-baseline gap-3">
@@ -266,13 +288,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
               </span>
             )}
           </div>
-          
+
           <div className="flex items-center gap-2 text-xs text-gray-600">
             <Truck className="w-3 h-3" />
             <span>Free delivery on orders over $50</span>
           </div>
         </div>
-        
+
         {/* Add to Cart Button */}
         <button
           onClick={(e) => {
@@ -290,16 +312,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
         >
           <ShoppingCart className="w-5 h-5 flex-shrink-0" />
           <span className="font-semibold">
-            {isOutOfStock 
-              ? "Out of Stock" 
-              : isMaxQuantity 
+            {isOutOfStock
+              ? "Out of Stock"
+              : isMaxQuantity
               ? "Max Quantity Reached"
-              : isInCart 
-              ? "Added to Cart" 
-              : "Add to Cart"
-            }
+              : isInCart
+              ? "Added to Cart"
+              : "Add to Cart"}
           </span>
-          
+
           {/* Ripple effect */}
           {!isOutOfStock && !isMaxQuantity && (
             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
