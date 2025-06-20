@@ -7,6 +7,7 @@ import { useShoppingCart } from "../context/ShoppingCartContext";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "../cart/formatCurrency";
+import { useUserStats } from "../context/UserStatsContext";
 
 interface ApiProduct {
   id: string;
@@ -32,6 +33,7 @@ const WishList: React.FC = () => {
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]); // for removing
   const [wishlistProducts, setWishlistProducts] = useState<ApiProduct[]>([]);
   const navigate = useNavigate();
+  const { refreshStats } = useUserStats();
 
   // Fetch favorite product IDs on mount
   useEffect(() => {
@@ -82,6 +84,7 @@ const WishList: React.FC = () => {
         }
       );
       toast.success("Removed from wishlist!");
+      refreshStats();
     } catch (err) {
       toast.error("Failed to remove from wishlist.");
     }
@@ -335,7 +338,8 @@ const WishList: React.FC = () => {
               </button>
               <button
                 onClick={() => navigate("/store")}
-               className="w-full sm:w-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 bg-white text-gray-700 rounded-full font-medium hover:bg-gray-50 transition-colors duration-300 border border-gray-200 text-sm sm:text-base">
+                className="w-full sm:w-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 bg-white text-gray-700 rounded-full font-medium hover:bg-gray-50 transition-colors duration-300 border border-gray-200 text-sm sm:text-base"
+              >
                 Continue Shopping
               </button>
             </div>
