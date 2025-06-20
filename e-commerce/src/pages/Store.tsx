@@ -16,6 +16,7 @@ import { formatCurrency } from "../cart/formatCurrency";
 import { toast } from "react-toastify"; // Import toast
 import { useNavigate } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
+import { useRef } from "react";
 
 interface Category {
   id: string | null;
@@ -196,13 +197,11 @@ const Store = () => {
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isFiltering, setIsFiltering] = useState<boolean>(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const productsPerPage = 8;
 
   const navigate = useNavigate();
-
-  // Debounce search term
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const transformedProducts: Product[] = useMemo(
     () => apiProducts.map(transformProduct),
@@ -262,7 +261,7 @@ const Store = () => {
     setCurrentPage(1);
     setIsFiltering(true);
     try {
-      await fetchProducts(1, productsPerPage, debouncedSearchTerm, categoryId);
+      await fetchProducts(1, productsPerPage, searchTerm, categoryId);
     } catch (error) {
       console.error("Error filtering by category:", error);
       toast.error("Failed to filter products. Please try again.");
@@ -360,23 +359,24 @@ const Store = () => {
   };
 
   useEffect(() => {
-    fetchProducts(
-      currentPage,
-      productsPerPage,
-      debouncedSearchTerm,
-      selectedCategoryId
-    );
-  }, [currentPage, debouncedSearchTerm, selectedCategoryId, fetchProducts]);
+    fetchProducts(currentPage, productsPerPage, searchTerm, selectedCategoryId);
+  }, [currentPage, searchTerm, selectedCategoryId, fetchProducts]);
 
   useEffect(() => {
-    if (debouncedSearchTerm.trim()) {
+    if (searchTerm.trim()) {
       setCurrentPage(1);
     }
-  }, [debouncedSearchTerm]);
+  }, [searchTerm]);
 
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
+
+  useEffect(() => {
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchTerm]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -443,6 +443,7 @@ const Store = () => {
                     placeholder="Search for products..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    ref={searchInputRef}
                     className="text-gray-600 w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 shadow-sm"
                   />
                 </div>
