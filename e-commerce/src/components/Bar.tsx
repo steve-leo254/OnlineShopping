@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import CartDropdown from "./CartDropdown";
@@ -6,6 +6,7 @@ import { useShoppingCart } from "../context/ShoppingCartContext";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { Heart } from "lucide-react";
+import { useUserStats } from "../context/UserStatsContext";
 
 declare global {
   interface Window {
@@ -17,13 +18,8 @@ declare global {
 const Bar: React.FC = () => {
   const { isAuthenticated, logout, role, token } = useAuth();
   const { cartQuantity } = useShoppingCart();
-
-  // Pending reviews count state
-  const [pendingReviewsCount, setPendingReviewsCount] = useState<number>(0);
-  // Active orders count state
-  const [activeOrdersCount, setActiveOrdersCount] = useState<number>(0);
-  // Wishlist count state
-  const [wishlistCount, setWishlistCount] = useState<number>(0);
+  const { pendingReviewsCount, activeOrdersCount, wishlistCount } =
+    useUserStats();
 
   // Initialize Flowbite (if available) on component mount
   useEffect(() => {
@@ -34,9 +30,6 @@ const Bar: React.FC = () => {
 
   useEffect(() => {
     if (!isAuthenticated || !token) {
-      setPendingReviewsCount(0);
-      setActiveOrdersCount(0);
-      setWishlistCount(0);
       return;
     }
     let isMounted = true;
@@ -71,9 +64,8 @@ const Bar: React.FC = () => {
             }
           });
         });
-        if (isMounted) setPendingReviewsCount(count);
       } catch {
-        if (isMounted) setPendingReviewsCount(0);
+        // If there's an error, set pendingReviewsCount to 0
       }
     };
     const fetchActiveOrdersCount = async () => {
@@ -91,9 +83,8 @@ const Bar: React.FC = () => {
         const pendingOrders = pendingRes.data.items || [];
         const processingOrders = processingRes.data.items || [];
         const count = pendingOrders.length + processingOrders.length;
-        if (isMounted) setActiveOrdersCount(count);
       } catch {
-        if (isMounted) setActiveOrdersCount(0);
+        // If there's an error, set activeOrdersCount to 0
       }
     };
     const fetchWishlistCount = async () => {
@@ -101,10 +92,8 @@ const Bar: React.FC = () => {
         const favRes = await axios.get(`${API_BASE_URL}/favorites`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (isMounted)
-          setWishlistCount(Array.isArray(favRes.data) ? favRes.data.length : 0);
       } catch {
-        if (isMounted) setWishlistCount(0);
+        // If there's an error, set wishlistCount to 0
       }
     };
     fetchPendingReviewsCount();
