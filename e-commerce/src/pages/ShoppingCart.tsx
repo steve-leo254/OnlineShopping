@@ -346,7 +346,7 @@ const ShoppingCart: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-3 text-base text-gray-700">
                       <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
-                      <span>30-Day Money Back Guarantee</span>
+                      <span>7-Day Money Back Guarantee</span>
                     </div>
                     <div className="flex items-center space-x-3 text-base text-gray-700">
                       <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
