@@ -7,6 +7,7 @@ import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { useUserStats } from "../context/UserStatsContext";
+import { useFavorites } from "../context/FavoritesContext";
 
 interface Product {
   id: string;
@@ -29,21 +30,18 @@ interface Product {
 
 interface ProductCardProps {
   product: Product;
-  favorites: Set<string>;
-  toggleFavorite: (productId: string) => void;
   onFavoriteChange?: () => void;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
   product,
-  favorites,
-  toggleFavorite,
   onFavoriteChange,
 }) => {
   const navigate = useNavigate();
   const { addToCart, getItemQuantity } = useShoppingCart();
   const { token, isAuthenticated } = useAuth();
   const { refreshStats } = useUserStats();
+  const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const [isProcessing, setIsProcessing] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -69,39 +67,17 @@ const ProductCard: React.FC<ProductCardProps> = ({
     e.stopPropagation();
     if (!isAuthenticated || !token || !userId) return;
     setIsProcessing(true);
-    const isFav = favorites.has(product.id) || product.isFavorite;
-
-    toggleFavorite(product.id);
+    const isFav = isFavorite(product.id.toString());
     try {
       if (!isFav) {
-        await axios.post(
-          `${import.meta.env.VITE_API_BASE_URL}/favorites`,
-          { product_id: parseInt(product.id), user_id: userId },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await addFavorite(product.id.toString());
       } else {
-        const favRes = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/favorites`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        const fav = Array.isArray(favRes.data)
-          ? favRes.data.find((f: any) => f.product_id === parseInt(product.id))
-          : null;
-        if (fav) {
-          await axios.delete(
-            `${import.meta.env.VITE_API_BASE_URL}/favorites/${fav.id}`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-        }
+        await removeFavorite(product.id.toString());
       }
       if (onFavoriteChange) onFavoriteChange();
       refreshStats();
     } catch (err) {
-      toggleFavorite(product.id);
+      // Optionally handle error
     } finally {
       setIsProcessing(false);
     }
@@ -117,7 +93,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   const isInCart = getItemQuantity(parseInt(product.id)) > 0;
-  const isFavorited = favorites.has(product.id) || product.isFavorite;
+  const isFavorited = isFavorite(product.id.toString());
   const isOutOfStock = !product.inStock;
   const isMaxQuantity =
     getItemQuantity(parseInt(product.id)) >= product.stockQuantity;
