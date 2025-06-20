@@ -1,11 +1,13 @@
 import React, { useState } from "react";
-import { Star, Heart, Eye, ShoppingCart } from "lucide-react";
+import { Star, Heart, Eye, ShoppingCart, Truck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "../cart/formatCurrency";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import { useUserStats } from "../context/UserStatsContext";
+import { useFavorites } from "../context/FavoritesContext";
 
 interface Product {
   id: string;
@@ -28,21 +30,20 @@ interface Product {
 
 interface ProductCardProps {
   product: Product;
-  favorites: Set<string>;
-  toggleFavorite: (productId: string) => void;
   onFavoriteChange?: () => void;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
   product,
-  favorites,
-  toggleFavorite,
   onFavoriteChange,
 }) => {
   const navigate = useNavigate();
   const { addToCart, getItemQuantity } = useShoppingCart();
   const { token, isAuthenticated } = useAuth();
+  const { refreshStats } = useUserStats();
+  const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   let userId: number | null = null;
   if (token) {
@@ -63,176 +64,244 @@ const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent event bubbling
+    e.stopPropagation();
     if (!isAuthenticated || !token || !userId) return;
     setIsProcessing(true);
-    const isFav = favorites.has(product.id) || product.isFavorite;
-    // Optimistically update UI
-    toggleFavorite(product.id);
+    const isFav = isFavorite(product.id.toString());
     try {
       if (!isFav) {
-        // Add to favorites
-        await axios.post(
-          `${import.meta.env.VITE_API_BASE_URL}/favorites`,
-          { product_id: parseInt(product.id), user_id: userId },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await addFavorite(product.id.toString());
       } else {
-        // Remove from favorites: need favorite id, so assume API supports DELETE by product_id
-        await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/favorites`, {
-          data: { product_id: parseInt(product.id) },
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await removeFavorite(product.id.toString());
       }
       if (onFavoriteChange) onFavoriteChange();
+      refreshStats();
     } catch (err) {
-      // Revert optimistic update on error
-      toggleFavorite(product.id);
+      // Optionally handle error
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleViewClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent event bubbling
+    e.stopPropagation();
     navigate(`/product-details/${product.id}`);
   };
 
+  const handleCardClick = () => {
+    navigate(`/product-details/${product.id}`);
+  };
+
+  const isInCart = getItemQuantity(parseInt(product.id)) > 0;
+  const isFavorited = isFavorite(product.id.toString());
+  const isOutOfStock = !product.inStock;
+  const isMaxQuantity =
+    getItemQuantity(parseInt(product.id)) >= product.stockQuantity;
+
   return (
-    <div className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 flex flex-col h-full">
-      <div className="relative overflow-hidden aspect-square">
+    <div
+      onClick={handleCardClick}
+      className="group relative bg-white rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-gray-200 flex flex-col cursor-pointer transform hover:-translate-y-1 will-change-transform"
+    >
+      {/* Image Container */}
+      <div className="relative aspect-square overflow-hidden bg-gray-50">
+        {/* Image */}
         <img
           src={product.img_url}
           alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          className={`w-full h-full object-cover transition-all duration-700 ${
+            imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105"
+          } group-hover:scale-110`}
+          onLoad={() => setImageLoaded(true)}
           onError={(e) => {
             (e.target as HTMLImageElement).src =
-              "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop";
+              "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=600&h=600&fit=crop";
+            setImageLoaded(true);
           }}
         />
-        
-        {/* Product Badges - Fixed z-index */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1 z-20">
+
+        {/* Image Loading Skeleton */}
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse" />
+        )}
+
+        {/* Badges Container */}
+        <div className="absolute top-4 left-4 flex flex-col gap-2 z-20">
           {product.isNew && (
-            <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+            <div className="bg-gradient-to-r from-emerald-500 to-green-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm">
               New
-            </span>
+            </div>
           )}
           {product.discount > 0 && (
-            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+            <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm">
               -{product.discount}%
-            </span>
+            </div>
           )}
         </div>
-        
-        {/* Action Buttons - Fixed positioning and z-index */}
-        <div className="absolute top-3 right-3 flex flex-col gap-2 z-30">
+
+        {/* Action Buttons - Always visible on mobile, hover on desktop */}
+        <div className="absolute top-4 right-4 flex flex-col gap-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 z-30">
           <button
             onClick={handleFavoriteClick}
             disabled={isProcessing}
-            className={`w-10 h-10 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center backdrop-blur-sm hover:scale-110 ${
-              favorites.has(product.id) || product.isFavorite
-                ? "bg-red-500 text-white"
-                : "bg-white/90 text-gray-600 hover:text-red-500 hover:bg-white"
+            className={`w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all duration-300 flex items-center justify-center backdrop-blur-md hover:scale-110 active:scale-95 ${
+              isFavorited
+                ? "bg-red-500 text-white shadow-red-200"
+                : "bg-white/90 text-gray-600 hover:text-red-500 hover:bg-white shadow-gray-200"
             }`}
-            title={favorites.has(product.id) || product.isFavorite ? "Remove from favorites" : "Add to favorites"}
+            title={isFavorited ? "Remove from favorites" : "Add to favorites"}
           >
             <Heart
-              className="w-5 h-5"
-              fill={
-                favorites.has(product.id) || product.isFavorite
-                  ? "currentColor"
-                  : "none"
-              }
+              className={`w-4 h-4 md:w-5 md:h-5 transition-all duration-200 ${
+                isProcessing ? "animate-pulse" : ""
+              }`}
+              fill={isFavorited ? "currentColor" : "none"}
             />
           </button>
+
           <button
             onClick={handleViewClick}
-            className="w-10 h-10 bg-white/90 backdrop-blur-sm text-gray-600 hover:text-blue-600 hover:bg-white rounded-full shadow-lg transition-all duration-200 flex items-center justify-center hover:scale-110"
-            title="View product details"
+            className="w-10 h-10 md:w-12 md:h-12 bg-white/90 backdrop-blur-md text-gray-600 hover:text-blue-600 hover:bg-white rounded-full shadow-lg shadow-gray-200 transition-all duration-300 flex items-center justify-center hover:scale-110 active:scale-95"
+            title="Quick view"
           >
-            <Eye className="w-5 h-5" />
+            <Eye className="w-4 h-4 md:w-5 md:h-5" />
           </button>
         </div>
-        
+
         {/* Out of Stock Overlay */}
-        {!product.inStock && (
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
-            <span className="text-white font-medium">Out of Stock</span>
+        {isOutOfStock && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent flex items-center justify-center z-10">
+            <div className="bg-white/95 backdrop-blur-sm text-gray-900 font-semibold px-4 py-2 rounded-full shadow-lg">
+              Out of Stock
+            </div>
           </div>
         )}
       </div>
-      
-      <div className="p-4 flex-1 flex flex-col justify-between h-full">
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-full">
+
+      {/* Content */}
+      <div className="p-6 flex flex-col flex-1 space-y-4">
+        {/* Header */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
               {product.category}
             </span>
-            <span className="text-xs text-gray-500">{product.brand}</span>
+            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+              {product.brand}
+            </span>
           </div>
-          <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2 text-sm sm:text-base">
+
+          <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-200 line-clamp-2 text-base leading-tight">
             {product.name}
           </h3>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="flex items-center">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`w-3 h-3 ${
-                    i < Math.floor(product.rating)
-                      ? "text-yellow-400 fill-current"
-                      : "text-gray-300"
-                  }`}
-                />
-              ))}
-            </div>
-            <span className="text-sm font-medium text-gray-900">
-              {product.rating}
-            </span>
-            <span className="text-xs text-gray-500">({product.reviews})</span>
+        </div>
+
+        {/* Rating & Reviews */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
+            {[...Array(5)].map((_, i) => {
+              const rating = product.rating || 0;
+              const isFilled = i < Math.floor(rating);
+              const isHalfFilled =
+                i === Math.floor(rating) && rating % 1 >= 0.5;
+
+              return (
+                <div key={i} className="relative">
+                  <Star
+                    className={`w-4 h-4 ${
+                      isFilled
+                        ? "text-yellow-400 fill-yellow-400"
+                        : "text-gray-300 fill-gray-300"
+                    }`}
+                  />
+                  {isHalfFilled && (
+                    <Star
+                      className="absolute inset-0 w-4 h-4 text-yellow-400 fill-yellow-400"
+                      style={{
+                        clipPath: "polygon(0 0, 50% 0, 50% 100%, 0 100%)",
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
-          <div className="mb-3">
-            <span className="text-xs text-gray-500">
-              Stock: {product.stockQuantity} available
+          <span className="text-sm font-semibold text-gray-900">
+            {product.rating ? product.rating.toFixed(1) : "0.0"}
+          </span>
+          <span className="text-xs text-gray-500">
+            ({(product.reviews || 0).toLocaleString()})
+          </span>
+        </div>
+
+        {/* Stock Info */}
+        <div className="flex items-center gap-2">
+          <div
+            className={`w-2 h-2 rounded-full ${
+              product.stockQuantity > 10
+                ? "bg-green-400"
+                : product.stockQuantity > 0
+                ? "bg-yellow-400"
+                : "bg-red-400"
+            }`}
+          />
+          <span className="text-xs text-gray-600">
+            {product.stockQuantity > 0
+              ? `${product.stockQuantity} in stock`
+              : "Out of stock"}
+          </span>
+        </div>
+
+        {/* Pricing */}
+        <div className="space-y-2">
+          <div className="flex items-baseline gap-3">
+            <span className="text-2xl font-bold text-gray-900">
+              {formatCurrency(product.price)}
             </span>
+            {product.originalPrice > product.price && (
+              <span className="text-sm text-gray-500 line-through">
+                {formatCurrency(product.originalPrice)}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-gray-600">
+            <Truck className="w-3 h-3" />
+            <span>Free delivery on orders over $50</span>
           </div>
         </div>
-        <div className="mt-auto">
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-lg sm:text-xl font-bold text-gray-900">
-                  {formatCurrency(product.price)}
-                </span>
-                {product.originalPrice > product.price && (
-                  <span className="text-sm text-gray-500 line-through">
-                    {formatCurrency(product.originalPrice)}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-1 text-xs text-gray-500">
-                <span>Delivered at a fee</span>
-              </div>
-            </div>
-            <button
-              onClick={handleAddToCart}
-              disabled={
-                !product.inStock ||
-                getItemQuantity(parseInt(product.id)) >= product.stockQuantity
-              }
-              className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
-                product.inStock &&
-                getItemQuantity(parseInt(product.id)) < product.stockQuantity
-                  ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
-            >
-              <ShoppingCart className="w-4 h-4 flex-shrink-0" />
-              <span>Add to Cart</span>
-            </button>
-          </div>
-        </div>
+
+        {/* Add to Cart Button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAddToCart();
+          }}
+          disabled={isOutOfStock || isMaxQuantity}
+          className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 text-sm relative overflow-hidden ${
+            isOutOfStock || isMaxQuantity
+              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : isInCart
+              ? "bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-200 hover:shadow-green-300"
+              : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-200 hover:shadow-blue-300 transform hover:scale-[1.02] active:scale-[0.98]"
+          }`}
+        >
+          <ShoppingCart className="w-5 h-5 flex-shrink-0" />
+          <span className="font-semibold">
+            {isOutOfStock
+              ? "Out of Stock"
+              : isMaxQuantity
+              ? "Max Quantity Reached"
+              : isInCart
+              ? "Added to Cart"
+              : "Add to Cart"}
+          </span>
+
+          {/* Ripple effect */}
+          {!isOutOfStock && !isMaxQuantity && (
+            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+          )}
+        </button>
       </div>
     </div>
   );

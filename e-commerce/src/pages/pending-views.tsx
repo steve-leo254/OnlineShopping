@@ -11,6 +11,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import { useUserStats } from "../context/UserStatsContext";
 
 // Type definitions
 interface User {
@@ -219,6 +220,7 @@ const ReviewPage: React.FC = () => {
   } | null>(null);
   const [reviews, setReviews] = useState<Record<number, Review>>({});
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const { refreshStats } = useUserStats();
 
   useEffect(() => {
     const fetchPendingReviews = async () => {
@@ -313,6 +315,7 @@ const ReviewPage: React.FC = () => {
           date: new Date().toISOString(),
         },
       }));
+      refreshStats(); // Update navbar counts
     } catch (err) {
       alert("Failed to submit review. Please try again.");
     } finally {
@@ -332,9 +335,6 @@ const ReviewPage: React.FC = () => {
   // Main review page
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30">
-      
-    
-
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
         {pendingReviews.length > 0 ? (

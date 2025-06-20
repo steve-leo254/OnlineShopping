@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify"; // Import toast
+import { useUserStats } from "../context/UserStatsContext";
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ const Home: React.FC = () => {
   const { isLoading, products, error, fetchProducts } = useFetchProducts();
   const { addToCart } = useShoppingCart();
   const imgEndPoint = import.meta.env.VITE_API_BASE_URL;
+  const { refreshStats } = useUserStats();
 
   // Ref for carousel container
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -29,6 +31,10 @@ const Home: React.FC = () => {
   useEffect(() => {
     fetchProducts(1, 100, ""); // Fetch many more products for carousel
   }, [fetchProducts]);
+
+  useEffect(() => {
+    refreshStats();
+  }, [refreshStats]);
 
   // Effect for continuous scroll loop carousel (for products)
   useEffect(() => {

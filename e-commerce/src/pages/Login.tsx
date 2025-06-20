@@ -92,7 +92,8 @@ const Login: React.FC = () => {
           sessionStorage.removeItem("checkoutData");
           navigate(redirectPath);
         } else {
-          navigate("/"); // Your original default navigation
+          navigate("/");
+          window.location.reload(); 
         }
       }, 1000);
     } catch (error: any) {

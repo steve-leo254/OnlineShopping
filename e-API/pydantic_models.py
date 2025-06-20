@@ -126,7 +126,7 @@ class FavoriteBase(BaseModel):
 
 
 class FavoriteCreate(FavoriteBase):
-    user_id: int
+    user_id: Optional[int] = None
 
 
 class FavoriteResponse(FavoriteBase):
@@ -154,6 +154,7 @@ class ReviewResponse(ReviewBase):
     product_id: int
     order_id: int
     created_at: datetime
+    username: Optional[str] = None
 
     class Config:
         from_attributes = True

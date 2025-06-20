@@ -19,6 +19,9 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useShoppingCart } from "../context/ShoppingCartContext";
+import { useAuth } from "../context/AuthContext";
+import { useUserStats } from "../context/UserStatsContext";
+import { useFavorites } from "../context/FavoritesContext";
 
 // Types
 interface Product {
@@ -51,6 +54,7 @@ interface Review {
   rating: number;
   comment: string;
   created_at: string;
+  username?: string;
 }
 
 type TabType = "description" | "specifications" | "reviews";
@@ -58,11 +62,10 @@ type NotificationType = "success" | "error" | "info";
 
 // Static Data
 
-
-const CURRENCY_FORMATTER = new Intl.NumberFormat('en-KE', {
-  currency: 'KES',
-  style: 'currency',
-  currencyDisplay: 'symbol',
+const CURRENCY_FORMATTER = new Intl.NumberFormat("en-KE", {
+  currency: "KES",
+  style: "currency",
+  currencyDisplay: "symbol",
   minimumFractionDigits: 0,
   maximumFractionDigits: 0,
 });
@@ -70,8 +73,8 @@ const CURRENCY_FORMATTER = new Intl.NumberFormat('en-KE', {
 export function formatCurrency(number: number) {
   // Format the number and replace all "KSh" or "KSH" (with or without space) with "Ksh "
   return CURRENCY_FORMATTER.format(number)
-    .replace(/KSh|KSH/gi, 'Ksh')
-    .replace(/\s*Ksh/, ' Ksh'); // Ensure a space before Ksh
+    .replace(/KSh|KSH/gi, "Ksh")
+    .replace(/\s*Ksh/, " Ksh"); // Ensure a space before Ksh
 }
 
 const ProductDetail: React.FC = () => {
@@ -84,7 +87,6 @@ const ProductDetail: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
-  const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<TabType>("description");
   const [showImageModal, setShowImageModal] = useState<boolean>(false);
   const [notification, setNotification] = useState<{
@@ -102,6 +104,11 @@ const ProductDetail: React.FC = () => {
     decreaseCartQuantity,
     getItemQuantity,
   } = useShoppingCart();
+  const { isAuthenticated, token } = useAuth();
+  const { refreshStats } = useUserStats();
+  const { isFavorite, addFavorite, removeFavorite } = useFavorites();
+  const [isProcessingFavorite, setIsProcessingFavorite] =
+    useState<boolean>(false);
 
   const calculateAverageRating = (reviews: Review[]): number => {
     if (!reviews || reviews.length === 0) return 0;
@@ -121,7 +128,7 @@ const ProductDetail: React.FC = () => {
       try {
         const res = await axios.get(`${API_BASE_URL}/public/products/${id}`);
         const data = res.data;
-        
+
         // Transform images
         let images: string[] = [];
         if (
@@ -135,7 +142,7 @@ const ProductDetail: React.FC = () => {
               : `${API_BASE_URL}${img.img_url}`
           );
         }
-        
+
         // Transform specifications
         let specifications: Record<string, string | number> = {};
         if (
@@ -148,7 +155,7 @@ const ProductDetail: React.FC = () => {
             }
           });
         }
-  
+
         // Fetch reviews first to calculate rating
         let fetchedReviews: Review[] = [];
         try {
@@ -160,10 +167,10 @@ const ProductDetail: React.FC = () => {
         } catch {
           setReviews([]);
         }
-  
+
         // Calculate rating from reviews
         const calculatedRating = calculateAverageRating(fetchedReviews);
-        
+
         // Compose product object with calculated rating
         const prod: Product = {
           id: data.id,
@@ -185,10 +192,9 @@ const ProductDetail: React.FC = () => {
           createdAt: data.created_at,
           specifications,
         };
-        
+
         setProduct(prod);
-        setIsFavorite(false);
-  
+
         // Fetch related products with ratings
         if (data.category && data.category.id) {
           const relRes = await axios.get(`${API_BASE_URL}/public/products`, {
@@ -197,13 +203,13 @@ const ProductDetail: React.FC = () => {
           const relItems = relRes.data.items.filter(
             (p: any) => p.id !== data.id
           );
-          
+
           // Fetch reviews for each related product to calculate ratings
           const relatedProductsWithRatings = await Promise.all(
             relItems.map(async (item: any) => {
               let itemRating = 0;
               let itemReviewCount = 0;
-              
+
               try {
                 const itemReviewsRes = await axios.get(
                   `${API_BASE_URL}/products/${item.id}/reviews`
@@ -216,7 +222,7 @@ const ProductDetail: React.FC = () => {
                 itemRating = 0;
                 itemReviewCount = 0;
               }
-              
+
               return {
                 id: item.id,
                 name: item.name,
@@ -248,7 +254,7 @@ const ProductDetail: React.FC = () => {
               };
             })
           );
-          
+
           setRelatedProducts(relatedProductsWithRatings);
         } else {
           setRelatedProducts([]);
@@ -260,11 +266,7 @@ const ProductDetail: React.FC = () => {
       }
     };
     fetchProduct();
-  }, [id, API_BASE_URL]);
-
-  useEffect(() => {
-    if (product) setIsFavorite(product.isFavorite || false);
-  }, [product]);
+  }, [id, API_BASE_URL, isAuthenticated, token]);
 
   const showNotification = (
     message: string,
@@ -387,6 +389,29 @@ const ProductDetail: React.FC = () => {
     );
   };
 
+  const handleFavoriteToggle = async () => {
+    if (!isAuthenticated || !token || !product) {
+      showNotification("You must be logged in to use favorites.", "error");
+      return;
+    }
+    setIsProcessingFavorite(true);
+    const isFav = isFavorite(product.id.toString());
+    try {
+      if (!isFav) {
+        await addFavorite(product.id.toString());
+        showNotification("Added to favorites!", "success");
+      } else {
+        await removeFavorite(product.id.toString());
+        showNotification("Removed from favorites", "info");
+      }
+      refreshStats();
+    } catch (err) {
+      showNotification("Failed to update favorites.", "error");
+    } finally {
+      setIsProcessingFavorite(false);
+    }
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -414,7 +439,6 @@ const ProductDetail: React.FC = () => {
       {renderNotification()}
 
       {/* Header */}
-     
 
       {/* Product Details */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -508,9 +532,10 @@ const ProductDetail: React.FC = () => {
               {/* Rating */}
               <div className="flex items-center gap-2 mb-4">
                 {renderStars(product.rating)}
-                <span className="text-gray-600">
-                  ({product.reviews} reviews)
+                <span className="text-gray-700 font-semibold">
+                  {product.rating.toFixed(1)}
                 </span>
+                <span className="text-gray-600">({product.reviews})</span>
               </div>
 
               {/* Price */}
@@ -588,26 +613,28 @@ const ProductDetail: React.FC = () => {
               </button>
 
               <button
-                onClick={() => {
-                  // Simulate API call
-                  setTimeout(() => {
-                    setIsFavorite(!isFavorite);
-                    showNotification(
-                      isFavorite
-                        ? "Removed from favorites"
-                        : "Added to favorites!",
-                      isFavorite ? "info" : "success"
-                    );
-                  }, 300);
-                }}
-                className={`p-3 rounded-lg border transition-colors ${
-                  isFavorite
-                    ? "bg-red-50 border-red-200 text-red-600"
+                onClick={handleFavoriteToggle}
+                disabled={isProcessingFavorite}
+                className={`p-3 rounded-lg border transition-colors flex items-center justify-center ${
+                  isFavorite(product.id.toString())
+                    ? "bg-red-500 border-red-200 text-white shadow-red-200"
                     : "bg-white border-gray-300 text-gray-600 hover:text-red-600"
+                } ${
+                  isProcessingFavorite ? "opacity-60 cursor-not-allowed" : ""
                 }`}
+                title={
+                  isFavorite(product.id.toString())
+                    ? "Remove from favorites"
+                    : "Add to favorites"
+                }
               >
                 <Heart
-                  className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`}
+                  className={`w-5 h-5 transition-all duration-200 ${
+                    isProcessingFavorite ? "animate-pulse" : ""
+                  }`}
+                  fill={
+                    isFavorite(product.id.toString()) ? "currentColor" : "none"
+                  }
                 />
               </button>
             </div>
@@ -686,7 +713,9 @@ const ProductDetail: React.FC = () => {
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <span className="font-medium text-gray-900">
-                            {`User #${review.user_id}`}
+                            {review.username
+                              ? review.username
+                              : `User #${review.user_id}`}
                           </span>
                         </div>
                         <span className="text-sm text-gray-500">
@@ -735,6 +764,9 @@ const ProductDetail: React.FC = () => {
                     </h3>
                     <div className="flex items-center gap-2 mb-2">
                       {renderStars(relatedProduct.rating)}
+                      <span className="text-gray-700 font-semibold">
+                        {relatedProduct.rating.toFixed(1)}
+                      </span>
                       <span className="text-sm text-gray-500">
                         ({relatedProduct.reviews})
                       </span>

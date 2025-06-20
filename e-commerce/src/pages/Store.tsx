@@ -89,27 +89,21 @@ const transformProduct = (apiProduct: ApiProduct): Product => {
       : new Date().getTime() - new Date(apiProduct.created_at).getTime() <
         30 * 24 * 60 * 60 * 1000;
 
-  // Handle rating: could be a number or an array of review objects
-  let ratingValue = 4.5;
-  if (typeof apiProduct.rating === "number") {
-    ratingValue = apiProduct.rating;
-  } else if (
-    Array.isArray(apiProduct.rating) &&
-    apiProduct.rating &&
-    apiProduct.rating.length > 0
-  ) {
-    // If it's an array of review objects, calculate average
-    const ratings = apiProduct.rating
+  // --- FIXED: Use reviews array for average rating if present ---
+  let ratingValue = 0;
+  if (Array.isArray(apiProduct.reviews) && apiProduct.reviews.length > 0) {
+    const ratings = apiProduct.reviews
       .map((r: any) => (typeof r.rating === "number" ? r.rating : null))
       .filter((r: number | null) => r !== null) as number[];
     if (ratings.length > 0) {
-      ratingValue =
-        ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length;
+      ratingValue = ratings.reduce((a, b) => a + b, 0) / ratings.length;
     }
+  } else if (typeof apiProduct.rating === "number") {
+    ratingValue = apiProduct.rating;
   }
 
   // Handle reviews count: if reviews is an array, use its length
-  let reviewsCount = 100;
+  let reviewsCount = 0;
   if (typeof apiProduct.reviews === "number") {
     reviewsCount = apiProduct.reviews;
   } else if (
@@ -122,8 +116,12 @@ const transformProduct = (apiProduct: ApiProduct): Product => {
 
   // Build images array from API
   let images: string[] = [];
-  if (apiProduct.images && Array.isArray(apiProduct.images) && apiProduct.images.length > 0) {
-    images = apiProduct.images.map(img =>
+  if (
+    apiProduct.images &&
+    Array.isArray(apiProduct.images) &&
+    apiProduct.images.length > 0
+  ) {
+    images = apiProduct.images.map((img) =>
       img.img_url.startsWith("http")
         ? img.img_url
         : `${import.meta.env.VITE_API_BASE_URL}${img.img_url}`
@@ -196,7 +194,6 @@ const Store = () => {
   );
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500000]);
   const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [categories, setCategories] = useState<Category[]>([]);
   const [isFiltering, setIsFiltering] = useState<boolean>(false);
 
@@ -272,18 +269,6 @@ const Store = () => {
     } finally {
       setIsFiltering(false);
     }
-  };
-
-  const toggleFavorite = (productId: string) => {
-    const newFavorites = new Set(favorites);
-    if (newFavorites.has(productId)) {
-      newFavorites.delete(productId);
-      toast.info("Removed from favorites");
-    } else {
-      newFavorites.add(productId);
-      toast.success("Added to favorites!");
-    }
-    setFavorites(newFavorites);
   };
 
   const fetchCategories = useCallback(async () => {
@@ -564,12 +549,7 @@ const Store = () => {
 
             <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {displayedProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  favorites={favorites}
-                  toggleFavorite={toggleFavorite}
-                />
+                <ProductCard key={product.id} product={product} />
               ))}
             </div>
 
