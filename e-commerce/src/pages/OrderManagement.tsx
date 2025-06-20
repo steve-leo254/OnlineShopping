@@ -21,6 +21,7 @@ import {
   Trash2,
   Phone,
 } from "lucide-react";
+import { useUserStats } from "../context/UserStatsContext";
 
 // Define interfaces for type safety
 interface Address {
@@ -108,6 +109,7 @@ const OrdersManagement: React.FC = () => {
   const [paymentStatus, setPaymentStatus] = useState("idle");
 
   const dropdownRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
+  const { refreshStats } = useUserStats();
 
   const statusOptions = [
     { value: "", label: "All Statuses" },
@@ -168,7 +170,9 @@ const OrdersManagement: React.FC = () => {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/admin/orders?${params.toString()}`,
+        `${
+          import.meta.env.VITE_API_BASE_URL
+        }/admin/orders?${params.toString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -242,7 +246,11 @@ const OrdersManagement: React.FC = () => {
   };
 
   // Initiate M-Pesa transaction
-  const initiateTransaction = async (orderId: number, phoneNumber: string, amount: number) => {
+  const initiateTransaction = async (
+    orderId: number,
+    phoneNumber: string,
+    amount: number
+  ) => {
     const transactionData = {
       order_id: orderId,
       phone_number: phoneNumber,
@@ -302,11 +310,7 @@ const OrdersManagement: React.FC = () => {
         formattedPhone = "254" + mpesaPhone.substring(1);
       }
 
-      await initiateTransaction(
-        orderId,
-        formattedPhone,
-        total
-      );
+      await initiateTransaction(orderId, formattedPhone, total);
       let attempts = 0;
       const maxAttempts = 24; // 2 minutes with 5-second intervals
 
@@ -322,6 +326,7 @@ const OrdersManagement: React.FC = () => {
           setSelectedOrderForDelivery(null);
           setMpesaPhone("");
           toast.success("Payment confirmed and order marked as delivered.");
+          refreshStats();
         } else if (status === 3 || status === 2) {
           // REJECTED or CANCELLED
           clearInterval(interval);
@@ -468,6 +473,7 @@ const OrdersManagement: React.FC = () => {
     await updateOrderStatus(orderId, "delivered");
     setShowDeliveredModal(false);
     setSelectedOrderForDelivery(null);
+    refreshStats();
   };
 
   // Fetch orders on mount and when page or status changes
@@ -692,7 +698,9 @@ const OrdersManagement: React.FC = () => {
                                 <div className="p-1">
                                   <button
                                     onClick={() => {
-                                      navigate(`/order-details/${order.order_id}`);
+                                      navigate(
+                                        `/order-details/${order.order_id}`
+                                      );
                                       setOpenDropdown(null);
                                     }}
                                     className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-md transition-colors duration-200"
@@ -703,7 +711,9 @@ const OrdersManagement: React.FC = () => {
 
                                   {order.user && (
                                     <button
-                                      onClick={() => showAccountInfo(order.user!)}
+                                      onClick={() =>
+                                        showAccountInfo(order.user!)
+                                      }
                                       className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-md transition-colors duration-200"
                                     >
                                       <User className="w-4 h-4" />
@@ -727,7 +737,9 @@ const OrdersManagement: React.FC = () => {
                                   {order.status !== "cancelled" &&
                                     order.status !== "delivered" && (
                                       <button
-                                        onClick={() => handleCancelOrder(order.order_id)}
+                                        onClick={() =>
+                                          handleCancelOrder(order.order_id)
+                                        }
                                         className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-700 hover:bg-red-50 rounded-md transition-colors duration-200"
                                       >
                                         <Trash2 className="w-4 h-4" />
@@ -750,9 +762,13 @@ const OrdersManagement: React.FC = () => {
             {total > 0 && (
               <div className="flex items-center justify-between mt-6 z-1">
                 <p className="text-sm text-slate-600">
-                  Showing <span className="font-medium">{(page - 1) * limit + 1}</span> to{" "}
-                  <span className="font-medium">{Math.min(page * limit, total)}</span> of{" "}
-                  <span className="font-medium">{total}</span> results
+                  Showing{" "}
+                  <span className="font-medium">{(page - 1) * limit + 1}</span>{" "}
+                  to{" "}
+                  <span className="font-medium">
+                    {Math.min(page * limit, total)}
+                  </span>{" "}
+                  of <span className="font-medium">{total}</span> results
                 </p>
 
                 <div className="flex items-center gap-2">
@@ -846,7 +862,9 @@ const OrdersManagement: React.FC = () => {
                     >
                       <div
                         className={`w-2 h-2 rounded-full ${
-                          accountInfo.is_active ? "bg-emerald-500" : "bg-red-500"
+                          accountInfo.is_active
+                            ? "bg-emerald-500"
+                            : "bg-red-500"
                         }`}
                       ></div>
                       {accountInfo.is_active ? "Active" : "Inactive"}
@@ -892,8 +910,8 @@ const OrdersManagement: React.FC = () => {
                 </h3>
                 <p className="text-gray-600 text-center mb-6">
                   Are you sure you want to cancel order{" "}
-                  <span className="font-semibold">#{selectedOrderId}</span>? This
-                  action cannot be undone.
+                  <span className="font-semibold">#{selectedOrderId}</span>?
+                  This action cannot be undone.
                 </p>
                 <div className="flex gap-3">
                   <button
@@ -942,8 +960,8 @@ const OrdersManagement: React.FC = () => {
                   <span className="font-semibold">
                     #{selectedOrderForDelivery}
                   </span>{" "}
-                  has been delivered, you can either initiate an M-Pesa payment or
-                  mark it as delivered for cash payments.
+                  has been delivered, you can either initiate an M-Pesa payment
+                  or mark it as delivered for cash payments.
                 </p>
                 <div className="space-y-4">
                   <div>
@@ -1010,7 +1028,10 @@ const OrdersManagement: React.FC = () => {
                         (o) => o.order_id === selectedOrderForDelivery
                       );
                       if (order) {
-                        handleInitiatePayment(selectedOrderForDelivery, order.total);
+                        handleInitiatePayment(
+                          selectedOrderForDelivery,
+                          order.total
+                        );
                       }
                     }}
                     className="flex-1 px-4 py-2.5 text-white bg-green-500 hover:bg-green-600 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
