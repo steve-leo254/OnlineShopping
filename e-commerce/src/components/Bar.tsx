@@ -19,6 +19,8 @@ const Bar: React.FC = () => {
 
   // Pending reviews count state
   const [pendingReviewsCount, setPendingReviewsCount] = useState<number>(0);
+  // Active orders count state
+  const [activeOrdersCount, setActiveOrdersCount] = useState<number>(0);
 
   // Initialize Flowbite (if available) on component mount
   useEffect(() => {
@@ -30,6 +32,7 @@ const Bar: React.FC = () => {
   useEffect(() => {
     if (!isAuthenticated || !token) {
       setPendingReviewsCount(0);
+      setActiveOrdersCount(0);
       return;
     }
     let isMounted = true;
@@ -69,7 +72,28 @@ const Bar: React.FC = () => {
         if (isMounted) setPendingReviewsCount(0);
       }
     };
+    const fetchActiveOrdersCount = async () => {
+      try {
+        // Fetch pending orders
+        const pendingRes = await axios.get(`${API_BASE_URL}/orders`, {
+          params: { limit: 100, status: "pending" },
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        // Fetch processing orders
+        const processingRes = await axios.get(`${API_BASE_URL}/orders`, {
+          params: { limit: 100, status: "processing" },
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const pendingOrders = pendingRes.data.items || [];
+        const processingOrders = processingRes.data.items || [];
+        const count = pendingOrders.length + processingOrders.length;
+        if (isMounted) setActiveOrdersCount(count);
+      } catch {
+        if (isMounted) setActiveOrdersCount(0);
+      }
+    };
     fetchPendingReviewsCount();
+    fetchActiveOrdersCount();
     return () => {
       isMounted = false;
     };
@@ -233,7 +257,7 @@ const Bar: React.FC = () => {
                       </Link>
                       <Link
                         to="/orders-overview"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors duration-200"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors duration-200 relative"
                       >
                         <svg
                           className="w-4 h-4 mr-3"
@@ -249,6 +273,11 @@ const Bar: React.FC = () => {
                           />
                         </svg>
                         My Orders
+                        {activeOrdersCount > 0 && (
+                          <span className="absolute left-5 -top-1 bg-blue-600 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center animate-pulse shadow-lg">
+                            {activeOrdersCount > 99 ? "99+" : activeOrdersCount}
+                          </span>
+                        )}
                       </Link>
                       <Link
                         to="/address-book"
