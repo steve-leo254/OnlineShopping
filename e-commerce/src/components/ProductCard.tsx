@@ -67,7 +67,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isAuthenticated || !token || !userId) return;
+    if (!isAuthenticated || !token || !userId) {
+      toast.error("You must be logged in to use favorites.");
+      return;
+    }
     setIsProcessing(true);
     const isFav = isFavorite(product.id.toString());
     try {
