@@ -206,22 +206,37 @@ const ProductCard: React.FC<ProductCardProps> = ({
         {/* Rating & Reviews */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`w-4 h-4 ${
-                  i < Math.floor(product.rating)
-                    ? "text-yellow-400 fill-current"
-                    : "text-gray-300"
-                }`}
-              />
-            ))}
+            {[...Array(5)].map((_, i) => {
+              const rating = product.rating || 0;
+              const isFilled = i < Math.floor(rating);
+              const isHalfFilled = i === Math.floor(rating) && rating % 1 >= 0.5;
+              
+              return (
+                <div key={i} className="relative">
+                  <Star
+                    className={`w-4 h-4 ${
+                      isFilled 
+                        ? "text-yellow-400 fill-yellow-400" 
+                        : "text-gray-300 fill-gray-300"
+                    }`}
+                  />
+                  {isHalfFilled && (
+                    <Star
+                      className="absolute inset-0 w-4 h-4 text-yellow-400 fill-yellow-400"
+                      style={{
+                        clipPath: 'polygon(0 0, 50% 0, 50% 100%, 0 100%)'
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
           <span className="text-sm font-semibold text-gray-900">
-            {product.rating.toFixed(1)}
+            {product.rating ? product.rating.toFixed(1) : '0.0'}
           </span>
           <span className="text-xs text-gray-500">
-            ({product.reviews.toLocaleString()})
+            ({(product.reviews || 0).toLocaleString()})
           </span>
         </div>
         
