@@ -126,7 +126,7 @@ class FavoriteBase(BaseModel):
 
 
 class FavoriteCreate(FavoriteBase):
-    user_id: int
+    user_id: Optional[int] = None
 
 
 class FavoriteResponse(FavoriteBase):
