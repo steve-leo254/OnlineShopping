@@ -28,6 +28,7 @@ import ResetPassword from "./pages/ResetPassword";
 import ProtectedRoute from "./assets/PrivateRoutes";
 import ReviewPage from "./pages/pending-views";
 import WishList from "./pages/WishList";
+import TermsAndConditions from "./pages/Terms&Condition";
 
 function App() {
   return (
@@ -52,6 +53,8 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/SuperAdmin" element={<SuperAdminRegister />} />
+            <Route path='/termsconditions' element={<TermsAndConditions />} />
+            
 
             <Route element={<Layout />}>
               <Route path="/pending-reviews" element={<ReviewPage />} />

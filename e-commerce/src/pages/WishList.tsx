@@ -6,6 +6,7 @@ import { useFetchProducts } from "../components/UseFetchProducts";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { formatCurrency } from "../cart/formatCurrency";
 
 interface ApiProduct {
   id: string;
@@ -200,23 +201,23 @@ const WishList: React.FC = () => {
                         : `${import.meta.env.VITE_API_BASE_URL}${
                             product.images[0].img_url
                           }`
-                      : "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop"
+                      : ""
                   }
                   alt={product.name}
                   className="w-full h-40 sm:h-48 lg:h-56 xl:h-64 object-cover group-hover:scale-105 transition-transform duration-500"
                 />
 
                 {/* Overlay Actions - Only show on hover for larger screens */}
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 hidden sm:flex items-center justify-center">
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <button className="p-2 lg:p-3 bg-white rounded-full shadow-lg hover:scale-110 transition-transform">
-                      <Eye className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
-                    </button>
-                    <button className="p-2 lg:p-3 bg-white rounded-full shadow-lg hover:scale-110 transition-transform">
-                      <Share2 className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
-                    </button>
-                  </div>
-                </div>
+                 <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+    <div className="flex gap-2 pointer-events-auto">
+      <button className="p-2 lg:p-3 bg-white rounded-full shadow-lg hover:scale-110 transition-transform">
+        <Eye className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
+      </button>
+      <button className="p-2 lg:p-3 bg-white rounded-full shadow-lg hover:scale-110 transition-transform">
+        <Share2 className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
+      </button>
+    </div>
+  </div>
 
                 {/* Remove Button - Always visible on mobile, hover on desktop */}
                 <button
@@ -265,11 +266,11 @@ const WishList: React.FC = () => {
 
                 <div className="flex items-center gap-2 mb-3 sm:mb-4">
                   <span className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold text-gray-900">
-                    ${product.price.toFixed(2)}
+                    {formatCurrency(product.price)}
                   </span>
                   {product.original_price && (
                     <span className="text-xs sm:text-sm lg:text-base text-gray-500 line-through">
-                      ${product.original_price.toFixed(2)}
+                      {formatCurrency(product.original_price)}
                     </span>
                   )}
                 </div>
