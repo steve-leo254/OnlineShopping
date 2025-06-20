@@ -643,7 +643,7 @@ const ProductDetail: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Truck className="w-5 h-5" />
-                <span>Free Shipping</span>
+                <span>Home delivery service</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Shield className="w-5 h-5" />
@@ -651,7 +651,7 @@ const ProductDetail: React.FC = () => {
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <RotateCcw className="w-5 h-5" />
-                <span>30-Day Return</span>
+                <span>7-Day Return</span>
               </div>
             </div>
           </div>

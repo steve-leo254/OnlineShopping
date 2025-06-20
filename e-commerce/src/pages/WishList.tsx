@@ -140,7 +140,9 @@ const WishList: React.FC = () => {
 
               {/* Call to action */}
               <div className="space-y-3 sm:space-y-4">
-                <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-full font-medium hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl text-sm sm:text-base">
+                <button
+                onClick={() => navigate("/store")}
+                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-full font-medium hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl text-sm sm:text-base">
                   <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
                   Start Exploring
                 </button>

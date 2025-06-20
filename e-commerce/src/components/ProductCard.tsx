@@ -267,7 +267,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
           <div className="flex items-center gap-2 text-xs text-gray-600">
             <Truck className="w-3 h-3" />
-            <span>Free delivery on orders over $50</span>
+            <span>Convenient delivery options</span>
           </div>
         </div>
 
