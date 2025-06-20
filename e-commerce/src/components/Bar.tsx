@@ -1,8 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import CartDropdown from "./CartDropdown";
 import { useShoppingCart } from "../context/ShoppingCartContext";
+import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 
 declare global {
   interface Window {
@@ -12,8 +14,11 @@ declare global {
 
 // Define the component as a React Functional Component (React.FC) for TypeScript compliance
 const Bar: React.FC = () => {
-  const { isAuthenticated, logout, role } = useAuth();
+  const { isAuthenticated, logout, role, token } = useAuth();
   const { cartQuantity } = useShoppingCart();
+
+  // Pending reviews count state
+  const [pendingReviewsCount, setPendingReviewsCount] = useState<number>(0);
 
   // Initialize Flowbite (if available) on component mount
   useEffect(() => {
@@ -21,6 +26,54 @@ const Bar: React.FC = () => {
       window.initFlowbite();
     }
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated || !token) {
+      setPendingReviewsCount(0);
+      return;
+    }
+    let isMounted = true;
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    let currentUser: { id: number; name: string } | null = null;
+    try {
+      const decoded: any = jwtDecode(token);
+      currentUser = { id: decoded.id, name: decoded.sub };
+    } catch {
+      currentUser = null;
+    }
+    if (!currentUser) return;
+    const fetchPendingReviewsCount = async () => {
+      try {
+        const orderRes = await axios.get(`${API_BASE_URL}/orders`, {
+          params: { limit: 100, status: "delivered" },
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const deliveredOrders = orderRes.data.items || [];
+        let count = 0;
+        deliveredOrders.forEach((order: any) => {
+          if (!order.order_details) return;
+          order.order_details.forEach((detail: any) => {
+            const product = detail.product;
+            const alreadyReviewed = (product.reviews || []).some(
+              (rev: any) =>
+                rev.user_id === currentUser!.id &&
+                rev.order_id === order.order_id
+            );
+            if (!alreadyReviewed) {
+              count++;
+            }
+          });
+        });
+        if (isMounted) setPendingReviewsCount(count);
+      } catch {
+        if (isMounted) setPendingReviewsCount(0);
+      }
+    };
+    fetchPendingReviewsCount();
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated, token]);
 
   // Handle logout functionality
   const handleLogout = () => {
@@ -224,7 +277,7 @@ const Bar: React.FC = () => {
                       </Link>
                       <Link
                         to="/pending-reviews"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors duration-200"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors duration-200 relative"
                       >
                         <svg
                           className="w-4 h-4 mr-3"
@@ -240,6 +293,13 @@ const Bar: React.FC = () => {
                           />
                         </svg>
                         Pending Reviews
+                        {pendingReviewsCount > 0 && (
+                          <span className="absolute left-5 -top-1 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center animate-pulse shadow-lg">
+                            {pendingReviewsCount > 99
+                              ? "99+"
+                              : pendingReviewsCount}
+                          </span>
+                        )}
                       </Link>
                       {(role === "admin" || role === "SUPERADMIN") && (
                         <>
