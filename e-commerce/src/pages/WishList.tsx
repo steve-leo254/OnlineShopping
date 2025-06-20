@@ -208,16 +208,16 @@ const WishList: React.FC = () => {
                 />
 
                 {/* Overlay Actions - Only show on hover for larger screens */}
-                 <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-    <div className="flex gap-2 pointer-events-auto">
-      <button className="p-2 lg:p-3 bg-white rounded-full shadow-lg hover:scale-110 transition-transform">
-        <Eye className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
-      </button>
-      <button className="p-2 lg:p-3 bg-white rounded-full shadow-lg hover:scale-110 transition-transform">
-        <Share2 className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
-      </button>
-    </div>
-  </div>
+                <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                  <div className="flex gap-2 pointer-events-auto">
+                    <button className="p-2 lg:p-3 bg-white rounded-full shadow-lg hover:scale-110 transition-transform">
+                      <Eye className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
+                    </button>
+                    <button className="p-2 lg:p-3 bg-white rounded-full shadow-lg hover:scale-110 transition-transform">
+                      <Share2 className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
+                    </button>
+                  </div>
+                </div>
 
                 {/* Remove Button - Always visible on mobile, hover on desktop */}
                 <button
