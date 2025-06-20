@@ -208,16 +208,19 @@ const WishList: React.FC = () => {
                 />
 
                 {/* Overlay Actions - Only show on hover for larger screens */}
-                 <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-    <div className="flex gap-2 pointer-events-auto">
-      <button className="p-2 lg:p-3 bg-white rounded-full shadow-lg hover:scale-110 transition-transform">
-        <Eye className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
-      </button>
-      <button className="p-2 lg:p-3 bg-white rounded-full shadow-lg hover:scale-110 transition-transform">
-        <Share2 className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
-      </button>
-    </div>
-  </div>
+                <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                  <div className="flex gap-2 pointer-events-auto">
+                    <button
+                      onClick={() => navigate(`/product-details/${product.id}`)}
+                      className="p-2 lg:p-3 bg-white rounded-full shadow-lg hover:scale-110 transition-transform"
+                    >
+                      <Eye className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
+                    </button>
+                    <button className="p-2 lg:p-3 bg-white rounded-full shadow-lg hover:scale-110 transition-transform">
+                      <Share2 className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
+                    </button>
+                  </div>
+                </div>
 
                 {/* Remove Button - Always visible on mobile, hover on desktop */}
                 <button
@@ -330,7 +333,9 @@ const WishList: React.FC = () => {
               <button className="w-full sm:w-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-full font-medium hover:scale-105 transition-transform duration-300 shadow-lg text-sm sm:text-base">
                 Share Wishlist
               </button>
-              <button className="w-full sm:w-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 bg-white text-gray-700 rounded-full font-medium hover:bg-gray-50 transition-colors duration-300 border border-gray-200 text-sm sm:text-base">
+              <button
+                onClick={() => navigate("/store")}
+               className="w-full sm:w-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 bg-white text-gray-700 rounded-full font-medium hover:bg-gray-50 transition-colors duration-300 border border-gray-200 text-sm sm:text-base">
                 Continue Shopping
               </button>
             </div>
