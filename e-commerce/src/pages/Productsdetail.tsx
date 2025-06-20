@@ -16,8 +16,9 @@ import {
   X,
   Eye,
 } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useShoppingCart } from "../context/ShoppingCartContext";
 
 // Types
 interface Product {
@@ -41,13 +42,15 @@ interface Product {
   specifications: Record<string, string | number>;
 }
 
+// Backend Review type
 interface Review {
   id: number;
-  user: string;
+  user_id: number;
+  product_id: number;
+  order_id: number;
   rating: number;
   comment: string;
-  date: string;
-  verified: boolean;
+  created_at: string;
 }
 
 type TabType = "description" | "specifications" | "reviews";
@@ -92,30 +95,33 @@ const staticProduct: Product = {
 const staticReviews: Review[] = [
   {
     id: 1,
-    user: "Sarah Johnson",
+    user_id: 1,
+    product_id: 1,
+    order_id: 1,
     rating: 5,
     comment:
       "Absolutely amazing headphones! The sound quality is incredible and the noise cancellation works perfectly. I use them daily for work calls and music.",
-    date: "2024-01-15",
-    verified: true,
+    created_at: "2024-01-15",
   },
   {
     id: 2,
-    user: "Mike Chen",
+    user_id: 2,
+    product_id: 1,
+    order_id: 2,
     rating: 4,
     comment:
       "Great build quality and comfortable to wear. Battery life is excellent. Only minor complaint is that they're a bit heavy for long sessions.",
-    date: "2024-01-10",
-    verified: true,
+    created_at: "2024-01-10",
   },
   {
     id: 3,
-    user: "Emily Davis",
+    user_id: 3,
+    product_id: 1,
+    order_id: 3,
     rating: 5,
     comment:
       "Best purchase I've made this year. The audio is crystal clear and the ANC is top-notch. Highly recommend!",
-    date: "2024-01-08",
-    verified: false,
+    created_at: "2024-01-08",
   },
 ];
 
@@ -192,14 +198,14 @@ const staticRelatedProducts: Product[] = [
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [reviews] = useState<Review[]>(staticReviews);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
-  const [quantity, setQuantity] = useState<number>(1);
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<TabType>("description");
   const [showImageModal, setShowImageModal] = useState<boolean>(false);
@@ -212,6 +218,18 @@ const ProductDetail: React.FC = () => {
     message: "",
     type: "success",
   });
+  const {
+    addToCart,
+    increaseCartQuantity,
+    decreaseCartQuantity,
+    getItemQuantity,
+  } = useShoppingCart();
+
+  const calculateAverageRating = (reviews: Review[]): number => {
+    if (!reviews || reviews.length === 0) return 0;
+    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+    return totalRating / reviews.length;
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -225,6 +243,7 @@ const ProductDetail: React.FC = () => {
       try {
         const res = await axios.get(`${API_BASE_URL}/public/products/${id}`);
         const data = res.data;
+        
         // Transform images
         let images: string[] = [];
         if (
@@ -238,6 +257,7 @@ const ProductDetail: React.FC = () => {
               : `${API_BASE_URL}${img.img_url}`
           );
         }
+        
         // Transform specifications
         let specifications: Record<string, string | number> = {};
         if (
@@ -250,30 +270,48 @@ const ProductDetail: React.FC = () => {
             }
           });
         }
-        // Compose product object
+  
+        // Fetch reviews first to calculate rating
+        let fetchedReviews: Review[] = [];
+        try {
+          const reviewsRes = await axios.get(
+            `${API_BASE_URL}/products/${data.id}/reviews`
+          );
+          fetchedReviews = reviewsRes.data;
+          setReviews(fetchedReviews);
+        } catch {
+          setReviews([]);
+        }
+  
+        // Calculate rating from reviews
+        const calculatedRating = calculateAverageRating(fetchedReviews);
+        
+        // Compose product object with calculated rating
         const prod: Product = {
           id: data.id,
           name: data.name,
           price: data.price,
           originalPrice: data.original_price,
-          rating: data.rating || 0,
-          reviews: data.reviews ? data.reviews.length : 0,
+          rating: calculatedRating, // Use calculated rating
+          reviews: fetchedReviews.length, // Use actual review count
           images,
           category: data.category?.name || "Uncategorized",
           brand: data.brand || "Unknown",
           inStock: data.stock_quantity > 0,
           discount: data.discount || 0,
           isNew: data.is_new || false,
-          isFavorite: false, // TODO: fetch favorite status if needed
+          isFavorite: false,
           stockQuantity: data.stock_quantity,
           description: data.description || "",
           barcode: data.barcode,
           createdAt: data.created_at,
           specifications,
         };
+        
         setProduct(prod);
-        setIsFavorite(false); // or fetch favorite status
-        // Fetch related products
+        setIsFavorite(false);
+  
+        // Fetch related products with ratings
         if (data.category && data.category.id) {
           const relRes = await axios.get(`${API_BASE_URL}/public/products`, {
             params: { category_id: data.category.id, limit: 8 },
@@ -281,37 +319,59 @@ const ProductDetail: React.FC = () => {
           const relItems = relRes.data.items.filter(
             (p: any) => p.id !== data.id
           );
-          setRelatedProducts(
-            relItems.map((item: any) => ({
-              id: item.id,
-              name: item.name,
-              price: item.price,
-              originalPrice: item.original_price,
-              rating: item.rating || 0,
-              reviews: item.reviews ? item.reviews.length : 0,
-              images:
-                item.images && item.images.length > 0
-                  ? item.images.map((img: any) =>
-                      img.img_url.startsWith("http")
-                        ? img.img_url
-                        : `${API_BASE_URL}${img.img_url}`
-                    )
-                  : [
-                      "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop",
-                    ],
-              category: item.category?.name || "Uncategorized",
-              brand: item.brand || "Unknown",
-              inStock: item.stock_quantity > 0,
-              discount: item.discount || 0,
-              isNew: item.is_new || false,
-              isFavorite: false,
-              stockQuantity: item.stock_quantity,
-              description: item.description || "",
-              barcode: item.barcode,
-              createdAt: item.created_at,
-              specifications: {},
-            }))
+          
+          // Fetch reviews for each related product to calculate ratings
+          const relatedProductsWithRatings = await Promise.all(
+            relItems.map(async (item: any) => {
+              let itemRating = 0;
+              let itemReviewCount = 0;
+              
+              try {
+                const itemReviewsRes = await axios.get(
+                  `${API_BASE_URL}/products/${item.id}/reviews`
+                );
+                const itemReviews = itemReviewsRes.data;
+                itemRating = calculateAverageRating(itemReviews);
+                itemReviewCount = itemReviews.length;
+              } catch {
+                // If reviews fetch fails, keep default values
+                itemRating = 0;
+                itemReviewCount = 0;
+              }
+              
+              return {
+                id: item.id,
+                name: item.name,
+                price: item.price,
+                originalPrice: item.original_price,
+                rating: itemRating, // Use calculated rating
+                reviews: itemReviewCount, // Use actual review count
+                images:
+                  item.images && item.images.length > 0
+                    ? item.images.map((img: any) =>
+                        img.img_url.startsWith("http")
+                          ? img.img_url
+                          : `${API_BASE_URL}${img.img_url}`
+                      )
+                    : [
+                        "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop",
+                      ],
+                category: item.category?.name || "Uncategorized",
+                brand: item.brand || "Unknown",
+                inStock: item.stock_quantity > 0,
+                discount: item.discount || 0,
+                isNew: item.is_new || false,
+                isFavorite: false,
+                stockQuantity: item.stock_quantity,
+                description: item.description || "",
+                barcode: item.barcode,
+                createdAt: item.created_at,
+                specifications: {},
+              };
+            })
           );
+          
+          setRelatedProducts(relatedProductsWithRatings);
         } else {
           setRelatedProducts([]);
         }
@@ -347,39 +407,21 @@ const ProductDetail: React.FC = () => {
 
   const handleAddToCart = (): void => {
     if (!product) return;
-
-    if (quantity > product.stockQuantity) {
+    if (getItemQuantity(product.id) >= product.stockQuantity) {
       showNotification(
         `Cannot add more than available stock (${product.stockQuantity})`,
         "error"
       );
       return;
     }
-
-    // Simulate API call
-    setTimeout(() => {
-      showNotification(
-        `${quantity} ${product.name}(s) added to cart!`,
-        "success"
-      );
-    }, 500);
-  };
-
-  const handleQuantityChange = (newQuantity: number): void => {
-    if (product && newQuantity >= 1 && newQuantity <= product.stockQuantity) {
-      setQuantity(newQuantity);
-    }
-  };
-
-  const toggleFavorite = (): void => {
-    // Simulate API call
-    setTimeout(() => {
-      setIsFavorite(!isFavorite);
-      showNotification(
-        isFavorite ? "Removed from favorites" : "Added to favorites!",
-        isFavorite ? "info" : "success"
-      );
-    }, 300);
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      img_url: product.images[0] || null,
+      stockQuantity: product.stockQuantity,
+    });
+    showNotification(`${product.name} added to cart!`, "success");
   };
 
   const handleShare = async (): Promise<void> => {
@@ -413,7 +455,7 @@ const ProductDetail: React.FC = () => {
   };
 
   const handleRelatedProductClick = (relatedProduct: Product): void => {
-    showNotification(`Viewing ${relatedProduct.name}`, "info");
+    navigate(`/product-details/${relatedProduct.id}`);
   };
 
   const handleBackToProducts = (): void => {
@@ -421,16 +463,28 @@ const ProductDetail: React.FC = () => {
   };
 
   const renderStars = (rating: number) => {
+    const numericRating = Number(rating) || 0;
+
     return (
       <div className="flex items-center">
-        {[...Array(5)].map((_, i) => (
-          <Star
-            key={i}
-            className={`w-4 h-4 ${
-              i < rating ? "text-yellow-400 fill-current" : "text-gray-300"
-            }`}
-          />
-        ))}
+        {[...Array(5)].map((_, i) => {
+          const isFullStar = i < Math.floor(numericRating);
+          const isHalfStar =
+            i === Math.floor(numericRating) && numericRating % 1 >= 0.5;
+
+          return (
+            <Star
+              key={i}
+              className={`w-4 h-4 ${
+                isFullStar
+                  ? "text-yellow-400 fill-yellow-400"
+                  : isHalfStar
+                  ? "text-yellow-400 fill-yellow-200"
+                  : "text-gray-300"
+              }`}
+            />
+          );
+        })}
       </div>
     );
   };
@@ -489,17 +543,7 @@ const ProductDetail: React.FC = () => {
       {renderNotification()}
 
       {/* Header */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <button
-            onClick={handleBackToProducts}
-            className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            Back to Products
-          </button>
-        </div>
-      </div>
+     
 
       {/* Product Details */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -635,16 +679,24 @@ const ProductDetail: React.FC = () => {
                 <span className="text-gray-700 font-medium">Quantity:</span>
                 <div className="flex items-center border border-gray-300 rounded-lg">
                   <button
-                    onClick={() => handleQuantityChange(quantity - 1)}
-                    disabled={quantity <= 1}
+                    onClick={() => decreaseCartQuantity(product.id)}
+                    disabled={getItemQuantity(product.id) <= 1}
                     className="p-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
-                  <span className="px-4 py-2 font-medium">{quantity}</span>
+                  <span className="px-4 py-2 font-medium">
+                    {getItemQuantity(product.id)}
+                  </span>
                   <button
-                    onClick={() => handleQuantityChange(quantity + 1)}
-                    disabled={quantity >= product.stockQuantity}
+                    onClick={() => {
+                      if (getItemQuantity(product.id) < product.stockQuantity) {
+                        increaseCartQuantity(product.id);
+                      }
+                    }}
+                    disabled={
+                      getItemQuantity(product.id) >= product.stockQuantity
+                    }
                     className="p-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus className="w-4 h-4" />
@@ -665,7 +717,18 @@ const ProductDetail: React.FC = () => {
               </button>
 
               <button
-                onClick={toggleFavorite}
+                onClick={() => {
+                  // Simulate API call
+                  setTimeout(() => {
+                    setIsFavorite(!isFavorite);
+                    showNotification(
+                      isFavorite
+                        ? "Removed from favorites"
+                        : "Added to favorites!",
+                      isFavorite ? "info" : "success"
+                    );
+                  }, 300);
+                }}
                 className={`p-3 rounded-lg border transition-colors ${
                   isFavorite
                     ? "bg-red-50 border-red-200 text-red-600"
@@ -752,16 +815,11 @@ const ProductDetail: React.FC = () => {
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <span className="font-medium text-gray-900">
-                            {review.user}
+                            {`User #${review.user_id}`}
                           </span>
-                          {review.verified && (
-                            <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
-                              Verified Purchase
-                            </span>
-                          )}
                         </div>
                         <span className="text-sm text-gray-500">
-                          {review.date}
+                          {new Date(review.created_at).toLocaleDateString()}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 mb-3">

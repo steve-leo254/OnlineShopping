@@ -550,14 +550,38 @@ const ProductsTable: React.FC = () => {
                           </span>
                         </td>
                         <td className="py-4 px-6">
-                          <div className="flex items-center gap-1">
-                            <span className="text-yellow-400">★</span>
-                            <span className="text-sm font-medium">
-                              {product.rating}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              ({product.reviews})
-                            </span>
+                          <div className="flex flex-col gap-0.5">
+                            {Array.isArray(product.reviews) &&
+                            product.reviews.length > 0 ? (
+                              (() => {
+                                const count = product.reviews.length;
+                                const avg =
+                                  product.reviews.reduce(
+                                    (sum, r) => sum + (r.rating || 0),
+                                    0
+                                  ) / count;
+                                return (
+                                  <span className="text-sm text-gray-800">
+                                    {avg.toFixed(1)}{" "}
+                                    <span className="text-yellow-400">★</span>{" "}
+                                    from {count} review{count > 1 ? "s" : ""}
+                                  </span>
+                                );
+                              })()
+                            ) : typeof product.rating === "number" &&
+                              typeof product.reviews === "number" &&
+                              product.reviews > 0 ? (
+                              <span className="text-sm text-gray-800">
+                                {product.rating.toFixed(1)}{" "}
+                                <span className="text-yellow-400">★</span> from{" "}
+                                {product.reviews} review
+                                {product.reviews > 1 ? "s" : ""}
+                              </span>
+                            ) : (
+                              <span className="text-sm text-gray-400">
+                                No reviews
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="py-4 px-6">

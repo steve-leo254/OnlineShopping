@@ -14,10 +14,21 @@ import { useFetchProducts } from "../components/UseFetchProducts";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
 import { toast } from "react-toastify"; // Import toast
+import { useNavigate } from "react-router-dom";
 
 interface Category {
   id: string | null;
   name: string;
+}
+
+interface ReviewObject {
+  rating: number;
+  comment: string;
+  id: string;
+  user_id: string;
+  product_id: string;
+  order_id: string;
+  created_at: string;
 }
 
 interface ApiProduct {
@@ -26,8 +37,8 @@ interface ApiProduct {
   price: number;
   original_price?: number;
   cost?: number;
-  rating?: number;
-  reviews?: number;
+  rating?: number | ReviewObject[];
+  reviews?: number | ReviewObject[];
   img_url?: string;
   category?: { id: string; name: string };
   brand?: string;
@@ -75,6 +86,37 @@ const transformProduct = (apiProduct: ApiProduct): Product => {
       : new Date().getTime() - new Date(apiProduct.created_at).getTime() <
         30 * 24 * 60 * 60 * 1000;
 
+  // Handle rating: could be a number or an array of review objects
+  let ratingValue = 4.5;
+  if (typeof apiProduct.rating === "number") {
+    ratingValue = apiProduct.rating;
+  } else if (
+    Array.isArray(apiProduct.rating) &&
+    apiProduct.rating &&
+    apiProduct.rating.length > 0
+  ) {
+    // If it's an array of review objects, calculate average
+    const ratings = apiProduct.rating
+      .map((r: any) => (typeof r.rating === "number" ? r.rating : null))
+      .filter((r: number | null) => r !== null) as number[];
+    if (ratings.length > 0) {
+      ratingValue =
+        ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length;
+    }
+  }
+
+  // Handle reviews count: if reviews is an array, use its length
+  let reviewsCount = 100;
+  if (typeof apiProduct.reviews === "number") {
+    reviewsCount = apiProduct.reviews;
+  } else if (
+    Array.isArray(apiProduct.reviews) &&
+    apiProduct.reviews &&
+    apiProduct.reviews.length > 0
+  ) {
+    reviewsCount = apiProduct.reviews.length;
+  }
+
   return {
     id: apiProduct.id,
     name: apiProduct.name,
@@ -84,8 +126,8 @@ const transformProduct = (apiProduct: ApiProduct): Product => {
       (apiProduct.price > (apiProduct.cost ?? 0)
         ? apiProduct.price
         : apiProduct.cost ?? 0),
-    rating: apiProduct.rating || 4.5,
-    reviews: apiProduct.reviews || 100,
+    rating: ratingValue,
+    reviews: reviewsCount,
     img_url: apiProduct.img_url
       ? `${import.meta.env.VITE_API_BASE_URL}${apiProduct.img_url}`
       : "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop",
@@ -142,6 +184,8 @@ const Store = () => {
   const [isFiltering, setIsFiltering] = useState<boolean>(false);
 
   const productsPerPage = 8;
+
+  const navigate = useNavigate();
 
   // Debounce search term
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -547,7 +591,12 @@ const Store = () => {
                           }
                         />
                       </button>
-                      <button className="p-2 bg-white text-gray-600 hover:text-blue-600 rounded-full shadow-lg transition-colors">
+                      <button
+                        onClick={() =>
+                          navigate(`/product-details/${product.id}`)
+                        }
+                        className="p-2 bg-white text-gray-600 hover:text-blue-600 rounded-full shadow-lg transition-colors"
+                      >
                         <Eye className="w-4 h-4" />
                       </button>
                     </div>
