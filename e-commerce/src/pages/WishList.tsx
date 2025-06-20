@@ -3,6 +3,7 @@ import { Heart, ShoppingCart, X, Star, Eye, Share2 } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { useFetchProducts } from "../components/UseFetchProducts";
+import { useShoppingCart } from "../context/ShoppingCartContext";
 
 interface ApiProduct {
   id: string;
@@ -23,6 +24,7 @@ interface Favorite {
 
 const WishList: React.FC = () => {
   const { token, isAuthenticated } = useAuth();
+  const { addToCart, getItemQuantity } = useShoppingCart();
   const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]); // for removing
   const [wishlistProducts, setWishlistProducts] = useState<ApiProduct[]>([]);
@@ -78,11 +80,6 @@ const WishList: React.FC = () => {
     } catch (err) {
       // Optionally revert UI or show error
     }
-  };
-
-  const addToCart = (product: ApiProduct) => {
-    // Simulate adding to cart
-    console.log(`Added ${product.name} to cart`);
   };
 
   return (
@@ -258,7 +255,26 @@ const WishList: React.FC = () => {
                 {/* Actions */}
                 <div className="flex gap-2 sm:gap-3">
                   <button
-                    onClick={() => addToCart(product)}
+                    onClick={() =>
+                      addToCart({
+                        id:
+                          typeof product.id === "string"
+                            ? parseInt(product.id)
+                            : product.id,
+                        name: product.name,
+                        price: product.price,
+                        img_url:
+                          Array.isArray(product.images) &&
+                          product.images.length > 0
+                            ? product.images[0].img_url.startsWith("http")
+                              ? product.images[0].img_url
+                              : `${import.meta.env.VITE_API_BASE_URL}${
+                                  product.images[0].img_url
+                                }`
+                            : null,
+                        stockQuantity: (product as any).stock_quantity || 1,
+                      })
+                    }
                     className="flex-1 flex items-center justify-center gap-1 sm:gap-2 py-2 sm:py-2.5 lg:py-3 px-2 sm:px-3 lg:px-4 rounded-lg lg:rounded-xl font-medium transition-all duration-300 bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:shadow-lg hover:scale-105 text-xs sm:text-sm lg:text-base"
                   >
                     <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
