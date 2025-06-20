@@ -29,67 +29,72 @@ import ProtectedRoute from "./assets/PrivateRoutes";
 import ReviewPage from "./pages/pending-views";
 import WishList from "./pages/WishList";
 import TermsAndConditions from "./pages/Terms&Condition";
+import { FavoritesProvider } from "./context/FavoritesContext";
 
 function App() {
   return (
     <AuthProvider>
-      <ShoppingCartProvider>
-        <Router>
-          <ToastContainer
-            position="top-left"
-            autoClose={3000}
-            hideProgressBar={true}
-            newestOnTop={true}
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            progressClassName="toast-progress-bar"
-          />
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/verify-email" element={<EmailVerification />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/SuperAdmin" element={<SuperAdminRegister />} />
-            <Route path='/termsconditions' element={<TermsAndConditions />} />
-            
+      <FavoritesProvider>
+        <ShoppingCartProvider>
+          <Router>
+            <ToastContainer
+              position="top-left"
+              autoClose={3000}
+              hideProgressBar={true}
+              newestOnTop={true}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              progressClassName="toast-progress-bar"
+            />
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/verify-email" element={<EmailVerification />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/SuperAdmin" element={<SuperAdminRegister />} />
+              <Route path="/termsconditions" element={<TermsAndConditions />} />
 
-            <Route element={<Layout />}>
-              <Route path="/pending-reviews" element={<ReviewPage />} />
-              <Route path="/wishlist" element={<WishList />} />
-              <Route index element={<Home />} />
-              <Route path="/product-details/:id" element={<ProductDetail />} />
-              <Route path="/store" element={<Store />} />
-              <Route path="/shopping-cart" element={<ShoppingCart />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Route>
-            <Route element={<ProtectedRoute />}>
               <Route element={<Layout />}>
-                <Route path="/products" element={<Products />} />
-                <Route path="/AdminPage" element={<SuperAdminDashboard />} />
-                <Route path="/checkout" element={<Checkout />} />
-
+                <Route path="/pending-reviews" element={<ReviewPage />} />
+                <Route path="/wishlist" element={<WishList />} />
+                <Route index element={<Home />} />
                 <Route
-                  path="/order-details/:orderId"
-                  element={<OrderDetails />}
+                  path="/product-details/:id"
+                  element={<ProductDetail />}
                 />
-
-                <Route path="/orders-overview" element={<OrdersOverview />} />
-                <Route
-                  path="/orders-management"
-                  element={<OrdersManagement />}
-                />
-
-                <Route path="/MyProfile" element={<AccountProfile />} />
-                <Route path="/address-book" element={<AddressBook />} />
+                <Route path="/store" element={<Store />} />
+                <Route path="/shopping-cart" element={<ShoppingCart />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="*" element={<NotFound />} />
               </Route>
-            </Route>
-          </Routes>
-        </Router>
-      </ShoppingCartProvider>
+              <Route element={<ProtectedRoute />}>
+                <Route element={<Layout />}>
+                  <Route path="/products" element={<Products />} />
+                  <Route path="/AdminPage" element={<SuperAdminDashboard />} />
+                  <Route path="/checkout" element={<Checkout />} />
+
+                  <Route
+                    path="/order-details/:orderId"
+                    element={<OrderDetails />}
+                  />
+
+                  <Route path="/orders-overview" element={<OrdersOverview />} />
+                  <Route
+                    path="/orders-management"
+                    element={<OrdersManagement />}
+                  />
+
+                  <Route path="/MyProfile" element={<AccountProfile />} />
+                  <Route path="/address-book" element={<AddressBook />} />
+                </Route>
+              </Route>
+            </Routes>
+          </Router>
+        </ShoppingCartProvider>
+      </FavoritesProvider>
     </AuthProvider>
   );
 }

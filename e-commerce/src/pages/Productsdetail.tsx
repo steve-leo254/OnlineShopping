@@ -20,6 +20,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { useAuth } from "../context/AuthContext";
+import { useUserStats } from "../context/UserStatsContext";
 
 // Types
 interface Product {
@@ -106,6 +107,7 @@ const ProductDetail: React.FC = () => {
     getItemQuantity,
   } = useShoppingCart();
   const { isAuthenticated, token } = useAuth();
+  const { refreshStats } = useUserStats();
 
   const calculateAverageRating = (reviews: Review[]): number => {
     if (!reviews || reviews.length === 0) return 0;
@@ -442,6 +444,7 @@ const ProductDetail: React.FC = () => {
           showNotification("Favorite not found.", "error");
         }
       }
+      refreshStats(); // Update context after success
     } catch (err) {
       setIsFavorite(prevFavorite); // Revert on error
       showNotification("Failed to update favorites.", "error");
