@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { formatCurrency } from "../cart/formatCurrency";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { useUserStats } from "../context/UserStatsContext";
 
 interface Order {
   order_id: number;
@@ -102,6 +103,7 @@ const OrdersOverview: React.FC = () => {
   );
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<number | null>(null);
+  const { refreshStats } = useUserStats();
 
   // Mapping frontend dropdown values to API status values
   const statusMapping = {
@@ -196,6 +198,7 @@ const OrdersOverview: React.FC = () => {
       setShowConfirmModal(false);
       setOrderToCancel(null);
       await fetchOrders();
+      refreshStats();
     } catch (error: unknown) {
       console.error("Error cancelling order:", error);
       const errorMessage = axios.isAxiosError(error)
