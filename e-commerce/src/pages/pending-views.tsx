@@ -332,34 +332,8 @@ const ReviewPage: React.FC = () => {
   // Main review page
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-2.5">
-                <Package className="text-white" size={20} />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">
-                  Product Reviews
-                </h1>
-                <p className="text-gray-600 text-sm">
-                  Welcome back,{" "}
-                  <span className="font-medium text-blue-600">
-                    {currentUser ? currentUser.name : "User"}
-                  </span>{" "}
-                  ✨
-                </p>
-              </div>
-            </div>
-            <button className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-sm">
-              <ArrowLeft size={16} />
-              Back to Orders
-            </button>
-          </div>
-        </div>
-      </div>
+      
+    
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
