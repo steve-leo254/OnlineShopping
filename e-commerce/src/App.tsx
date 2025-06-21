@@ -30,7 +30,7 @@ import ReviewPage from "./pages/pending-views";
 import WishList from "./pages/WishList";
 import TermsAndConditions from "./pages/Terms&Condition";
 import { FavoritesProvider } from "./context/FavoritesContext";
-
+import ModernEcommerceHomepage from "./components/Test";
 function App() {
   return (
     <AuthProvider>
@@ -49,6 +49,7 @@ function App() {
               progressClassName="toast-progress-bar"
             />
             <Routes>
+              <Route path="/test" element={<ModernEcommerceHomepage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/verify-email" element={<EmailVerification />} />
