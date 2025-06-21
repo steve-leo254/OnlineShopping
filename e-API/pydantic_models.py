@@ -90,7 +90,6 @@ class ProductsBase(BaseModel):
     subcategory_id: Optional[int] = None  # New field
     brand: Optional[str]
     description: Optional[str]
-    rating: Optional[float] = 0.0  # New field
     discount: Optional[float] = 0.0  # New field
     is_new: bool = False  # New field
 
@@ -265,7 +264,6 @@ class UpdateProduct(BaseModel):
     category_id: Optional[int]
     brand: Optional[str]
     description: Optional[str]
-    rating: Optional[float] = None  # New field
     discount: Optional[float] = None  # New field
     is_new: Optional[bool] = None  # New field
 
@@ -485,7 +483,6 @@ class ProductCreateRequest(BaseModel):
     subcategory_id: Optional[int] = None  # New field
     brand: Optional[str]
     description: Optional[str]
-    rating: Optional[float] = 0.0
     discount: Optional[float] = 0.0
     is_new: bool = False
     images: Optional[List[ProductImageCreate]] = None
