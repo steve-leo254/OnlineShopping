@@ -374,15 +374,49 @@ const ProductDetail: React.FC = () => {
     }
   };
 
+  const getProductsPerSlide = () => {
+    if (typeof window !== "undefined") {
+      if (window.innerWidth >= 1024) return 4; // lg screens
+      if (window.innerWidth >= 768) return 2; // md screens
+      return 1; // mobile
+    }
+    return 4; // default fallback
+  };
+
+  const getTotalSlides = () => {
+    const productsPerSlide = getProductsPerSlide();
+    return Math.ceil(relatedProducts.length / productsPerSlide);
+  };
+
+  const getCurrentSlideProducts = () => {
+    const productsPerSlide = getProductsPerSlide();
+    const startIndex = currentSlide * productsPerSlide;
+    return relatedProducts.slice(startIndex, startIndex + productsPerSlide);
+  };
+
+  // Updated navigation functions:
   const handleNextSlide = (): void => {
-    const maxSlides = relatedProducts.length - 1;
-    setCurrentSlide((prev) => (prev === maxSlides ? 0 : prev + 1));
+    const totalSlides = getTotalSlides();
+    setCurrentSlide((prev) => (prev === totalSlides - 1 ? 0 : prev + 1));
   };
-  
+
   const handlePrevSlide = (): void => {
-    const maxSlides = relatedProducts.length - 1;
-    setCurrentSlide((prev) => (prev === 0 ? maxSlides : prev - 1));
+    const totalSlides = getTotalSlides();
+    setCurrentSlide((prev) => (prev === 0 ? totalSlides - 1 : prev - 1));
   };
+
+  // Add this useEffect to handle screen resize:
+  useEffect(() => {
+    const handleResize = () => {
+      const totalSlides = getTotalSlides();
+      if (currentSlide >= totalSlides) {
+        setCurrentSlide(0);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [currentSlide, relatedProducts.length]);
 
   // Loading state
   if (loading) {
@@ -731,96 +765,108 @@ const ProductDetail: React.FC = () => {
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (
-          <div className="mt-12">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl md:text-2xl font-bold text-gray-900">
-                Related Products
-              </h2>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handlePrevSlide}
-                  className="p-2 rounded-full bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+  <div className="mt-12">
+    <div className="flex items-center justify-between mb-6">
+      <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+        Related Products
+      </h2>
+      {getTotalSlides() > 1 && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePrevSlide}
+            className="p-2 rounded-full bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-gray-600" />
+          </button>
+          <button
+            onClick={handleNextSlide}
+            className="p-2 rounded-full bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+          >
+            <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-gray-600" />
+          </button>
+        </div>
+      )}
+    </div>
+    
+    <div className="relative overflow-hidden">
+      <div
+        className="flex transition-transform duration-300 ease-in-out"
+        style={{
+          transform: `translateX(-${currentSlide * 100}%)`,
+        }}
+      >
+        {Array.from({ length: getTotalSlides() }, (_, slideIndex) => {
+          const productsPerSlide = getProductsPerSlide();
+          const startIndex = slideIndex * productsPerSlide;
+          const slideProducts = relatedProducts.slice(startIndex, startIndex + productsPerSlide);
+          
+          return (
+            <div
+              key={slideIndex}
+              className="w-full flex-shrink-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
+            >
+              {slideProducts.map((relatedProduct) => (
+                <div
+                  key={relatedProduct.id}
+                  onClick={() => handleRelatedProductClick(relatedProduct)}
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full"
                 >
-                  <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-gray-600" />
-                </button>
-                <button
-                  onClick={handleNextSlide}
-                  className="p-2 rounded-full bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
-                >
-                  <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-gray-600" />
-                </button>
-              </div>
-            </div>
-
-            <div className="relative overflow-hidden">
-              <div
-                className="flex transition-transform duration-300 ease-in-out"
-                style={{
-                  transform: `translateX(-${currentSlide * 100}%)`,
-                }}
-              >
-                {relatedProducts.map((relatedProduct, index) => (
-                  <div
-                    key={relatedProduct.id}
-                    className="w-full md:w-1/2 lg:w-1/4 flex-shrink-0 px-2 md:px-3"
-                  >
-                    <div
-                      onClick={() => handleRelatedProductClick(relatedProduct)}
-                      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full"
-                    >
-                      <img
-                        src={relatedProduct.images[0]}
-                        alt={relatedProduct.name}
-                        className="w-full h-40 md:h-48 object-cover"
-                      />
-                      <div className="p-3 md:p-4">
-                        <h3 className="font-medium text-gray-900 mb-2 text-sm md:text-base line-clamp-2">
-                          {relatedProduct.name}
-                        </h3>
-                        <div className="flex items-center gap-1 md:gap-2 mb-2">
-                          <div className="flex">
-                            {renderStars(relatedProduct.rating)}
-                          </div>
-                          <span className="text-gray-700 font-semibold text-xs md:text-sm">
-                            {relatedProduct.rating.toFixed(1)}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            ({relatedProduct.reviews})
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-gray-900 text-sm md:text-base">
-                            {formatCurrency(relatedProduct.price)}
-                          </span>
-                          {relatedProduct.originalPrice &&
-                            relatedProduct.originalPrice >
-                              relatedProduct.price && (
-                              <span className="text-xs md:text-sm text-gray-500 line-through">
-                                {formatCurrency(relatedProduct.originalPrice)}
-                              </span>
-                            )}
-                        </div>
+                  <img
+                    src={relatedProduct.images[0]}
+                    alt={relatedProduct.name}
+                    className="w-full h-40 md:h-48 object-cover"
+                  />
+                  <div className="p-3 md:p-4">
+                    <h3 className="font-medium text-gray-900 mb-2 text-sm md:text-base line-clamp-2">
+                      {relatedProduct.name}
+                    </h3>
+                    <div className="flex items-center gap-1 md:gap-2 mb-2">
+                      <div className="flex">
+                        {renderStars(relatedProduct.rating)}
                       </div>
+                      <span className="text-gray-700 font-semibold text-xs md:text-sm">
+                        {relatedProduct.rating.toFixed(1)}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        ({relatedProduct.reviews})
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-gray-900 text-sm md:text-base">
+                        {formatCurrency(relatedProduct.price)}
+                      </span>
+                      {relatedProduct.originalPrice &&
+                        relatedProduct.originalPrice > relatedProduct.price && (
+                          <span className="text-xs md:text-sm text-gray-500 line-through">
+                            {formatCurrency(relatedProduct.originalPrice)}
+                          </span>
+                        )}
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Slide Indicators */}
-            <div className="flex justify-center mt-4 gap-2">
-              {relatedProducts.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentSlide(index)}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    currentSlide === index ? "bg-blue-600" : "bg-gray-300"
-                  }`}
-                />
+                </div>
               ))}
             </div>
-          </div>
-        )}
+          );
+        })}
+      </div>
+    </div>
+    
+    {/* Slide Indicators */}
+    {getTotalSlides() > 1 && (
+      <div className="flex justify-center mt-4 gap-2">
+        {Array.from({ length: getTotalSlides() }, (_, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrentSlide(index)}
+            className={`w-2 h-2 rounded-full transition-colors ${
+              currentSlide === index ? "bg-blue-600" : "bg-gray-300"
+            }`}
+          />
+        ))}
+      </div>
+    )}
+  </div>
+)}
       </div>
 
       {/* Image Modal */}
