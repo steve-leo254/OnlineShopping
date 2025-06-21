@@ -14,14 +14,32 @@ import {
   PlusCircle,
   Settings,
   List,
+  ChevronDown,
+  AlertCircle,
+  CheckCircle,
+  Info,
 } from "lucide-react";
-import CategoryForm from "./AddCategory"; // Import the CategoryForm component
+import CategoryForm from "./AddCategory";
 
-// Define types based on your Pydantic models
+// Define types based on your database models
 type Category = {
   id: number;
   name: string;
   description: string | null;
+};
+
+type Subcategory = {
+  id: number;
+  name: string;
+  description: string | null;
+  category_id: number;
+};
+
+type Specification = {
+  id: number;
+  name: string;
+  value_type: string;
+  category_id: number;
 };
 
 type ProductForm = {
@@ -29,13 +47,12 @@ type ProductForm = {
   cost: number;
   price: number;
   original_price: number;
-  images: string[];
   stock_quantity: number;
   barcode: number;
   category_id: number | null;
+  subcategory_id: number | null;
   brand: string;
   description: string;
-  rating: number;
   discount: number;
   is_new: boolean;
 };
@@ -51,26 +68,28 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
     cost: 0,
     price: 0,
     original_price: 0,
-    images: [],
     stock_quantity: 0,
     barcode: 0,
     category_id: null,
+    subcategory_id: null,
     brand: "",
     description: "",
-    rating: 0,
     discount: 0,
     is_new: false,
   });
+
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
+  const [specifications, setSpecifications] = useState<Specification[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [showCategoryModal, setShowCategoryModal] = useState<boolean>(false); // State for category modal
-  type Specification = { id: number; name: string; value_type: string };
-  const [specifications, setSpecifications] = useState<Specification[]>([]);
+  const [showCategoryModal, setShowCategoryModal] = useState<boolean>(false);
   const [specValues, setSpecValues] = useState<Record<number, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch categories on mount and when a new category is added
+  // Fetch categories on mount
   const fetchCategories = async () => {
     try {
       const response = await axios.get<Category[]>(
@@ -83,9 +102,51 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
     }
   };
 
+  // Fetch subcategories when category changes
+  const fetchSubcategories = async (categoryId: number) => {
+    try {
+      const response = await axios.get<Subcategory[]>(
+        `${
+          import.meta.env.VITE_API_BASE_URL
+        }/categories/${categoryId}/subcategories`
+      );
+      setSubcategories(response.data || []);
+    } catch (err) {
+      setSubcategories([]);
+    }
+  };
+
+  // Fetch specifications when category changes
+  const fetchSpecifications = async (categoryId: number) => {
+    try {
+      const response = await axios.get<Specification[]>(
+        `${
+          import.meta.env.VITE_API_BASE_URL
+        }/categories/${categoryId}/specifications`
+      );
+      setSpecifications(response.data || []);
+    } catch (err) {
+      setSpecifications([]);
+    }
+  };
+
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  // Handle category change
+  useEffect(() => {
+    if (formData.category_id) {
+      fetchSubcategories(formData.category_id);
+      fetchSpecifications(formData.category_id);
+      // Reset subcategory when category changes
+      setFormData((prev) => ({ ...prev, subcategory_id: null }));
+    } else {
+      setSubcategories([]);
+      setSpecifications([]);
+      setFormData((prev) => ({ ...prev, subcategory_id: null }));
+    }
+  }, [formData.category_id]);
 
   // Calculate selling price whenever original_price or discount changes
   useEffect(() => {
@@ -93,29 +154,12 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
       const discountAmount =
         (formData.original_price * formData.discount) / 100;
       const calculatedPrice = formData.original_price - discountAmount;
-
       setFormData((prev) => ({
         ...prev,
-        price: Math.round(calculatedPrice * 100) / 100, // Round to 2 decimal places
+        price: Math.round(calculatedPrice * 100) / 100,
       }));
     }
   }, [formData.original_price, formData.discount]);
-
-  // Fetch specifications when category changes
-  useEffect(() => {
-    if (formData.category_id) {
-      axios
-        .get(
-          `${import.meta.env.VITE_API_BASE_URL}/categories/${
-            formData.category_id
-          }/specifications`
-        )
-        .then((res) => setSpecifications(res.data))
-        .catch(() => setSpecifications([]));
-    } else {
-      setSpecifications([]);
-    }
-  }, [formData.category_id]);
 
   // Handle form input changes
   const handleChange = (
@@ -124,25 +168,73 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
     >
   ) => {
     const { name, value, type } = e.target;
+    const newValue =
+      type === "checkbox"
+        ? (e.target as HTMLInputElement).checked
+        : name === "cost" ||
+          name === "price" ||
+          name === "original_price" ||
+          name === "stock_quantity" ||
+          name === "barcode" ||
+          name === "discount"
+        ? Number(value) || 0
+        : name === "category_id" || name === "subcategory_id"
+        ? value
+          ? Number(value)
+          : null
+        : value;
+
     setFormData((prev) => ({
       ...prev,
-      [name]:
-        type === "checkbox"
-          ? (e.target as HTMLInputElement).checked
-          : name === "cost" ||
-            name === "price" ||
-            name === "original_price" ||
-            name === "stock_quantity" ||
-            name === "barcode" ||
-            name === "rating" ||
-            name === "discount"
-          ? Number(value) || 0
-          : name === "category_id"
-          ? value
-            ? Number(value)
-            : null
-          : value,
+      [name]: newValue,
     }));
+
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  // Validate form
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Product name is required";
+    } else if (formData.name.trim().length < 3) {
+      newErrors.name = "Product name must be at least 3 characters";
+    }
+
+    if (formData.cost <= 0) {
+      newErrors.cost = "Cost must be greater than 0";
+    }
+
+    if (formData.original_price <= 0) {
+      newErrors.original_price = "Original price must be greater than 0";
+    }
+
+    if (formData.price <= 0) {
+      newErrors.price = "Selling price must be greater than 0";
+    }
+
+    if (formData.stock_quantity < 0) {
+      newErrors.stock_quantity = "Stock quantity cannot be negative";
+    }
+
+    if (formData.barcode <= 0) {
+      newErrors.barcode = "Barcode must be a positive number";
+    }
+
+    if (formData.discount < 0 || formData.discount > 100) {
+      newErrors.discount = "Discount must be between 0 and 100";
+    }
+
+    if (!formData.category_id) {
+      newErrors.category_id = "Please select a category";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   // Handle image file selection
@@ -159,6 +251,12 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
       }
       return true;
     });
+
+    if (imageFiles.length + validFiles.length > 5) {
+      toast.error("Maximum 5 images allowed");
+      return;
+    }
+
     setImageFiles((prev) => [...prev, ...validFiles]);
     validFiles.forEach((file) => {
       const reader = new FileReader();
@@ -172,18 +270,6 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
   const handleRemoveImageFile = (index: number) => {
     setImageFiles((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  // Handle image uploads (for simplicity, just URLs for now)
-  const handleAddImage = (url: string) => {
-    setFormData((prev) => ({ ...prev, images: [...prev.images, url] }));
-  };
-
-  const handleRemoveImage = (url: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((img) => img !== url),
-    }));
   };
 
   // Handle specification value changes
@@ -200,44 +286,16 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
       return;
     }
 
-    // Client-side validation
-    if (!formData.name) {
-      toast.error("Product name is required");
-      return;
-    }
-    if (formData.cost <= 0) {
-      toast.error("Cost must be greater than 0");
-      return;
-    }
-    if (formData.price <= 0) {
-      toast.error("Price must be greater than 0");
-      return;
-    }
-    if (formData.original_price <= 0) {
-      toast.error("Original price must be greater than 0");
-      return;
-    }
-    if (formData.stock_quantity < 0) {
-      toast.error("Stock quantity cannot be negative");
-      return;
-    }
-    if (formData.barcode <= 0) {
-      toast.error("Barcode must be a positive number");
-      return;
-    }
-    if (formData.rating < 0 || formData.rating > 5) {
-      toast.error("Rating must be between 0 and 5");
-      return;
-    }
-    if (formData.discount < 0 || formData.discount > 100) {
-      toast.error("Discount must be between 0 and 100");
+    if (!validateForm()) {
+      toast.error("Please fix the errors in the form");
       return;
     }
 
-    setIsLoading(true);
+    setIsSubmitting(true);
 
     try {
       let uploadedImageUrls: string[] = [];
+
       // Upload all selected image files
       for (let i = 0; i < imageFiles.length; i++) {
         const formDataImage = new FormData();
@@ -255,36 +313,36 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
         uploadedImageUrls.push(imageResponse.data.img_url);
       }
 
-      // Prepare images array for API (uploaded + manual URLs)
-      const allImageUrls = [...uploadedImageUrls, ...formData.images].filter(
-        (url) => url
-      );
-      const images = allImageUrls.map((url) => ({ img_url: url }));
+      // Prepare images array for API
+      const images = uploadedImageUrls.map((url) => ({ img_url: url }));
 
       // Prepare specifications array for API
       const specificationsArr = Object.entries(specValues)
-        .filter(([_, value]) => value !== "")
+        .filter(([_, value]) => value.trim() !== "")
         .map(([specification_id, value]) => ({
           specification_id: Number(specification_id),
-          value,
+          value: value.trim(),
         }));
 
-      // Create product (flat body)
+      // Create product payload
+      const productPayload = {
+        ...formData,
+        images: images.length > 0 ? images : undefined,
+        specifications:
+          specificationsArr.length > 0 ? specificationsArr : undefined,
+      };
+
       await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/products`,
-        {
-          ...formData,
-          images: images.length > 0 ? images : undefined,
-          specifications:
-            specificationsArr.length > 0 ? specificationsArr : undefined,
-        },
+        productPayload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-      toast.success("Product added successfully");
+
+      toast.success("Product added successfully!");
       onClose();
     } catch (err: any) {
       const errorMessage =
@@ -293,15 +351,33 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
       toast.error(errorMessage);
       console.error("Error adding product:", err);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const handleCategoryAdded = () => {
-    fetchCategories(); // Re-fetch categories to update the dropdown
-    // Do NOT close the modal here; let the user add specifications
-    // setShowCategoryModal(false);
+    fetchCategories();
   };
+
+  const getValueTypeColor = (valueType: string) => {
+    switch (valueType) {
+      case "string":
+        return "bg-blue-100 text-blue-700 border-blue-200";
+      case "number":
+        return "bg-green-100 text-green-700 border-green-200";
+      case "boolean":
+        return "bg-purple-100 text-purple-700 border-purple-200";
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-200";
+    }
+  };
+
+  const completedSpecs = Object.values(specValues).filter(
+    (val) => val.trim() !== ""
+  ).length;
+  const totalSpecs = specifications.length;
+  const completionPercentage =
+    totalSpecs > 0 ? (completedSpecs / totalSpecs) * 100 : 0;
 
   return (
     <div className="relative bg-white rounded-2xl max-h-[90vh] overflow-hidden">
@@ -330,11 +406,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
 
       {/* Form Container */}
       <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-8"
-          encType="multipart/form-data"
-        >
+        <form onSubmit={handleSubmit} className="space-y-8">
           {/* Basic Information */}
           <div className="bg-gray-50 rounded-2xl p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -353,10 +425,20 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                    errors.name
+                      ? "border-red-500 ring-red-200"
+                      : "border-gray-300"
+                  }`}
                   placeholder="Enter product name"
                   required
                 />
+                {errors.name && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {errors.name}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -367,20 +449,24 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                   name="brand"
                   value={formData.brand}
                   onChange={handleChange}
-                  className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                   placeholder="Product brand"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category
+                  Category *
                 </label>
                 <div className="flex items-center gap-2">
                   <select
                     name="category_id"
                     value={formData.category_id ?? ""}
                     onChange={handleChange}
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                      errors.category_id
+                        ? "border-red-500 ring-red-200"
+                        : "border-gray-300"
+                    }`}
                   >
                     <option value="">Select category</option>
                     {categories.map((category) => (
@@ -398,6 +484,37 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                     <PlusCircle className="w-5 h-5" />
                   </button>
                 </div>
+                {errors.category_id && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {errors.category_id}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Subcategory
+                </label>
+                <select
+                  name="subcategory_id"
+                  value={formData.subcategory_id ?? ""}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  disabled={!formData.category_id}
+                >
+                  <option value="">Select subcategory</option>
+                  {subcategories.map((subcategory) => (
+                    <option key={subcategory.id} value={subcategory.id}>
+                      {subcategory.name}
+                    </option>
+                  ))}
+                </select>
+                {!formData.category_id && (
+                  <p className="mt-1 text-sm text-gray-500 flex items-center">
+                    <Info className="w-4 h-4 mr-1" />
+                    Select a category first
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -408,10 +525,20 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                   name="barcode"
                   value={formData.barcode}
                   onChange={handleChange}
-                  className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                    errors.barcode
+                      ? "border-red-500 ring-red-200"
+                      : "border-gray-300"
+                  }`}
                   placeholder="Enter barcode"
                   required
                 />
+                {errors.barcode && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {errors.barcode}
+                  </p>
+                )}
               </div>
               <div className="lg:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -422,7 +549,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                   rows={3}
                   value={formData.description}
                   onChange={handleChange}
-                  className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
                   placeholder="Product description..."
                 />
               </div>
@@ -449,10 +576,20 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                   onChange={handleChange}
                   min="0"
                   step="0.01"
-                  className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 ${
+                    errors.cost
+                      ? "border-red-500 ring-red-200"
+                      : "border-gray-300"
+                  }`}
                   placeholder="0.00"
                   required
                 />
+                {errors.cost && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {errors.cost}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -465,10 +602,20 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                   onChange={handleChange}
                   min="0"
                   step="0.01"
-                  className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 ${
+                    errors.original_price
+                      ? "border-red-500 ring-red-200"
+                      : "border-gray-300"
+                  }`}
                   placeholder="0.00"
                   required
                 />
+                {errors.original_price && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {errors.original_price}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -481,9 +628,19 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                   onChange={handleChange}
                   min="0"
                   max="100"
-                  className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 ${
+                    errors.discount
+                      ? "border-red-500 ring-red-200"
+                      : "border-gray-300"
+                  }`}
                   placeholder="0"
                 />
+                {errors.discount && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {errors.discount}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -495,11 +652,19 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                   value={formData.price}
                   min="0"
                   step="0.01"
-                  className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100 cursor-not-allowed"
+                  className={`w-full px-4 py-3 border rounded-xl bg-gray-100 cursor-not-allowed ${
+                    errors.price ? "border-red-500" : "border-gray-300"
+                  }`}
                   placeholder="0.00"
                   readOnly
                   disabled
                 />
+                {errors.price && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {errors.price}
+                  </p>
+                )}
                 <p className="text-xs text-gray-500 mt-1">
                   Calculated as: Original Price - (Original Price × Discount %)
                 </p>
@@ -514,10 +679,20 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                   value={formData.stock_quantity}
                   onChange={handleChange}
                   min="0"
-                  className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 ${
+                    errors.stock_quantity
+                      ? "border-red-500 ring-red-200"
+                      : "border-gray-300"
+                  }`}
                   placeholder="0"
                   required
                 />
+                {errors.stock_quantity && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {errors.stock_quantity}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -533,7 +708,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
             <div className="flex flex-col lg:flex-row gap-6">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Choose Images
+                  Choose Images (Max 5)
                 </label>
                 <div className="relative">
                   <input
@@ -541,7 +716,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                     accept="image/jpeg,image/png,image/gif"
                     multiple
                     onChange={handleImageChange}
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
@@ -552,7 +727,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
               {imagePreviews.length > 0 && (
                 <div className="lg:w-48">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Preview
+                    Preview ({imagePreviews.length}/5)
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {imagePreviews.map((preview, idx) => (
@@ -593,11 +768,11 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                   </p>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {specifications.map((spec, index) => (
-                  <div 
-                    key={spec.id} 
+                  <div
+                    key={spec.id}
                     className="group relative bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 hover:border-indigo-300"
                   >
                     <div className="flex items-start gap-3">
@@ -614,39 +789,48 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
                           <input
                             type="text"
                             value={specValues[spec.id] || ""}
-                            onChange={(e) => handleSpecChange(spec.id, e.target.value)}
+                            onChange={(e) =>
+                              handleSpecChange(spec.id, e.target.value)
+                            }
                             className="w-full px-4 py-3 text-gray-700 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all duration-200 placeholder-gray-400"
                             placeholder={`Enter ${spec.name.toLowerCase()}...`}
                           />
                           <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                            <div className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-md">
+                            <div
+                              className={`text-xs px-2 py-1 rounded-md border ${getValueTypeColor(
+                                spec.value_type
+                              )}`}
+                            >
                               {spec.value_type}
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Subtle animation indicator */}
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-t-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                   </div>
                 ))}
               </div>
-              
+
               {/* Specifications Summary */}
               <div className="mt-6 p-4 bg-white/70 rounded-xl border border-indigo-200">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <div className="w-2 h-2 bg-indigo-400 rounded-full"></div>
-                  <span>
-                    {Object.values(specValues).filter(val => val !== "").length} of {specifications.length} specifications completed
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="w-2 h-2 bg-indigo-400 rounded-full"></div>
+                    <span>
+                      {completedSpecs} of {totalSpecs} specifications completed
+                    </span>
+                  </div>
+                  <span className="text-sm font-medium text-indigo-600">
+                    {Math.round(completionPercentage)}%
                   </span>
                 </div>
-                <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                  <div 
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
                     className="bg-gradient-to-r from-indigo-500 to-cyan-500 h-2 rounded-full transition-all duration-300"
-                    style={{ 
-                      width: `${(Object.values(specValues).filter(val => val !== "").length / specifications.length) * 100}%` 
-                    }}
+                    style={{ width: `${completionPercentage}%` }}
                   ></div>
                 </div>
               </div>
@@ -678,14 +862,14 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
           <div className="sticky bottom-0 bg-white pt-4 border-t border-gray-200">
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isSubmitting}
               className={`w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 ${
-                isLoading
+                isSubmitting
                   ? "opacity-50 cursor-not-allowed"
                   : "hover:from-blue-700 hover:to-purple-700"
               }`}
             >
-              {isLoading ? (
+              {isSubmitting ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Adding Product...
