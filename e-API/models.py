@@ -74,6 +74,20 @@ class Categories(Base):
     specifications = relationship(
         "Specification", back_populates="category", cascade="all, delete-orphan"
     )
+    subcategories = relationship(
+        "Subcategory", back_populates="category", cascade="all, delete-orphan"
+    )
+
+
+
+class Subcategory(Base):
+    __tablename__ = "subcategories"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    description = Column(String(200))
+    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
+    category = relationship("Categories", back_populates="subcategories")
+    products = relationship("Products", back_populates="subcategory")
 
 
 class Products(Base):
@@ -97,8 +111,14 @@ class Products(Base):
     brand = Column(String(100), nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     category_id = Column(Integer, ForeignKey("categories.id"))
+    subcategory_id = Column(
+        Integer, ForeignKey("subcategories.id"), nullable=True
+    )  # New field
     user = relationship("Users", back_populates="products")
     category = relationship("Categories", back_populates="products")
+    subcategory = relationship(
+        "Subcategory", back_populates="products"
+    )  # New relationship
     order_details = relationship("OrderDetails", back_populates="product")
     images = relationship(
         "ProductImage", back_populates="product", cascade="all, delete-orphan"
