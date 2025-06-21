@@ -484,9 +484,9 @@ const EnhancedServiceChatbot: React.FC = () => {
         <div className="flex space-x-2">
           <button 
             onClick={() => navigate('/store')}
-            className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-colors"
+            className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white rounded-lg text-sm font-medium hover:from-blue-700 hover:via-purple-700 hover:to-blue-900 transition-colors"
           >
-            Browse Products
+            Browse Store
           </button>
           <button 
             onClick={() => navigate('/shopping-cart')}
@@ -556,7 +556,7 @@ const EnhancedServiceChatbot: React.FC = () => {
     
 
     // Handle comprehensive Kiswahili responses
-    if (['sasa', 'mambo', 'uko aje', 'niaje', 'vipi'].includes(message)) {
+    if (['sasa', 'mambo', 'uko aje', 'niaje', 'vipi','hujambo','hujambo' ].includes(message)) {
       return {
         id: Date.now(),
         text: "Poa sana! Ukoaje? 😊✨ Karibu sana Flowtechs! Mimi ni Makena, your shopping assistant! 🇰🇪\n\nNimefurahi kukuona hapa! (I'm happy to see you here!)\n\nNiko tayari kukusaidia na:\n• 🛍️ Kupata bidhaa (Find products)\n• 📦 Kufuatilia oda (Track orders)\n• 💡 Mapendekezo (Recommendations)\n• 🎧 Msaada wa wateja (Customer support)\n• 🏷️ Bei nzuri (Best deals)\n• 💳 Malipo (Payment help)\n\nTuanze safari ya manunuzi pamoja! 🚀💫\n\n(PS: I'm still learning Swahili, so feel free to mix with English!)",
@@ -697,6 +697,39 @@ const EnhancedServiceChatbot: React.FC = () => {
       };
     }
 
+    // Handle Kiswahili deals and good prices
+    if (
+      message.includes("deal mzuri") || message.includes("bei mzuri") || message.includes("bei nzuri") || message.includes("anguka nayo") ||message.includes("bei") ||
+      message.includes("makubaliano mzuri") || message.includes("bei rahisi") || message.includes("bei nafuu") ||
+      message.includes("bei ya chini") || message.includes("bei bora") || message.includes("bei nafuu") ||
+      message.includes("ninaweza pata bei nzuri") || message.includes("unao bei nzuri") || message.includes("bei gani nzuri") ||
+      message.includes("makubaliano gani") || message.includes("bei ya bei") || message.includes("bei ya bei nzuri")
+    ) {
+      const discountedProducts = products.filter(product => product.discount && product.discount > 0);
+      
+      if (discountedProducts.length > 0) {
+        const topDeals = discountedProducts
+          .sort((a, b) => (b.discount || 0) - (a.discount || 0))
+          .slice(0, 3);
+
+        return {
+          id: Date.now(),
+          text: `🏷️ **Makubaliano Mzuri Sana!** 💰✨\n\nEeh! Nina makubaliano mazuri sana kwa ajili yako! 🎉\n\n**Makubaliano Bora za Leo:**\n${topDeals.map(product => 
+            `• 📱 **${product.name}** - ${formatCurrency(product.price)} (${product.discount}% OFF)\n  💰 Bei ya awali: ${formatCurrency(product.original_price || product.price)}`
+          ).join('\n\n')}\n\n**Kwa nini makubaliano yetu ni mzuri sana?** 🤔\n• 💎 Bidhaa za ubora wa juu\n• 🏷️ Bei ya chini kabisa\n• 🚚 Usambazaji wa bure (kwa oda za juu ya Ksh 5,000)\n• 💳 Malipo ya rahisi\n• 🛡️ Dhamana ya kurudi (siku 30)\n\n**Je, ungependa kuona makubaliano yote?** Au unahitaji kitu maalum? 🛍️\n\n**Kumbuka:** Makubaliano haya yanaweza kuisha haraka! ⏰✨`,
+          sender: "bot",
+          timestamp: new Date(),
+        };
+      } else {
+        return {
+          id: Date.now(),
+          text: `💎 **Bei Zetu Zote ni Mzuri! Yani Ya Kuanguka nayo😂!** ✨\n\nHakuna makubaliano maalum sasa hivi, lakini bei zetu zote ni mzuri sana! 🎯\n\n**Kwa nini bei zetu ni mzuri:**\n• 💰 Bei ya ushindani - tunashindana na wengine\n• 🏷️ Hakuna bei ya juu - bei moja kwa kila mtu\n• 💎 Ubora wa juu - hakuna kitu cha chini\n• 🚚 Usambazaji wa haraka - siku 2-5\n• 🛡️ Dhamana kamili - kurudi bila swali\n\n**Je, unatafuta bidhaa gani?** Ninaweza kukusaidia kupata bei bora kwa kila kitu! 🛍️\n\n**Au ungependa kuona:**\n• 📱 Vifaa vya elektroniki\n• 👗 Mavazi na nguo\n• 🎮 Michezo na burudani\n• 🏠 Vifaa vya nyumbani\n\n**Tuanze kununua!** Bei nzuri inakungoja! 💫`,
+          sender: "bot",
+          timestamp: new Date(),
+        };
+      }
+    }
+
     // Handle founder-related queries in Kiswahili
     if (
       message.includes("founder") || message.includes("founders") ||
@@ -710,7 +743,7 @@ const EnhancedServiceChatbot: React.FC = () => {
     ) {
       return {
         id: Date.now(),
-        text: `👥 **Meet Our Founders: Eric Omondi & Steve Leo** ✨\n\nFlowtechs was founded by two young, enthusiastic developers, **Eric Omondi** and **Steve Leo**, who are passionate about joining and shaping the tech revolution in Kenya and beyond.\n\n**Background:**\nEric and Steve met as university students, both driven by a love for technology and a desire to solve real-world problems. They noticed that many Kenyans, especially in rural areas, struggled to access quality products at fair prices. Inspired by the global e-commerce boom, they decided to build a platform that would make premium shopping accessible to everyone in Kenya.\n\n**Their Vision:**\n- To empower every Kenyan with access to quality products, no matter where they live.\n- To use technology to bridge gaps in commerce, logistics, and customer service.\n- To create a vibrant, trustworthy online marketplace that supports local businesses and delights customers.\n\n**Their Story:**\nStarting with just a laptop and a dream, Eric and Steve worked tirelessly to build Flowtechs from the ground up. They spent countless nights coding, researching market needs, and connecting with suppliers. Their dedication paid off when they launched their first version in 2023, and the response was overwhelming.\n\n**What Makes Them Special:**\n• 🧠 **Young Innovators**: Fresh perspectives and modern approaches to e-commerce\n• 💻 **Tech-Savvy**: Deep understanding of both technology and business\n• 🌍 **Kenya-Focused**: Built specifically for Kenyan market needs and preferences\n• 🚀 **Future-Oriented**: Always thinking about the next big thing in tech\n• 🤝 **Community-Driven**: Believe in giving back and supporting local businesses\n\n**Their Mission Today:**\nEric and Steve continue to lead Flowtechs with the same passion and energy that drove them to start the company. They're constantly exploring new technologies, expanding their reach, and finding innovative ways to serve their customers better.\n\n**Join the Revolution:**\nWhen you shop with Flowtechs, you're not just buying products - you're supporting the vision of two young Kenyans who dared to dream big and are making that dream a reality for everyone! 🇰🇪✨\n\n**Ready to experience the future of shopping, built by Kenya's next generation of tech leaders?** 🛍️💫`,
+        text: `👥 **Meet Our Founders: Eric Omondi & Steve Leo** ✨\n\nFlowtechs was founded by two young, enthusiastic developers, **Eric Omondi** and **Steve Leo**, who are passionate about joining and shaping the tech revolution in Kenya and beyond.\n\n**Background:**\nEric and Steve met as university students, both driven by a love for technology and a desire to solve real-world problems. They noticed that many Kenyans, especially in rural areas, struggled to access quality products at fair prices. Inspired by the global e-commerce boom, they decided to build a platform that would make premium shopping accessible to everyone in Kenya.\n\n**Their Vision:**\n- To empower every Kenyan with access to quality products, no matter where they live.\n- To use technology to bridge gaps in commerce, logistics, and customer service.\n- To create a vibrant, trustworthy online marketplace that supports local businesses and delights customers.\n\n**Their Story:**\nStarting with just a laptop and a dream, Eric and Steve worked tirelessly to build Flowtechs from the ground up. They spent countless nights coding, researching market needs, and connecting with suppliers. Their dedication paid off when they launched their first version in 2025, and the response was overwhelming.\n\n**What Makes Them Special:**\n• 🧠 **Young Innovators**: Fresh perspectives and modern approaches to e-commerce\n• 💻 **Tech-Savvy**: Deep understanding of both technology and business\n• 🌍 **Kenya-Focused**: Built specifically for Kenyan market needs and preferences\n• 🚀 **Future-Oriented**: Always thinking about the next big thing in tech\n• 🤝 **Community-Driven**: Believe in giving back and supporting local businesses\n\n**Their Mission Today:**\nEric and Steve continue to lead Flowtechs with the same passion and energy that drove them to start the company. They're constantly exploring new technologies, expanding their reach, and finding innovative ways to serve their customers better.\n\n**Join the Revolution:**\nWhen you shop with Flowtechs, you're not just buying products - you're supporting the vision of two young Kenyans who dared to dream big and are making that dream a reality for everyone! 🇰🇪✨\n\n**Ready to experience the future of shopping, built by Kenya's next generation of tech leaders?** 🛍️💫`,
         sender: "bot",
         timestamp: new Date(),
       };
@@ -1221,12 +1254,12 @@ const EnhancedServiceChatbot: React.FC = () => {
         <div className="flex space-x-2">
           <button 
             onClick={() => navigate('/store')}
-            className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-colors"
+            className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white rounded-lg text-sm font-medium hover:from-blue-700 hover:via-purple-700 hover:to-blue-900 transition-colors"
           >
-            Browse All Products
+            Browse Store
           </button>
           <button 
-            onClick={() => navigate('/cart')}
+            onClick={() => navigate('/shopping-cart')}
             className="flex-1 py-2 px-4 bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-blue-700 transition-colors"
           >
             View Cart
@@ -2042,7 +2075,7 @@ const EnhancedServiceChatbot: React.FC = () => {
         <div className="flex space-x-2">
           <button 
             onClick={() => navigate('/returns')}
-            className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-colors"
+            className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white rounded-lg text-sm font-medium hover:from-blue-700 hover:via-purple-700 hover:to-blue-900 transition-colors"
           >
             Start Return
           </button>
@@ -2148,7 +2181,7 @@ const EnhancedServiceChatbot: React.FC = () => {
         <div className="flex space-x-2">
           <button 
             onClick={() => navigate('/contact')}
-            className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-colors"
+            className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-colors"
           >
             Contact Now
           </button>
@@ -2843,13 +2876,13 @@ const EnhancedServiceChatbot: React.FC = () => {
           <div className="flex space-x-2">
             <button 
               onClick={() => navigate('/store')}
-              className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-colors"
+              className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white rounded-lg text-sm font-medium hover:from-blue-700 hover:via-purple-700 hover:to-blue-900 transition-colors"
             >
               Browse Store
             </button>
             <button 
               onClick={() => navigate('/about')}
-              className="flex-1 py-2 px-4 bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-blue-700 transition-colors"
+              className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-colors"
             >
               About Us
             </button>
@@ -2885,7 +2918,7 @@ const EnhancedServiceChatbot: React.FC = () => {
       {/* Chatbot Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 z-50 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white p-4 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110"
+        className="fixed bottom-4 right-4 z-50 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 hover:from-blue-700 hover:via-purple-700 hover:to-blue-900 text-white p-4 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110"
       >
         {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
       </button>
@@ -2894,15 +2927,15 @@ const EnhancedServiceChatbot: React.FC = () => {
       {isOpen && (
         <div className="fixed inset-x-0 bottom-0 md:fixed md:bottom-16 md:left-4 w-full md:w-[400px] h-[70vh] md:h-[500px] bg-white rounded-t-2xl md:rounded-lg shadow-2xl border border-gray-200 flex flex-col z-50">
           {/* Header */}
-          <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white p-4 rounded-t-lg">
+          <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white p-4 rounded-t-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <img src="/makenabot.png" alt="Makena" className="w-12 h-12 rounded-full border-2 border-white/80 shadow-md" />
-                <h3 className="font-semibold text-lg">Makena AI Assistant</h3>
+                <h3 className="font-semibold text-lg">Makena  Shopping Bestie</h3>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-white hover:text-gray-200 transition-colors"
+                className="text-white/90 hover:text-white transition-colors"
               >
                 <X size={20} />
               </button>
@@ -2923,7 +2956,7 @@ const EnhancedServiceChatbot: React.FC = () => {
                 <div
                   className={`max-w-[280px] md:max-w-[320px] px-4 py-2 rounded-lg ${
                     message.sender === "user"
-                      ? "bg-gradient-to-r from-pink-500 to-purple-600 text-white"
+                      ? "bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white"
                       : "bg-gray-100 text-gray-800"
                   }`}
                 >
@@ -2944,9 +2977,9 @@ const EnhancedServiceChatbot: React.FC = () => {
               <div className="flex justify-start">
                 <div className="bg-gray-100 text-gray-800 px-4 py-2 rounded-lg">
                   <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-blue-800 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
                 </div>
               </div>
@@ -2965,12 +2998,12 @@ const EnhancedServiceChatbot: React.FC = () => {
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                 placeholder="Ask me anything... 😊"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
               />
               <button
                 onClick={handleSendMessage}
                 disabled={!inputMessage.trim()}
-                className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 hover:from-blue-700 hover:via-purple-700 hover:to-blue-900 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send size={16} />
               </button>
