@@ -281,7 +281,6 @@ const ModernEcommerceHomepage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-    
 
       {/* Hero Section */}
       <section className="relative h-[50vh] flex items-center justify-center overflow-hidden">
@@ -317,8 +316,6 @@ const ModernEcommerceHomepage = () => {
         </div>
       </section>
 
-     
-
       {/* Categories Section */}
       <section className="py-6 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -344,19 +341,19 @@ const ModernEcommerceHomepage = () => {
             </button>
 
             {/* Categories Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 overflow-hidden">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 overflow-hidden items-stretch">
               {categories
                 .slice(categoryCarouselIndex, categoryCarouselIndex + 6)
                 .map((category, index) => (
                   <div
                     key={category.id}
-                    className="group cursor-pointer"
+                    className="group cursor-pointer flex"
                     onClick={() => handleCategoryClick(category.name)}
                   >
                     <div
                       className={`${getCategoryColor(
                         category.name
-                      )} rounded-2xl p-8 text-center hover:shadow-2xl transform hover:scale-105 transition-all duration-300`}
+                      )} rounded-2xl p-8 text-center hover:shadow-2xl transform hover:scale-105 transition-all duration-300 h-48 flex flex-col justify-center items-center`}
                     >
                       <div className="text-4xl mb-4">
                         {getCategoryIcon(category.name)}
@@ -364,11 +361,6 @@ const ModernEcommerceHomepage = () => {
                       <h3 className="text-white font-semibold">
                         {category.name}
                       </h3>
-                      {category.description && (
-                        <p className="text-white/80 text-sm mt-2 line-clamp-2">
-                          {category.description}
-                        </p>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -611,8 +603,8 @@ const ModernEcommerceHomepage = () => {
         </div>
       </section>
 
-       {/* Features Section */}
-       <section className="py-8 bg-white mt-6">
+      {/* Features Section */}
+      <section className="py-8 bg-white mt-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
