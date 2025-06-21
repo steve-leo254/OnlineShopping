@@ -52,7 +52,6 @@ function App() {
               progressClassName="toast-progress-bar"
             />
             <Routes>
-              <Route path="/test" element={<ModernEcommerceHomepage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/verify-email" element={<EmailVerification />} />
@@ -62,6 +61,7 @@ function App() {
               <Route path="/termsconditions" element={<TermsAndConditions />} />
 
               <Route element={<Layout />}>
+                <Route path="/test" element={<ModernEcommerceHomepage />} />
                 <Route
                   path="/category-page"
                   element={<CategoryProductsPage />}
