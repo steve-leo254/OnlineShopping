@@ -26,7 +26,7 @@ import {
   Battery,
 } from "lucide-react";
 import axios from "axios";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 
 // Define types for our data
 type Category = {
@@ -71,6 +71,7 @@ type Product = {
 const CategoryProductsPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const params = useParams();
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("featured");
@@ -87,9 +88,38 @@ const CategoryProductsPage = () => {
 
   // Get category name from URL or location state
   useEffect(() => {
-    const categoryName = location.state?.categoryName || "Laptops";
+    // Try to get category from navigation state first
+    let categoryName = location.state?.categoryName;
+
+    // If not in state, try to extract from URL path
+    if (!categoryName) {
+      const pathSegments = location.pathname.split("/");
+      const categoryFromUrl = pathSegments[pathSegments.length - 1];
+      if (categoryFromUrl && categoryFromUrl !== "category") {
+        // Convert URL format back to category name (e.g., "pc-components" -> "PC Components")
+        categoryName = categoryFromUrl
+          .split("-")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
+      }
+    }
+
+    // Fallback to default
+    categoryName = categoryName || "Laptops";
+
+    console.log(
+      "CategoryPage: Setting category to:",
+      categoryName,
+      "from state:",
+      location.state
+    );
     setSelectedCategory(categoryName);
-  }, [location.state]);
+  }, [location.state, location.pathname]);
+
+  // Debug effect to log state changes
+  useEffect(() => {
+    console.log("CategoryPage: selectedCategory changed to:", selectedCategory);
+  }, [selectedCategory]);
 
   // Fetch categories from database
   const fetchCategories = async () => {
