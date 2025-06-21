@@ -30,6 +30,7 @@ import ReviewPage from "./pages/pending-views";
 import WishList from "./pages/WishList";
 import TermsAndConditions from "./pages/Terms&Condition";
 import { FavoritesProvider } from "./context/FavoritesContext";
+import CategoryManagement from "./components/CategoryManagment";
 
 function App() {
   return (
@@ -56,7 +57,7 @@ function App() {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/SuperAdmin" element={<SuperAdminRegister />} />
               <Route path="/termsconditions" element={<TermsAndConditions />} />
-
+             <Route path="/deletecategory"  element={<CategoryManagement />} />
               <Route element={<Layout />}>
                 <Route path="/pending-reviews" element={<ReviewPage />} />
                 <Route path="/wishlist" element={<WishList />} />
