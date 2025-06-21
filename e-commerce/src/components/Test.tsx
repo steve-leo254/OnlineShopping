@@ -205,8 +205,11 @@ const ModernEcommerceHomepage = () => {
 
   // Navigate to category page
   const handleCategoryClick = (categoryName: string) => {
+    console.log("Test.tsx: Navigating to category:", categoryName);
+    // Navigate to the correct route path with category parameter
     navigate(`/category/${categoryName.toLowerCase().replace(/\s+/g, "-")}`, {
       state: { categoryName },
+      replace: true,
     });
   };
 
