@@ -32,6 +32,7 @@ import TermsAndConditions from "./pages/Terms&Condition";
 import { FavoritesProvider } from "./context/FavoritesContext";
 import ModernEcommerceHomepage from "./components/Test";
 import CategoryProductsPage from "./components/CategoryPage";
+import AddSubcategory from "./components/AddSubcategory";
 function App() {
   return (
     <AuthProvider>
@@ -60,7 +61,7 @@ function App() {
               <Route path="/termsconditions" element={<TermsAndConditions />} />
 
               <Route element={<Layout />}>
-
+                
                <Route path="/category-page" element={<CategoryProductsPage />} />
                 <Route index element={<Home />} />
                 <Route
@@ -74,6 +75,7 @@ function App() {
               </Route>
               <Route element={<ProtectedRoute />}>
                 <Route element={<Layout />}>
+                <Route path="/add-subcategory" element={<AddSubcategory />} />
                 <Route path="/pending-reviews" element={<ReviewPage />} />
                 <Route path="/wishlist" element={<WishList />} />
                   <Route path="/products" element={<Products />} />
