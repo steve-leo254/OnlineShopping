@@ -32,6 +32,7 @@ from pydantic_models import (
     SubcategoryResponse,
     SubcategoryCreate,
     SubcategoryUpdate,
+    ReviewBase,
 )
 from typing import Annotated, List, Optional
 import models
@@ -1411,20 +1412,69 @@ async def delete_favorite(favorite_id: int, db: db_dependency, user: user_depend
     return {"message": "Favorite removed successfully"}
 
 
-# --- Reviews ---
+# Utility function to calculate and update product rating from reviews
+def update_product_rating(db: Session, product_id: int):
+    """Calculate average rating from reviews and update product rating"""
+    try:
+        # Calculate average rating from all reviews for this product
+        avg_rating = (
+            db.query(func.avg(models.Review.rating))
+            .filter(models.Review.product_id == product_id)
+            .scalar()
+        )
+
+        # Update product rating
+        product = (
+            db.query(models.Products).filter(models.Products.id == product_id).first()
+        )
+        if product:
+            product.rating = float(avg_rating) if avg_rating else 0.0
+            db.commit()
+            return product.rating
+    except Exception as e:
+        logger.error(f"Error updating product rating: {str(e)}")
+        db.rollback()
+        return 0.0
+
+
 @app.post("/reviews", response_model=ReviewResponse)
 async def add_review(review: ReviewCreate, db: db_dependency, user: user_dependency):
-    db_review = models.Review(
-        user_id=user.get("id"),
-        product_id=review.product_id,
-        order_id=review.order_id,
-        rating=review.rating,
-        comment=review.comment,
-    )
-    db.add(db_review)
-    db.commit()
-    db.refresh(db_review)
-    return db_review
+    try:
+        # Check if user has already reviewed this product
+        existing_review = (
+            db.query(models.Review)
+            .filter(
+                models.Review.user_id == user.get("id"),
+                models.Review.product_id == review.product_id,
+            )
+            .first()
+        )
+
+        if existing_review:
+            raise HTTPException(
+                status_code=400, detail="You have already reviewed this product"
+            )
+
+        # Create new review
+        db_review = models.Review(
+            user_id=user.get("id"),
+            product_id=review.product_id,
+            order_id=review.order_id,
+            rating=review.rating,
+            comment=review.comment,
+        )
+        db.add(db_review)
+        db.commit()
+        db.refresh(db_review)
+
+        # Update product rating
+        update_product_rating(db, review.product_id)
+
+        return db_review
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error adding review: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error adding review")
 
 
 @app.get("/products/{product_id}/reviews", response_model=List[ReviewResponse])
@@ -1432,16 +1482,74 @@ async def get_product_reviews(product_id: int, db: db_dependency):
     reviews = (
         db.query(models.Review).filter(models.Review.product_id == product_id).all()
     )
-    # Attach username to each review
-    result = []
-    for review in reviews:
-        user = db.query(models.Users).filter(models.Users.id == review.user_id).first()
-        review_dict = review.__dict__.copy()
-        review_dict["username"] = user.username if user else None
-        # Remove SQLAlchemy state if present
-        review_dict.pop("_sa_instance_state", None)
-        result.append(review_dict)
-    return result
+    return reviews
+
+
+@app.put("/reviews/{review_id}", response_model=ReviewResponse)
+async def update_review(
+    review_id: int, review_update: ReviewBase, db: db_dependency, user: user_dependency
+):
+    """Update a review and recalculate product rating"""
+    try:
+        # Find the review and ensure it belongs to the user
+        review = (
+            db.query(models.Review)
+            .filter(
+                models.Review.id == review_id, models.Review.user_id == user.get("id")
+            )
+            .first()
+        )
+
+        if not review:
+            raise HTTPException(status_code=404, detail="Review not found")
+
+        # Update review fields
+        review.rating = review_update.rating
+        review.comment = review_update.comment
+
+        db.commit()
+        db.refresh(review)
+
+        # Recalculate product rating
+        update_product_rating(db, review.product_id)
+
+        return review
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error updating review: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error updating review")
+
+
+@app.delete("/reviews/{review_id}", status_code=status.HTTP_200_OK)
+async def delete_review(review_id: int, db: db_dependency, user: user_dependency):
+    """Delete a review and recalculate product rating"""
+    try:
+        # Find the review and ensure it belongs to the user
+        review = (
+            db.query(models.Review)
+            .filter(
+                models.Review.id == review_id, models.Review.user_id == user.get("id")
+            )
+            .first()
+        )
+
+        if not review:
+            raise HTTPException(status_code=404, detail="Review not found")
+
+        product_id = review.product_id
+
+        # Delete the review
+        db.delete(review)
+        db.commit()
+
+        # Recalculate product rating
+        update_product_rating(db, product_id)
+
+        return {"message": "Review deleted successfully"}
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error deleting review: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error deleting review")
 
 
 @app.post(
@@ -1653,6 +1761,33 @@ async def get_products_by_subcategory(
     except Exception as e:
         logger.error(f"Error fetching products by subcategory: {str(e)}")
         raise HTTPException(status_code=500, detail="Error fetching products")
+
+
+@app.post("/admin/recalculate-product-ratings", status_code=status.HTTP_200_OK)
+async def recalculate_all_product_ratings(db: db_dependency, user: user_dependency):
+    """Recalculate ratings for all products from their reviews"""
+    require_admin(user)
+    try:
+        # Get all products
+        products = db.query(models.Products).all()
+        updated_count = 0
+
+        for product in products:
+            old_rating = product.rating
+            new_rating = update_product_rating(db, product.id)
+            if old_rating != new_rating:
+                updated_count += 1
+
+        return {
+            "message": f"Product ratings recalculated successfully",
+            "products_updated": updated_count,
+            "total_products": len(products),
+        }
+    except Exception as e:
+        logger.error(f"Error recalculating product ratings: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail="Error recalculating product ratings"
+        )
 
 
 if __name__ == "__main__":
