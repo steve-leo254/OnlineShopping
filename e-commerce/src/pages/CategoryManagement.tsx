@@ -306,9 +306,16 @@ const CategoryManagement: React.FC = () => {
       return;
     }
 
+    if (!selectedCategory) {
+      toast.error("Please select a category first");
+      return;
+    }
+
     try {
       await axios.delete(
-        `${import.meta.env.VITE_API_BASE_URL}/specifications/${specId}`,
+        `${
+          import.meta.env.VITE_API_BASE_URL
+        }/categories/${selectedCategory}/specifications/${specId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success("Specification deleted successfully!");
