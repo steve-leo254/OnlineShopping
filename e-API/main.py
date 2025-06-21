@@ -1180,6 +1180,168 @@ async def get_category_specifications(category_id: int, db: db_dependency):
     return specs
 
 
+@app.delete(
+    "/categories/{category_id}/specifications/{spec_id}",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_category_specification(
+    category_id: int,
+    spec_id: int,
+    db: db_dependency,
+    user: user_dependency,
+):
+    """Delete a specification from a category"""
+    require_admin(user)
+    try:
+        spec = (
+            db.query(models.Specification)
+            .filter(
+                models.Specification.id == spec_id,
+                models.Specification.category_id == category_id,
+            )
+            .first()
+        )
+        if not spec:
+            raise HTTPException(status_code=404, detail="Specification not found")
+
+        # Check if any products are using this specification
+        product_specs_count = (
+            db.query(models.ProductSpecification)
+            .filter(models.ProductSpecification.specification_id == spec_id)
+            .count()
+        )
+        if product_specs_count > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete specification. {product_specs_count} products are using this specification.",
+            )
+
+        db.delete(spec)
+        db.commit()
+        return {"message": "Specification deleted successfully"}
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error deleting specification: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error deleting specification")
+
+
+@app.put(
+    "/categories/{category_id}/specifications/{spec_id}",
+    response_model=SpecificationResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def update_category_specification(
+    category_id: int,
+    spec_id: int,
+    spec_update: SpecificationCreate,
+    db: db_dependency,
+    user: user_dependency,
+):
+    """Update a specification"""
+    require_admin(user)
+    try:
+        spec = (
+            db.query(models.Specification)
+            .filter(
+                models.Specification.id == spec_id,
+                models.Specification.category_id == category_id,
+            )
+            .first()
+        )
+        if not spec:
+            raise HTTPException(status_code=404, detail="Specification not found")
+
+        update_data = spec_update.dict()
+        for field, value in update_data.items():
+            setattr(spec, field, value)
+
+        db.commit()
+        db.refresh(spec)
+        return spec
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error updating specification: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error updating specification")
+
+
+# --- Category Management ---
+@app.put(
+    "/categories/{category_id}",
+    response_model=CategoryResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def update_category(
+    category_id: int,
+    category_update: CategoryBase,
+    user: user_dependency,
+    db: db_dependency,
+):
+    """Update a category"""
+    require_admin(user)
+    try:
+        category = (
+            db.query(models.Categories)
+            .filter(models.Categories.id == category_id)
+            .first()
+        )
+        if not category:
+            raise HTTPException(status_code=404, detail="Category not found")
+
+        update_data = category_update.dict()
+        for field, value in update_data.items():
+            setattr(category, field, value)
+
+        db.commit()
+        db.refresh(category)
+        return category
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error updating category: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error updating category")
+
+
+@app.delete(
+    "/categories/{category_id}",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_category(
+    category_id: int,
+    user: user_dependency,
+    db: db_dependency,
+):
+    """Delete a category"""
+    require_admin(user)
+    try:
+        category = (
+            db.query(models.Categories)
+            .filter(models.Categories.id == category_id)
+            .first()
+        )
+        if not category:
+            raise HTTPException(status_code=404, detail="Category not found")
+
+        # Check if any products are using this category
+        products_count = (
+            db.query(models.Products)
+            .filter(models.Products.category_id == category_id)
+            .count()
+        )
+        if products_count > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete category. {products_count} products are using this category.",
+            )
+
+        # The cascade delete will handle subcategories and specifications automatically
+        db.delete(category)
+        db.commit()
+        return {"message": "Category deleted successfully"}
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error deleting category: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error deleting category")
+
+
 # --- Product Specification Values ---
 @app.post(
     "/products/{product_id}/specifications", response_model=ProductSpecificationResponse
