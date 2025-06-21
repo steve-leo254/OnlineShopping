@@ -63,7 +63,7 @@ function App() {
               <Route element={<Layout />}>
                 <Route path="/test" element={<ModernEcommerceHomepage />} />
                 <Route
-                  path="/category-page"
+                  path="/category/:categoryName"
                   element={<CategoryProductsPage />}
                 />
                 <Route index element={<Home />} />
