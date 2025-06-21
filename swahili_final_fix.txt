@@ -1,0 +1,113 @@
+EXACT CHANGES NEEDED FOR SWAHILI SUPPORT:
+
+1. FIND THIS SECTION (around line 554-562):
+```tsx
+// Handle Kiswahili greetings
+if (['sasa', 'mambo', 'uko aje', 'niaje', 'vipi'].includes(message)) {
+  return {
+    id: Date.now(),
+    text: "Sasa! 😊 I see you're speaking Swahili! That's awesome! While I'm still learning and not yet fluent, I hope to chat with you in Swahili soon. For now, how can I help you in English? 🇰🇪",
+    sender: "bot",
+    timestamp: new Date(),
+  };
+}
+```
+
+2. REPLACE IT WITH THIS UPDATED VERSION:
+```tsx
+// Handle Kiswahili greetings
+if (['sasa', 'mambo', 'uko aje', 'niaje', 'vipi'].includes(message)) {
+  return {
+    id: Date.now(),
+    text: "Poa sana! Ukoaje? 😊✨ Karibu sana Flowtechs! Mimi ni Makena, your shopping assistant! 🇰🇪\n\nNimefurahi kukuona hapa! (I'm happy to see you here!)\n\nNiko tayari kukusaidia na:\n• 🛍️ Kupata bidhaa (Find products)\n• 📦 Kufuatilia oda (Track orders)\n• 💡 Mapendekezo (Recommendations)\n• 🎧 Msaada wa wateja (Customer support)\n• 🏷️ Bei nzuri (Best deals)\n• 💳 Malipo (Payment help)\n\nTuanze safari ya manunuzi pamoja! 🚀💫\n\n(PS: I'm still learning Swahili, so feel free to mix with English!)",
+    sender: "bot",
+    timestamp: new Date(),
+  };
+}
+
+// Handle Kiswahili product search
+if (
+  message.includes("tafuta") || message.includes("bidhaa gani") || message.includes("ninaweza pata") ||
+  message.includes("nisaidie kupata") || message.includes("ninaomba bidhaa")
+) {
+  return {
+    id: Date.now(),
+    text: "Unatafuta bidhaa gani leo? 🛍️ Andika jina la bidhaa au aina unayotaka, na nitakusaidia kuipata haraka!",
+    sender: "bot",
+    timestamp: new Date(),
+  };
+}
+
+// Handle Kiswahili order tracking
+if (
+  message.includes("oda yangu iko wapi") || message.includes("fuatilia oda") || message.includes("ninaweza fuatilia") ||
+  message.includes("oda yangu") || message.includes("nisaidie kufuatilia")
+) {
+  return {
+    id: Date.now(),
+    text: "Ili kufuatilia oda yako, tafadhali andika nambari ya oda au jina lako. Nitakupa taarifa za hivi punde kuhusu oda yako! 📦",
+    sender: "bot",
+    timestamp: new Date(),
+  };
+}
+
+// Handle Kiswahili recommendations
+if (
+  message.includes("pendekezo") || message.includes("nisaidie kuchagua") || message.includes("nini bora") ||
+  message.includes("unapendekeza nini")
+) {
+  return {
+    id: Date.now(),
+    text: "Ningependa kukupendekezea bidhaa bora! Niambie unachopenda au bajeti yako, na nitakutafutia chaguo nzuri. 💡",
+    sender: "bot",
+    timestamp: new Date(),
+  };
+}
+
+// Handle Kiswahili customer support/help
+if (
+  message.includes("msaada") || message.includes("nisaidie") || message.includes("shida") ||
+  message.includes("tatizo") || message.includes("nahitaji msaada")
+) {
+  return {
+    id: Date.now(),
+    text: "Niko hapa kukusaidia! Eleza shida yako au swali lako, na nitajitahidi kutoa suluhisho haraka. 🎧",
+    sender: "bot",
+    timestamp: new Date(),
+  };
+}
+```
+
+3. ALSO ADD FOUNDERS HANDLER (if not already added):
+```tsx
+// Handle founder-related queries
+if (
+  message.includes("founder") || message.includes("founders") ||
+  message.includes("eric") || message.includes("steve") ||
+  message.includes("omondi") || message.includes("leo") ||
+  message.includes("who started") || message.includes("who created") ||
+  message.includes("who owns") || message.includes("started by") ||
+  message.includes("who are the founders") || message.includes("who are founders") ||
+  message.includes("when was flowtechs started") || message.includes("when did flowtechs start") ||
+  message.includes("when was flowtechs founded") || message.includes("when did flowtechs begin")
+) {
+  return {
+    id: Date.now(),
+    text: `👥 **Meet Our Founders: Eric Omondi & Steve Leo** ✨\n\nFlowtechs was founded by two young, enthusiastic developers, **Eric Omondi** and **Steve Leo**, who are passionate about joining and shaping the tech revolution in Kenya and beyond.\n\n**Background:**\nEric and Steve met as university students, both driven by a love for technology and a desire to solve real-world problems. They noticed that many Kenyans, especially in rural areas, struggled to access quality products at fair prices. Inspired by the global e-commerce boom, they decided to build a platform that would make premium shopping accessible to everyone in Kenya.\n\n**Their Vision:**\n- To empower every Kenyan with access to quality products, no matter where they live.\n- To use technology to bridge gaps in commerce, logistics, and customer service.\n- To create a vibrant, trustworthy online marketplace that supports local businesses and delights customers.\n\n**Their Story:**\nStarting with just a laptop and a dream, Eric and Steve worked tirelessly to build Flowtechs from the ground up. They spent countless nights coding, researching market needs, and connecting with suppliers. Their dedication paid off when they launched their first version in 2023, and the response was overwhelming.\n\n**What Makes Them Special:**\n• 🧠 **Young Innovators**: Fresh perspectives and modern approaches to e-commerce\n• 💻 **Tech-Savvy**: Deep understanding of both technology and business\n• 🌍 **Kenya-Focused**: Built specifically for Kenyan market needs and preferences\n• 🚀 **Future-Oriented**: Always thinking about the next big thing in tech\n• 🤝 **Community-Driven**: Believe in giving back and supporting local businesses\n\n**Their Mission Today:**\nEric and Steve continue to lead Flowtechs with the same passion and energy that drove them to start the company. They're constantly exploring new technologies, expanding their reach, and finding innovative ways to serve their customers better.\n\n**Join the Revolution:**\nWhen you shop with Flowtechs, you're not just buying products - you're supporting the vision of two young Kenyans who dared to dream big and are making that dream a reality for everyone! 🇰🇪✨\n\n**Ready to experience the future of shopping, built by Kenya's next generation of tech leaders?** 🛍️💫`,
+    sender: "bot",
+    timestamp: new Date(),
+  };
+}
+```
+
+4. UPDATE COMPANY INFO TO INCLUDE FOUNDERS:
+Find the company info handler and update it to include founders' names.
+
+5. TEST ALL RESPONSES:
+- Try "sasa" or "mambo" for Swahili greeting
+- Try "tafuta bidhaa" for product search
+- Try "oda yangu" for order tracking
+- Try "pendekezo" for recommendations
+- Try "msaada" for customer support
+- Try "who are founders" for founders info
+- Try "tell me about flowtechs" for company info 

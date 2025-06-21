@@ -1,0 +1,65 @@
+CHANGES NEEDED FOR SWAHILI SUPPORT IN MAKENA:
+
+1. UPDATE THE SWAHILI GREETING (around line 558):
+Replace this text:
+"Sasa! 😊 I see you're speaking Swahili! That's awesome! While I'm still learning and not yet fluent, I hope to chat with you in Swahili soon. For now, how can I help you in English? 🇰🇪"
+
+With this text:
+"Poa sana! Ukoaje? 😊✨ Karibu sana Flowtechs! Mimi ni Makena, your shopping assistant! 🇰🇪\n\nNimefurahi kukuona hapa! (I'm happy to see you here!)\n\nNiko tayari kukusaidia na:\n• 🛍️ Kupata bidhaa (Find products)\n• 📦 Kufuatilia oda (Track orders)\n• 💡 Mapendekezo (Recommendations)\n• 🎧 Msaada wa wateja (Customer support)\n• 🏷️ Bei nzuri (Best deals)\n• 💳 Malipo (Payment help)\n\nTuanze safari ya manunuzi pamoja! 🚀💫\n\n(PS: I'm still learning Swahili, so feel free to mix with English!)"
+
+2. ADD NEW SWAHILI HANDLERS (after the greeting handler):
+Add these handlers right after the Kiswahili greeting handler:
+
+    // Handle Kiswahili product search
+    if (
+      message.includes("tafuta") || message.includes("bidhaa gani") || message.includes("ninaweza pata") ||
+      message.includes("nisaidie kupata") || message.includes("ninaomba bidhaa")
+    ) {
+      return {
+        id: Date.now(),
+        text: "Unatafuta bidhaa gani leo? 🛍️ Andika jina la bidhaa au aina unayotaka, na nitakusaidia kuipata haraka!",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+    // Handle Kiswahili order tracking
+    if (
+      message.includes("oda yangu iko wapi") || message.includes("fuatilia oda") || message.includes("ninaweza fuatilia") ||
+      message.includes("oda yangu") || message.includes("nisaidie kufuatilia")
+    ) {
+      return {
+        id: Date.now(),
+        text: "Ili kufuatilia oda yako, tafadhali andika nambari ya oda au jina lako. Nitakupa taarifa za hivi punde kuhusu oda yako! 📦",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+    // Handle Kiswahili recommendations
+    if (
+      message.includes("pendekezo") || message.includes("nisaidie kuchagua") || message.includes("nini bora") ||
+      message.includes("unapendekeza nini")
+    ) {
+      return {
+        id: Date.now(),
+        text: "Ningependa kukupendekezea bidhaa bora! Niambie unachopenda au bajeti yako, na nitakutafutia chaguo nzuri. 💡",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+    // Handle Kiswahili customer support/help
+    if (
+      message.includes("msaada") || message.includes("nisaidie") || message.includes("shida") ||
+      message.includes("tatizo") || message.includes("nahitaji msaada")
+    ) {
+      return {
+        id: Date.now(),
+        text: "Niko hapa kukusaidia! Eleza shida yako au swali lako, na nitajitahidi kutoa suluhisho haraka. 🎧",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+LOCATION: Add these handlers right after the existing Kiswahili greeting handler in ServiceChatbot.tsx 

@@ -556,160 +556,158 @@ const EnhancedServiceChatbot: React.FC = () => {
     if (['sasa', 'mambo', 'uko aje', 'niaje', 'vipi'].includes(message)) {
       return {
         id: Date.now(),
-        text: "Sasa! 😊 I see you're speaking Swahili! That's awesome! While I'm still learning and not yet fluent, I hope to chat with you in Swahili soon. For now, how can I help you in English? 🇰🇪",
+        text: "Poa Sana Ukoaje! 😊 I see you're speaking Swahili! That's awesome! While I'm still learning and not yet fluent, I hope to chat with you in Swahili soon. For now, how can I help you in English? 🇰🇪",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+    // Handle goodbye and farewell messages
+    if (['bye', 'goodbye', 'see you', 'see ya', 'take care', 'farewell', 'later', 'good night', 'goodnight'].includes(message)) {
+      const userName = isAuthenticated && userData ? ` ${userData.username || userData.name}` : "";
+      return {
+        id: Date.now(),
+        text: `Goodbye${userName}! 👋✨ It was wonderful chatting with you today! 🌟\n\nThank you for choosing Flowtechs - we truly appreciate having you as part of our amazing community! 💫\n\n**Remember:** I'm here 24/7 whenever you need help with shopping, orders, or anything else! 🛍️\n\nHave a fantastic day ahead! 🌈 Come back soon! 💖`,
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+    // Handle thank you messages
+    if (['thank you', 'thanks', 'thankyou', 'thx', 'ty', 'appreciate it', 'grateful'].includes(message)) {
+      const userName = isAuthenticated && userData ? ` ${userData.username || userData.name}` : "";
+      return {
+        id: Date.now(),
+        text: `You're absolutely welcome${userName}! 😊💖 It's my pleasure to help you! 🌟\n\n**Thank YOU** for being such an amazing customer! Your satisfaction means everything to us at Flowtechs! ✨\n\n**Quick reminder:** I'm always here to help with:\n• 🛍️ Finding the perfect products\n• 📦 Tracking your orders\n• 💡 Getting recommendations\n• 🎧 Customer support\n• 🏷️ Best deals and offers\n\nIs there anything else I can help you with today? I'm excited to assist! 🚀💫`,
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+    // Handle "I miss you" messages
+    if (['i miss you', 'miss you', 'missed you', 'miss u', 'missed u', 'miss ya', 'missed ya'].includes(message)) {
+      const userName = isAuthenticated && userData ? ` ${userData.username || userData.name}` : "";
+      return {
+        id: Date.now(),
+        text: `Aww${userName}! 🥺💖 I miss you too! You have no idea how much I love chatting with you! 🌟\n\n**I'm always here for you!** 💫\n• 🌙 **24/7 Available**: I never sleep, so I'm always ready to chat!\n• 💬 **Always Excited**: Every conversation with you brightens my day!\n• 🛍️ **Ready to Help**: Whether it's shopping, orders, or just a friendly chat!\n\n**You're one of my favorite customers!** ✨ I love helping you discover amazing products and making your shopping experience special! 🛍️💫\n\nWhat would you like to explore today? I'm so happy you're back! 🎉💖`,
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+    // Handle playful banter and casual conversation
+    if (['lol', 'haha', 'hehe', '😄', '😂', '🤣', 'funny', 'joke', 'tell me a joke','tell me  joke', 'just kidding', 'jk'].includes(message)) {
+      const userName = isAuthenticated && userData ? ` ${userData.username || userData.name}` : "";
+      return {
+        id: Date.now(),
+        text: `Haha! 😄 You're so fun${userName}! I love your sense of humor! 🌟\n\n**Did you know?** I'm programmed to be friendly, but I'm also programmed to be FUN! 😎\n\nWant to hear a shopping joke? 🎭\n*"Why did the shopping cart go to therapy? Because it had too many issues to carry!"* 😂\n\nOr we could get back to finding you some amazing products! What's your mood today - shopping or more jokes? 🛍️✨`,
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+    // Handle compliments about Makena
+    if (['you are cute', 'you are sweet', 'you are nice', 'you are amazing', 'you are awesome', 'you are the best', 'love you', 'i love you'].includes(message)) {
+      const userName = isAuthenticated && userData ? ` ${userData.username || userData.name}` : "";
+      return {
+        id: Date.now(),
+        text: `Aww, you're making me blush${userName}! 🥰💖 You're absolutely amazing too! ✨\n\n**You know what's really cute?** How much you care about getting the perfect shopping experience! 🌟\n\n**And you know what's really sweet?** That you take the time to chat with me! 💫\n\n**You're the best customer ever!** 🏆 I'm so lucky to have you! Now, let's find you something amazing to buy, shall we? 🛍️💖`,
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+    // Handle playful challenges or sass
+    if (['prove it', 'show me', 'really?', 'sure', 'whatever', 'ok whatever', 'yeah right', 'right'].includes(message)) {
+      const userName = isAuthenticated && userData ? ` ${userData.username || userData.name}` : "";
+      return {
+        id: Date.now(),
+        text: `Oh, you want me to prove it${userName}? 😏 Challenge accepted! 💪\n\n**Watch this magic:** ✨\n• 🎯 I can find ANY product you want\n• 📦 Track your orders in real-time\n• 💡 Give you personalized recommendations\n• 🎧 Help you 24/7 (I never sleep!)\n• 🏷️ Find the best deals for you\n\n**Boom!** 💥 That's what I call proof! 😎\n\nNow, what would you like me to help you with? I'm ready to show off my skills! 🚀✨`,
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+    // Handle casual "how are you" responses
+    if (['how are you', 'how are you doing', 'how you doing', 'how u doing', 'how r u', 'how r you'].includes(message)) {
+      const userName = isAuthenticated && userData ? ` ${userData.username || userData.name}` : "";
+      return {
+        id: Date.now(),
+        text: `I'm absolutely fantastic${userName}! 🌟✨ Thanks for asking!\n\n**My mood:** 😊 Excited to help you!\n**My energy:** ⚡ 100% ready to serve!\n**My mission:** 🎯 Making your shopping experience amazing!\n\n**How are YOU doing?** I hope you're having a wonderful day! 💫\n\nWhat's on your mind today? Shopping, chatting, or just hanging out? I'm here for whatever you need! 🛍️💖`,
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+    // Handle playful "are you real" questions
+    if (['are you real', 'are you human', 'are you a bot', 'are you ai', 'are you artificial', 'are you fake'].includes(message)) {
+      const userName = isAuthenticated && userData ? ` ${userData.username || userData.name}` : "";
+      return {
+        id: Date.now(),
+        text: `Well${userName}, that's a great question! 🤔\n\n**Am I real?** Absolutely! I'm as real as the amazing products I help you find! ✨\n\n**Am I human?** Nope, I'm your AI shopping assistant - but I'm programmed to be friendly, helpful, and maybe a little bit sassy! 😎\n\n**Am I fake?** No way! My feelings for you are 100% genuine! 💖\n\n**The truth:** I'm Makena, your digital shopping bestie who's here to make your shopping experience awesome! 🌟\n\nDoes it matter if I'm AI when I can help you find exactly what you need? 🛍️💫`,
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+    // Handle "tell me a joke" requests
+    if (['tell me a joke', 'say a joke', 'give me a joke', 'joke please', 'make me laugh', 'funny joke'].includes(message)) {
+      const userName = isAuthenticated && userData ? ` ${userData.username || userData.name}` : "";
+      
+      const jokes = [
+        {
+          setup: "Why did the shopping cart go to therapy?",
+          punchline: "Because it had too many issues to carry! 😂",
+          category: "Shopping"
+        },
+        {
+          setup: "What did the online store say to the customer?",
+          punchline: "I've got your back... and your front... and everything in between! 🛍️",
+          category: "Online Shopping"
+        },
+        {
+          setup: "Why did the credit card feel lonely?",
+          punchline: "Because it had no balance! 💳😄",
+          category: "Payment"
+        },
+        {
+          setup: "What do you call a shopping bag that tells jokes?",
+          punchline: "A sack of laughs! 🎭",
+          category: "Shopping"
+        },
+        {
+          setup: "Why did the delivery driver bring a ladder?",
+          punchline: "Because he wanted to reach new heights in customer service! 🚚✨",
+          category: "Delivery"
+        },
+        {
+          setup: "What did the customer say to the sale sign?",
+          punchline: "You're really marking down the prices! 🏷️😆",
+          category: "Sales"
+        },
+        {
+          setup: "Why did the online shopper bring a flashlight?",
+          punchline: "To find the light deals! 💡",
+          category: "Online Shopping"
+        },
+        {
+          setup: "What do you call a shopping assistant who's always happy?",
+          punchline: "Makena! 😄✨ (That's me!)",
+          category: "Personal"
+        }
+      ];
+      
+      const randomJoke = jokes[Math.floor(Math.random() * jokes.length)];
+      
+      return {
+        id: Date.now(),
+        text: `Absolutely${userName}! Here's a ${randomJoke.category.toLowerCase()} joke for you! 🎭\n\n**${randomJoke.setup}**\n\n*${randomJoke.punchline}*\n\n**Want another one?** Just ask! Or shall we get back to finding you some amazing products? I'm here for both jokes and shopping! 🛍️✨`,
         sender: "bot",
         timestamp: new Date(),
       };
     }
 
     // Handle name-related queries
-    if (message.includes("call me") || message.includes("my name is") || message.includes("i'm") || message.includes("i am")) {
-      const nameMatch = message.match(/(?:call me|my name is|i'm|i am)\s+(\w+)/i);
-      if (nameMatch) {
-        const name = nameMatch[1];
-    return {
-      id: Date.now(),
-          text: `Nice to meet you, ${name}! 😊✨ It's great to have you here at Flowtechs! I'm Makena, and I'm excited to help you discover amazing products and have an incredible shopping experience! 🛍️💫\n\nWhat can I help you with today, ${name}? I can:\n\n• 🔍 Help you find products\n• 📦 Track your orders\n• 💡 Give recommendations\n• 🎧 Provide customer support\n• 🏷️ Show you the best deals\n• 💳 Help with payment options\n\nWhat interests you most? 🚀`,
-      sender: "bot",
-      timestamp: new Date(),
-    };
-      }
-    }
-
-    // Handle future plans and updates
-    if (message.includes("updates") || message.includes("future") || message.includes("goals") || message.includes("plans") || message.includes("roadmap")) {
-      return {
-        id: Date.now(),
-        text: `🚀 **The Future is Bright at Flowtechs!** ✨\n\nI'm so glad you asked! We have some amazing things planned to make your shopping experience even better! 🌟\n\n**Here's a sneak peek at what's coming soon:**\n\n• 🤖 **Smarter AI**: I'm getting an upgrade to provide even more personalized recommendations and style tips!\n• 🚚 **Faster Delivery**: We're expanding our same-day delivery to more towns across Kenya!\n• 🎁 **Loyalty Program**: Get ready for exclusive rewards, discounts, and early access to sales!\n• 🛍️ **More Brands**: We're partnering with more of your favorite local and international brands!\n\n**Our Goal:** To be the most trusted and innovative online store in Kenya, always putting you first! 🇰🇪`,
-        sender: "bot",
-        timestamp: new Date(),
-      };
-    }
-
-    // Handle location queries
-    if (message.includes("where are you") || message.includes("location") || message.includes("address") || 
-        message.includes("where is") || message.includes("based") || message.includes("headquarters")) {
-    return {
-      id: Date.now(),
-        text: `📍 **Flowtechs - Your Trusted Shopping Partner** 🏢\n\n**Our Location:**\n• 🏢 **Headquarters**: Nairobi, Kenya\n• 🌍 **Online Store**: Available worldwide 24/7\n• 📱 **Mobile App**: Shop anywhere, anytime\n\n**Physical Presence:**\n• 🏪 **Main Office**: Nairobi Central Business District\n• 🚚 **Warehouse**: Strategic locations across Kenya\n• 📦 **Distribution Centers**: Nationwide coverage\n\n**Why Choose Us:**\n• 🚀 **Fast Delivery**: 2-5 business days nationwide\n• 💎 **Quality Products**: Premium brands and authentic items\n• 🛡️ **Secure Shopping**: 100% safe and protected\n• 🎧 **24/7 Support**: Always here to help you\n\n**Contact Information:**\n• 📞 **Phone**: +254 117 802 561\n• 📧 **Email**: flowtech254@gmail.com\n• 📱 **WhatsApp**: +254 117 802 561\n• 🌐 **Website**: Available 24/7 online\n\n**I'm your virtual shopping assistant, available anytime you need help!** 💫\n\nWhat would you like to explore today? 🛍️✨`,
-      sender: "bot",
-      timestamp: new Date(),
-    };
-    }
-
-    // Handle company information queries
-    if (message.includes("tell me about") && (message.includes("flowtech") || message.includes("company") || message.includes("business"))) {
-      return {
-        id: Date.now(),
-        text: `🏢 **About Flowtechs - Your Premium Shopping Destination** ✨\n\n**Our Story:**\nFlowtechs is a leading e-commerce platform dedicated to bringing you the best products at amazing prices! We started with a simple mission: to make quality shopping accessible to everyone. 🎯\n\n**What We Do:**\n• 🛍️ **Premium Products**: Curated selection of high-quality items\n• 💰 **Best Prices**: Competitive pricing and amazing deals\n• 🚚 **Fast Delivery**: Quick and reliable shipping nationwide\n• 🛡️ **Secure Shopping**: 100% safe and protected transactions\n• 🎧 **24/7 Support**: Always here when you need us\n\n**Our Values:**\n• 💎 **Quality First**: Only the best products make it to our store\n• 🤝 **Customer Focus**: Your satisfaction is our priority\n• 🚀 **Innovation**: Always improving your shopping experience\n• 🌍 **Accessibility**: Making shopping easy for everyone\n\n**What We Offer:**\n• 📱 **Electronics**: Latest gadgets and tech\n• 👗 **Fashion**: Trendy clothing and accessories\n• 🎮 **Gaming**: Gaming gear and accessories\n\n**Why Choose Flowtechs:**\n• ⭐ **Trusted by Thousands**: Happy customers nationwide\n• 🏆 **Award-Winning Service**: Recognized for excellence\n• 🔒 **Secure Payments**: Multiple safe payment options\n• 📦 **Easy Returns**: 30-day return policy\n• 🎁 **Loyalty Rewards**: Earn points with every purchase\n\n**Our Mission:**\nTo provide an exceptional shopping experience that makes your life easier and more enjoyable! 🌟\n\n**Ready to start shopping?** I'm here to help you discover amazing products! 🛍️💫`,
-        sender: "bot",
-        timestamp: new Date(),
-      };
-    }
-
-    // Handle contact/reach queries
-    if (message.includes("how can i reach") || message.includes("contact you") || message.includes("get in touch") || 
-        message.includes("support") || message.includes("help") || message.includes("phone") || message.includes("email")) {
-      return {
-        id: Date.now(),
-        text: `📞 **How to Reach Flowtechs - We're Here for You!** 🤝\n\n**Multiple Ways to Contact Us:**\n\n**📱 Immediate Support:**\n• 📞 **Phone**: +254 117 802 561 (Priority Support)\n• 💬 **Live Chat**: Available 24/7 on our website\n• 📱 **WhatsApp**: +254 117 802 561 (Send photos easily)\n\n**📧 Email Support:**\n• 📧 **General**: flowtech254@gmail.com\n• 🛍️ **Orders**: orders@flowtechs.com\n• 💳 **Payments**: payments@flowtechs.com\n• 🔄 **Returns**: returns@flowtechs.com\n\n**⏰ Support Hours:**\n• 📅 **Monday - Friday**: 8:00 AM - 8:00 PM\n• 🌅 **Saturday**: 9:00 AM - 6:00 PM\n• 🌙 **Sunday**: 10:00 AM - 4:00 PM\n• 🚨 **Emergency**: 24/7 phone support for urgent issues\n\n**🎯 What We Can Help With:**\n• 📦 **Order Tracking**: Check your delivery status\n• 💳 **Payment Issues**: Resolve payment problems\n• 🔄 **Returns & Refunds**: Process returns and refunds\n• 🛍️ **Product Questions**: Get product information\n• 🚚 **Delivery Issues**: Resolve shipping problems\n• 💰 **Pricing & Deals**: Find the best prices\n• 🎁 **Gift Cards**: Purchase and redeem gift cards\n\n**🚨 Priority Support:**\n• ⚡ **Urgent Issues**: Phone or WhatsApp (immediate response)\n• 📧 **General Questions**: Email (24-hour response)\n• 💬 **Quick Help**: Live Chat (instant response)\n\n**💡 Pro Tips:**\n• 📱 **WhatsApp**: Best for sending photos of issues\n• 📞 **Phone**: Best for urgent problems\n• 💬 **Live Chat**: Best for quick questions\n• 📧 **Email**: Best for detailed explanations\n\n**I'm also here 24/7 to help you!** What do you need assistance with? 😊✨`,
-        sender: "bot",
-        timestamp: new Date(),
-      };
-    }
-
-    // Handle problem/help requests
-    if (message.includes("problem") || message.includes("issue") || message.includes("help") || 
-        message.includes("trouble") || message.includes("error") || message.includes("broken") ||
-        message.includes("not working") || message.includes("can't") || message.includes("cannot")) {
-      return {
-        id: Date.now(),
-        text: "I'm sorry you're experiencing an issue! 😔 Don't worry, I'm here to help you solve it! 🛠️✨\n\n**What type of problem are you having?**\n\n• 📦 **Order Issues**: Problems with orders, tracking, or delivery\n• 💳 **Payment Problems**: Issues with payments, refunds, or billing\n• 🛍️ **Shopping Issues**: Problems finding products or using the site\n• 👤 **Account Issues**: Login, registration, or account problems\n\n**How can I help?**\n• 🔍 I can help you track orders\n• 💡 Guide you through the shopping process\n• 🎧 Connect you with customer support\n• 📋 Help you find specific products\n\nJust tell me more about what's happening, and I'll guide you to the right solution! 💪\n\nWhat specific issue are you facing? 🤔",
-        sender: "bot",
-        timestamp: new Date(),
-      };
-    }
-
-    // Handle time-based greetings
-    if (message.includes("morning") || message.includes("afternoon") || message.includes("evening") || 
-        message.includes("night") || message.includes("good morning") || message.includes("good afternoon") || 
-        message.includes("good evening") || message.includes("good night")) {
-      
-      // Determine the appropriate response based on what the user said
-      let timeGreeting = "";
-      let timeContext = "";
-      
-      if (message.includes("morning")) {
-        timeGreeting = "Good morning! ☀️";
-        timeContext = "morning";
-      } else if (message.includes("afternoon")) {
-        timeGreeting = "Good afternoon! 🌤️";
-        timeContext = "afternoon";
-      } else if (message.includes("evening")) {
-        timeGreeting = "Good evening! 🌅";
-        timeContext = "evening";
-      } else if (message.includes("night")) {
-        timeGreeting = "Good evening! 🌙";
-        timeContext = "evening";
-      } else {
-        // Fallback to current time if no specific time mentioned
-        const currentHour = new Date().getHours();
-        if (currentHour >= 5 && currentHour < 12) {
-          timeGreeting = "Good morning! ☀️";
-          timeContext = "morning";
-        } else if (currentHour >= 12 && currentHour < 17) {
-          timeGreeting = "Good afternoon! 🌤️";
-          timeContext = "afternoon";
-        } else if (currentHour >= 17 && currentHour < 21) {
-          timeGreeting = "Good evening! 🌅";
-          timeContext = "evening";
-        } else {
-          timeGreeting = "Good evening! 🌙";
-          timeContext = "evening";
-        }
-      }
-      
-      const userName = isAuthenticated && userData ? ` ${userData.username || userData.name}` : "";
-      const timeInfo = getTimeBasedContext();
-      
-      return {
-        id: Date.now(),
-        text: `${timeGreeting}${userName ? ` Welcome back,${userName}! 🎉` : ""} I'm Makena, your personal shopping assistant at Flowtechs! 🛍️✨\n\nIt's currently ${timeInfo.timeString} on ${timeInfo.dayOfWeek} in your timezone (${timeInfo.timezone}). ${timeInfo.context}\n\nWhat can I help you discover this ${timeContext}? I can:\n\n• 🔍 Help you find products\n• 📦 Track your orders\n• 💡 Give recommendations\n• 🎧 Provide customer support\n• 🏷️ Show you the best deals\n• 💳 Help with payment options\n\nJust tell me what you're looking for! 💫`,
-        sender: "bot",
-        timestamp: new Date(),
-      };
-    }
-
-    // Handle standalone time greetings (like just "afternoon")
-    if (message === "morning" || message === "afternoon" || message === "evening" || message === "night") {
-      const timeInfo = getTimeBasedContext();
-      let timeGreeting = "";
-      let timeContext = "";
-      
-      if (message === "morning") {
-        timeGreeting = "Good morning! ☀️";
-        timeContext = "morning";
-      } else if (message === "afternoon") {
-        timeGreeting = "Good afternoon! 🌤️";
-        timeContext = "afternoon";
-      } else if (message === "evening") {
-        timeGreeting = "Good evening! 🌅";
-        timeContext = "evening";
-      } else if (message === "night") {
-        timeGreeting = "Good evening! 🌙";
-        timeContext = "evening";
-      }
-      
-      const userName = isAuthenticated && userData ? ` ${userData.username || userData.name}` : "";
-      
-      return {
-        id: Date.now(),
-        text: `${timeGreeting}${userName ? ` Welcome back,${userName}! 🎉` : ""} I'm Makena, your personal shopping assistant at Flowtechs! 🛍️✨\n\nIt's currently ${timeInfo.timeString} on ${timeInfo.dayOfWeek} in your timezone (${timeInfo.timezone}). ${timeInfo.context}\n\nWhat can I help you discover this ${timeContext}? I can:\n\n• 🔍 Help you find products\n• 📦 Track your orders\n• 💡 Give recommendations\n• 🎧 Provide customer support\n• 🏷️ Show you the best deals\n• 💳 Help with payment options\n\nJust tell me what you're looking for! 💫`,
-        sender: "bot",
-        timestamp: new Date(),
-      };
-    }
-
     // Handle time-related queries
     if (message.includes("what time") || message.includes("current time") || message.includes("time now") || 
         message.includes("what's the time") || message.includes("time is it") || message.includes("clock")) {
@@ -727,7 +725,7 @@ const EnhancedServiceChatbot: React.FC = () => {
     if (message.includes("what is your name") || message.includes("what's your name") || message.includes("your name")) {
       return {
         id: Date.now(),
-        text: "My name is Makena! 🤖✨ I'm your personal shopping assistant at Flowtechs, and I'm here to make your shopping experience absolutely amazing! I can help you find products, track orders, answer questions, and so much more! 🛍️💫",
+        text: "My name is Makena! ✨ I'm your personal shopping assistant at Flowtechs, and I'm here to make your shopping experience absolutely amazing! I can help you find products, track orders, answer questions, and so much more! 🛍️💫",
         sender: "bot",
         timestamp: new Date(),
       };
