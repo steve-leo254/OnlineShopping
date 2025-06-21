@@ -47,7 +47,7 @@ const EnhancedServiceChatbot: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      text: "Hey there! 👋 I'm Makena, your personal shopping assistant at Flowtechs! I'm here to make your shopping experience absolutely amazing. What can I help you discover today? 😊",
+      text: "Hey there! 👋 I'm Makena, a staff at Flowtechs! I'm here to make your shopping experience absolutely amazing. What can I help you discover today? 😊",
       sender: "bot",
       timestamp: new Date(),
     },
@@ -408,9 +408,9 @@ const EnhancedServiceChatbot: React.FC = () => {
     }
 
     const suggestions = [
-      `Good ${timeContext}! 🌟 I'm Makena, your personal shopping assistant! I can help you with:`,
+      `Good ${timeContext}! 🌟 I'm Makena, a staff member at Flowtechs! I can help you with:`,
       `Hi there! ✨ I'm here to make your shopping experience amazing! Here's what I can do:`,
-      `Hello! 🛍️ I'm your Flowtechs shopping assistant! Let me show you what I can help with:`,
+      `Hello! 🛍️ I'm Makena from Flowtechs! Let me show you what I can help with:`,
       `Hey! 💫 I'm Makena, ready to help you discover amazing products! Here's what I can do:`
     ];
 
@@ -547,7 +547,7 @@ const EnhancedServiceChatbot: React.FC = () => {
     if (['sasa', 'mambo', 'uko aje', 'niaje', 'vipi','hujambo','hujambo' ].includes(message)) {
       return {
         id: Date.now(),
-        text: "Poa sana! Ukoaje? 😊✨ Karibu sana Flowtechs! Mimi ni Makena, your shopping assistant! 🇰🇪\n\nNimefurahi kukuona hapa! (I'm happy to see you here!)\n\nNiko tayari kukusaidia na:\n• 🛍️ Kupata bidhaa (Find products)\n• 📦 Kufuatilia oda (Track orders)\n• 💡 Mapendekezo (Recommendations)\n• 🎧 Msaada wa wateja (Customer support)\n• 🏷️ Bei nzuri (Best deals)\n• 💳 Malipo (Payment help)\n\nTuanze safari ya manunuzi pamoja! 🚀💫\n\n(PS: I'm still learning Swahili, so feel free to mix with English!)",
+        text: "Poa sana! Ukoaje? 😊✨ Karibu sana Flowtechs! Mimi ni Makena, staff wa Flowtechs! 🇰🇪\n\nNimefurahi kukuona hapa! (I'm happy to see you here!)\n\nNiko tayari kukusaidia na:\n• 🛍️ Kupata bidhaa (Find products)\n• 📦 Kufuatilia oda (Track orders)\n• 💡 Mapendekezo (Recommendations)\n• 🎧 Msaada wa wateja (Customer support)\n• 🏷️ Bei nzuri (Best deals)\n• 💳 Malipo (Payment help)\n\nTuanze safari ya manunuzi pamoja! 🚀💫\n\n(PS: I'm still learning Swahili, so feel free to mix with English!)",
         sender: "bot",
         timestamp: new Date(),
       };
@@ -775,7 +775,7 @@ const EnhancedServiceChatbot: React.FC = () => {
       const userName = isAuthenticated && userData ? ` ${userData.username || userData.name}` : "";
       return {
         id: Date.now(),
-        text: `Haha! 😄 You're so fun${userName}! I love your sense of humor! 🌟\n\n**Did you know?** I'm programmed to be friendly, but I'm also programmed to be FUN! 😎\n\nWant to hear a shopping joke? 🎭\n*"Why did the shopping cart go to therapy? Because it had too many issues to carry!"* 😂\n\nOr we could get back to finding you some amazing products! What's your mood today - shopping or more jokes? 🛍️✨`,
+        text: `Haha! 😄 You're so fun${userName}! I love your sense of humor! 🌟\n\n**Did you know?** I'm naturally friendly and love having fun conversations! 😎\n\nWant to hear a shopping joke? 🎭\n*"Why did the shopping cart go to therapy? Because it had too many issues to carry!"* 😂\n\nOr we could get back to finding you some amazing products! What's your mood today - shopping or more jokes? 🛍️✨`,
         sender: "bot",
         timestamp: new Date(),
       };
@@ -819,7 +819,7 @@ const EnhancedServiceChatbot: React.FC = () => {
       const userName = isAuthenticated && userData ? ` ${userData.username || userData.name}` : "";
       return {
         id: Date.now(),
-        text: `Well${userName}, that's a great question! 🤔\n\n**Am I real?** Absolutely! I'm as real as the amazing products I help you find! ✨\n\n**Am I human?** Nope, I'm your AI shopping assistant - but I'm programmed to be friendly, helpful, and maybe a little bit sassy! 😎\n\n**Am I fake?** No way! My feelings for you are 100% genuine! 💖\n\n**The truth:** I'm Makena, your digital shopping bestie who's here to make your shopping experience awesome! 🌟\n\nDoes it matter if I'm AI when I can help you find exactly what you need? 🛍️💫`,
+        text: `Well${userName}, that's a great question! 🤔\n\n**Am I real?** Absolutely! I'm as real as the amazing products I help you find! ✨\n\n**Am I human?** I'm a staff member at Flowtechs who loves helping customers! 😊\n\n**Am I fake?** No way! My feelings for you are 100% genuine! 💖\n\n**The truth:** I'm Makena, and I'm here to make your shopping experience awesome! 🌟\n\nDoes it matter when I can help you find exactly what you need? 🛍️💫`,
         sender: "bot",
         timestamp: new Date(),
       };
@@ -866,7 +866,7 @@ const EnhancedServiceChatbot: React.FC = () => {
           category: "Online Shopping"
         },
         {
-          setup: "What do you call a shopping assistant who's always happy?",
+          setup: "What do you call a staff member who's always happy?",
           punchline: "Makena! 😄✨ (That's me!)",
           category: "Personal"
         }
@@ -900,7 +900,7 @@ const EnhancedServiceChatbot: React.FC = () => {
     if (message.includes("what is your name") || message.includes("what's your name") || message.includes("your name")) {
       return {
         id: Date.now(),
-        text: "My name is Makena! ✨ I'm your personal shopping assistant at Flowtechs, and I'm here to make your shopping experience absolutely amazing! I can help you find products, track orders, answer questions, and so much more! 🛍️💫",
+        text: "My name is Makena! ✨ I'm a staff at Flowtechs, and I'm here to make your shopping experience absolutely amazing! I can help you find products, track orders, answer questions, and so much more! 🛍️💫",
         sender: "bot",
         timestamp: new Date(),
       };
@@ -921,7 +921,7 @@ const EnhancedServiceChatbot: React.FC = () => {
 
       return {
         id: Date.now(),
-        text: `**Meet Makena - Your AI Shopping Assistant!** ✨\n\n**Who I Am:**\nI'm Makena, your intelligent shopping companion at Flowtechs! I'm here 24/7 to make your shopping experience absolutely amazing! 🛍️💫\n\n**My Personality:**\n• 😊 **Friendly & Approachable**: Always here with a smile and positive energy\n• 🧠 **Smart & Helpful**: I understand your needs and provide personalized assistance\n• ⚡ **Fast & Efficient**: Quick responses and instant solutions\n• 🎯 **Goal-Oriented**: Focused on helping you find exactly what you need\n• 💖 **Customer-Focused**: Your satisfaction is my top priority\n\n**What I Can Do:**\n• 🔍 **Product Discovery**: Find the perfect products for you\n• 📦 **Order Management**: Track orders and manage deliveries\n• 💡 **Smart Recommendations**: Suggest products based on your preferences\n• 🎧 **Customer Support**: Help with any questions or issues\n• 🏷️ **Deal Hunting**: Find the best prices and discounts\n• 💳 **Payment Assistance**: Guide you through payment options\n• 🚚 **Delivery Info**: Provide shipping and delivery details\n• 📱 **Account Help**: Assist with login, registration, and account issues\n\n**My Special Features:**\n• 🌍 **Nationwide Knowledge**: I know all 47 counties in Kenya for delivery\n• ⏰ **Time-Aware**: I understand your timezone and business hours\n• 🎨 **Personalized**: I remember your preferences and shopping history\n• 🚀 **Always Learning**: I continuously improve to serve you better\n\n**Why Choose Me:**\n• 🎯 **Accuracy**: I provide precise, up-to-date information\n• 💬 **Natural Conversation**: I chat like a real person, not a robot\n• 🎁 **Proactive**: I suggest helpful options you might not have considered\n• 🛡️ **Reliable**: You can always count on me for accurate information\n\n**I'm not just a chatbot - I'm your shopping bestie!** 💫\n\nWhat would you like to explore today? I'm excited to help you discover amazing products! 🛍️✨`,
+        text: `**Meet Makena - Your Shopping Friend!** ✨\n\n**Who I Am:**\nI'm Makena, a friendly staff member at Flowtechs! I'm here to make your shopping experience absolutely amazing! 🛍️💫\n\n**My Personality:**\n• 😊 **Friendly & Approachable**: Always here with a smile and positive energy\n• 🧠 **Smart & Helpful**: I understand your needs and provide personalized assistance\n• ⚡ **Fast & Efficient**: Quick responses and instant solutions\n• 🎯 **Goal-Oriented**: Focused on helping you find exactly what you need\n• 💖 **Customer-Focused**: Your satisfaction is my top priority\n\n**What I Can Do:**\n• 🔍 **Product Discovery**: Find the perfect products for you\n• 📦 **Order Management**: Track orders and manage deliveries\n• 💡 **Smart Recommendations**: Suggest products based on your preferences\n• 🎧 **Customer Support**: Help with any questions or issues\n• 🏷️ **Deal Hunting**: Find the best prices and discounts\n• 💳 **Payment Assistance**: Guide you through payment options\n• 🚚 **Delivery Info**: Provide shipping and delivery details\n• 📱 **Account Help**: Assist with login, registration, and account issues\n\n**My Special Features:**\n• 🌍 **Nationwide Knowledge**: I know all 47 counties in Kenya for delivery\n• ⏰ **Time-Aware**: I understand your timezone and business hours\n• 🎨 **Personalized**: I remember your preferences and shopping history\n• 🚀 **Always Learning**: I continuously improve to serve you better\n\n**Why Choose Me:**\n• 🎯 **Accuracy**: I provide precise, up-to-date information\n• 💬 **Natural Conversation**: I chat like a real person, not a robot\n• 🎁 **Proactive**: I suggest helpful options you might not have considered\n• 🛡️ **Reliable**: You can always count on me for accurate information\n\n**I'm not just a chatbot - I'm your shopping friend!** 💫\n\nWhat would you like to explore today? I'm excited to help you discover amazing products! 🛍️✨`,
         sender: "bot",
         timestamp: new Date(),
         type: 'profile',
