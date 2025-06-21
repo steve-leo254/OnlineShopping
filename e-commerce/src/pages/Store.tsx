@@ -373,10 +373,13 @@ const Store = () => {
   }, [fetchCategories]);
 
   useEffect(() => {
-    if (searchInputRef.current) {
+    if (
+      searchInputRef.current &&
+      document.activeElement !== searchInputRef.current
+    ) {
       searchInputRef.current.focus();
     }
-  }, [searchTerm]);
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
