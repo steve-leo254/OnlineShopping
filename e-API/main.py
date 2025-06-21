@@ -28,6 +28,10 @@ from pydantic_models import (
     ReviewCreate,
     ReviewResponse,
     ProductCreateRequest,
+    SubcategoryBase,
+    SubcategoryResponse,
+    SubcategoryCreate,
+    SubcategoryUpdate,
 )
 from typing import Annotated, List, Optional
 import models
@@ -150,7 +154,7 @@ async def upload_image(user: user_dependency, file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail="Error uploading image")
 
 
-# Updated endpoint to support category filtering
+# Updated endpoint to support category and subcategory filtering
 @app.get(
     "/public/products",
     response_model=PaginatedProductResponse,
@@ -162,6 +166,7 @@ async def browse_products(
     page: int = 1,
     limit: int = 8,
     category_id: int = None,  # Add category_id parameter
+    subcategory_id: int = None,  # Add subcategory_id parameter
     ids: str = None,  # Add ids parameter for batch fetch
 ):
     try:
@@ -191,8 +196,28 @@ async def browse_products(
             query = query.filter(models.Products.category_id == category_id)
             logger.info(f"Product category filter: {category_id}")
 
+        # Apply subcategory filter
+        if subcategory_id:
+            query = query.filter(models.Products.subcategory_id == subcategory_id)
+            logger.info(f"Product subcategory filter: {subcategory_id}")
+
         total = query.count()
-        products = query.offset(skip).limit(limit).all()
+        products = (
+            query.options(
+                joinedload(models.Products.category),
+                joinedload(models.Products.subcategory),
+                joinedload(models.Products.images),
+                joinedload(models.Products.product_specifications).joinedload(
+                    models.ProductSpecification.specification
+                ),
+                joinedload(models.Products.favorites),
+                joinedload(models.Products.reviews),
+            )
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
         total_pages = ceil(total / limit)
 
         return {
@@ -202,7 +227,7 @@ async def browse_products(
             "limit": limit,
             "pages": total_pages,
         }
-    except SQLAlchemyError as e:
+    except Exception as e:
         logger.error(f"Error fetching products: {str(e)}")
         raise HTTPException(status_code=500, detail="Error fetching products")
 
@@ -215,14 +240,26 @@ async def browse_products(
 async def get_product_by_id(product_id: int, db: db_dependency):
     try:
         product = (
-            db.query(models.Products).filter(models.Products.id == product_id).first()
+            db.query(models.Products)
+            .options(
+                joinedload(models.Products.category),
+                joinedload(models.Products.subcategory),
+                joinedload(models.Products.images),
+                joinedload(models.Products.product_specifications).joinedload(
+                    models.ProductSpecification.specification
+                ),
+                joinedload(models.Products.favorites),
+                joinedload(models.Products.reviews).joinedload(models.Review.user),
+            )
+            .filter(models.Products.id == product_id)
+            .first()
         )
         if not product:
-            logger.info(f"Product not found: ID {product_id}")
             raise HTTPException(status_code=404, detail="Product not found")
+
         return product
-    except SQLAlchemyError as e:
-        logger.error(f"Error fetching product by ID {product_id}: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error fetching product: {str(e)}")
         raise HTTPException(status_code=500, detail="Error fetching product")
 
 
@@ -238,6 +275,23 @@ async def browse_categories(db: db_dependency):
     except SQLAlchemyError as e:
         logger.error(f"Error fetching categories: {str(e)}")
         raise HTTPException(status_code=500, detail="Error fetching categories")
+
+
+@app.get(
+    "/public/subcategories",
+    response_model=List[SubcategoryResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def browse_subcategories(db: db_dependency, category_id: int = None):
+    try:
+        query = db.query(models.Subcategory)
+        if category_id:
+            query = query.filter(models.Subcategory.category_id == category_id)
+        subcategories = query.all()
+        return subcategories
+    except SQLAlchemyError as e:
+        logger.error(f"Error fetching subcategories: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error fetching subcategories")
 
 
 @app.post(
@@ -1226,6 +1280,217 @@ async def get_product_reviews(product_id: int, db: db_dependency):
         review_dict.pop("_sa_instance_state", None)
         result.append(review_dict)
     return result
+
+
+@app.post(
+    "/subcategories",
+    response_model=SubcategoryResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_subcategory(
+    user: user_dependency, db: db_dependency, subcategory: SubcategoryBase
+):
+    require_admin(user)
+    try:
+        db_subcategory = models.Subcategory(**subcategory.dict())
+        db.add(db_subcategory)
+        db.commit()
+        db.refresh(db_subcategory)
+        return db_subcategory
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error creating subcategory: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get(
+    "/categories/{category_id}/subcategories",
+    response_model=List[SubcategoryResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def get_category_subcategories(category_id: int, db: db_dependency):
+    try:
+        subcategories = (
+            db.query(models.Subcategory)
+            .filter(models.Subcategory.category_id == category_id)
+            .all()
+        )
+        return subcategories
+    except SQLAlchemyError as e:
+        logger.error(f"Error fetching subcategories: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error fetching subcategories")
+
+
+def format_specifications_to_string(
+    product_specifications: List[models.ProductSpecification],
+) -> str:
+    """
+    Convert product specifications to a formatted string for UI display
+    """
+    if not product_specifications:
+        return ""
+
+    spec_parts = []
+    for ps in product_specifications:
+        if ps.specification and ps.value:
+            spec_parts.append(f"{ps.specification.name}: {ps.value}")
+
+    return ", ".join(spec_parts)
+
+
+# Enhanced subcategory endpoints
+@app.get(
+    "/subcategories",
+    response_model=List[SubcategoryResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def get_all_subcategories(db: db_dependency, category_id: int = None):
+    """Get all subcategories, optionally filtered by category"""
+    try:
+        query = db.query(models.Subcategory)
+        if category_id:
+            query = query.filter(models.Subcategory.category_id == category_id)
+
+        subcategories = query.all()
+        return subcategories
+    except SQLAlchemyError as e:
+        logger.error(f"Error fetching subcategories: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error fetching subcategories")
+
+
+@app.get(
+    "/subcategories/{subcategory_id}",
+    response_model=SubcategoryResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_subcategory_by_id(subcategory_id: int, db: db_dependency):
+    """Get a specific subcategory by ID"""
+    try:
+        subcategory = (
+            db.query(models.Subcategory)
+            .filter(models.Subcategory.id == subcategory_id)
+            .first()
+        )
+        if not subcategory:
+            raise HTTPException(status_code=404, detail="Subcategory not found")
+        return subcategory
+    except SQLAlchemyError as e:
+        logger.error(f"Error fetching subcategory: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error fetching subcategory")
+
+
+@app.put(
+    "/subcategories/{subcategory_id}",
+    response_model=SubcategoryResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def update_subcategory(
+    subcategory_id: int,
+    subcategory_update: SubcategoryUpdate,
+    user: user_dependency,
+    db: db_dependency,
+):
+    """Update a subcategory"""
+    require_admin(user)
+    try:
+        subcategory = (
+            db.query(models.Subcategory)
+            .filter(models.Subcategory.id == subcategory_id)
+            .first()
+        )
+        if not subcategory:
+            raise HTTPException(status_code=404, detail="Subcategory not found")
+
+        update_data = subcategory_update.dict(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(subcategory, field, value)
+
+        db.commit()
+        db.refresh(subcategory)
+        return subcategory
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error updating subcategory: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error updating subcategory")
+
+
+@app.delete(
+    "/subcategories/{subcategory_id}",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_subcategory(
+    subcategory_id: int,
+    user: user_dependency,
+    db: db_dependency,
+):
+    """Delete a subcategory"""
+    require_admin(user)
+    try:
+        subcategory = (
+            db.query(models.Subcategory)
+            .filter(models.Subcategory.id == subcategory_id)
+            .first()
+        )
+        if not subcategory:
+            raise HTTPException(status_code=404, detail="Subcategory not found")
+
+        # Check if any products are using this subcategory
+        products_count = (
+            db.query(models.Products)
+            .filter(models.Products.subcategory_id == subcategory_id)
+            .count()
+        )
+        if products_count > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete subcategory. {products_count} products are using this subcategory.",
+            )
+
+        db.delete(subcategory)
+        db.commit()
+        return {"message": "Subcategory deleted successfully"}
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error deleting subcategory: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error deleting subcategory")
+
+
+@app.get(
+    "/public/products/by-subcategory/{subcategory_id}",
+    response_model=PaginatedProductResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_products_by_subcategory(
+    subcategory_id: int,
+    db: db_dependency,
+    page: int = 1,
+    limit: int = 8,
+    search: str = None,
+):
+    """Get products filtered by subcategory"""
+    try:
+        skip = (page - 1) * limit
+        query = db.query(models.Products).filter(
+            models.Products.subcategory_id == subcategory_id
+        )
+
+        if search:
+            query = query.filter(models.Products.name.ilike(f"%{search}%"))
+
+        total = query.count()
+        products = query.offset(skip).limit(limit).all()
+        total_pages = ceil(total / limit)
+
+        return {
+            "items": products,
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "pages": total_pages,
+        }
+    except Exception as e:
+        logger.error(f"Error fetching products by subcategory: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error fetching products")
 
 
 if __name__ == "__main__":
