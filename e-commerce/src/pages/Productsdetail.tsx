@@ -90,6 +90,7 @@ const ProductDetail: React.FC = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<TabType>("description");
   const [showImageModal, setShowImageModal] = useState<boolean>(false);
+  const [currentSlide, setCurrentSlide] = useState<number>(0);
   const {
     addToCart,
     increaseCartQuantity,
@@ -371,6 +372,16 @@ const ProductDetail: React.FC = () => {
     } finally {
       setIsProcessingFavorite(false);
     }
+  };
+
+  const handleNextSlide = (): void => {
+    const maxSlides = Math.ceil(relatedProducts.length / 4) - 1;
+    setCurrentSlide((prev) => (prev === maxSlides ? 0 : prev + 1));
+  };
+
+  const handlePrevSlide = (): void => {
+    const maxSlides = Math.ceil(relatedProducts.length / 4) - 1;
+    setCurrentSlide((prev) => (prev === 0 ? maxSlides : prev - 1));
   };
 
   // Loading state
@@ -721,49 +732,118 @@ const ProductDetail: React.FC = () => {
         {/* Related Products */}
         {relatedProducts.length > 0 && (
           <div className="mt-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              Related Products
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {relatedProducts.map((relatedProduct) => (
-                <div
-                  key={relatedProduct.id}
-                  onClick={() => handleRelatedProductClick(relatedProduct)}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Related Products
+              </h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handlePrevSlide}
+                  className="p-2 rounded-full bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
                 >
-                  <img
-                    src={relatedProduct.images[0]}
-                    alt={relatedProduct.name}
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="p-4">
-                    <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
-                      {relatedProduct.name}
-                    </h3>
-                    <div className="flex items-center gap-2 mb-2">
-                      {renderStars(relatedProduct.rating)}
-                      <span className="text-gray-700 font-semibold">
-                        {relatedProduct.rating.toFixed(1)}
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        ({relatedProduct.reviews})
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-gray-900">
-                        {formatCurrency(relatedProduct.price)}
-                      </span>
-                      {relatedProduct.originalPrice &&
-                        relatedProduct.originalPrice > relatedProduct.price && (
-                          <span className="text-sm text-gray-500 line-through">
-                            {formatCurrency(relatedProduct.originalPrice)}
-                          </span>
-                        )}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                  <ChevronLeft className="w-5 h-5 text-gray-600" />
+                </button>
+                <button
+                  onClick={handleNextSlide}
+                  className="p-2 rounded-full bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
             </div>
+            <div className="relative overflow-hidden">
+              <div
+                className="flex transition-transform duration-300 ease-in-out"
+                style={{
+                  transform: `translateX(-${currentSlide * 100}%)`,
+                  width: `${Math.ceil(relatedProducts.length / 4) * 100}%`,
+                  display: "flex",
+                }}
+              >
+                {Array.from(
+                  { length: Math.ceil(relatedProducts.length / 4) },
+                  (_, slideIndex) => (
+                    <div
+                      key={slideIndex}
+                      className="flex gap-6"
+                      style={{
+                        width: `${
+                          100 / Math.ceil(relatedProducts.length / 4)
+                        }%`,
+                        minWidth: `${
+                          100 / Math.ceil(relatedProducts.length / 4)
+                        }%`,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {relatedProducts
+                        .slice(slideIndex * 4, slideIndex * 4 + 4)
+                        .map((relatedProduct) => (
+                          <div
+                            key={relatedProduct.id}
+                            onClick={() =>
+                              handleRelatedProductClick(relatedProduct)
+                            }
+                            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex-shrink-0"
+                            style={{ width: "calc(25% - 18px)" }}
+                          >
+                            <img
+                              src={relatedProduct.images[0]}
+                              alt={relatedProduct.name}
+                              className="w-full h-48 object-cover"
+                            />
+                            <div className="p-4">
+                              <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
+                                {relatedProduct.name}
+                              </h3>
+                              <div className="flex items-center gap-2 mb-2">
+                                {renderStars(relatedProduct.rating)}
+                                <span className="text-gray-700 font-semibold">
+                                  {relatedProduct.rating.toFixed(1)}
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                  ({relatedProduct.reviews})
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-gray-900">
+                                  {formatCurrency(relatedProduct.price)}
+                                </span>
+                                {relatedProduct.originalPrice &&
+                                  relatedProduct.originalPrice >
+                                    relatedProduct.price && (
+                                    <span className="text-sm text-gray-500 line-through">
+                                      {formatCurrency(
+                                        relatedProduct.originalPrice
+                                      )}
+                                    </span>
+                                  )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+            {/* Slide Indicators */}
+            {Math.ceil(relatedProducts.length / 4) > 1 && (
+              <div className="flex justify-center mt-4 gap-2">
+                {Array.from(
+                  { length: Math.ceil(relatedProducts.length / 4) },
+                  (_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentSlide(index)}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        currentSlide === index ? "bg-blue-600" : "bg-gray-300"
+                      }`}
+                    />
+                  )
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
