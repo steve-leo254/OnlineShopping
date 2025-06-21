@@ -6,36 +6,26 @@ import {
   MessageCircle,
   X,
   Send,
-  User,
   ShoppingCart,
-  Heart,
   Package,
   CreditCard,
   Truck,
-  AlertCircle,
   CheckCircle,
-  XCircle,
-  Star,
   Search,
-  Filter,
-  Sparkles,
   Zap,
   Gift,
-  TrendingUp,
   Clock,
-  Tag,
-  ThumbsUp,
   MessageSquare,
-  Bot,
-  Smile,
-  Image,
   ArrowUp,
+  Tag,
+  Star,
+  Sparkles,
+  XCircle,
   Phone,
   Mail
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useUserStats } from "../context/UserStatsContext";
 import { useAuth } from "../context/AuthContext";
 import { useFavorites } from "../context/FavoritesContext";
 import countiesData from "../context/kenyan_counties.json";
@@ -70,7 +60,6 @@ const EnhancedServiceChatbot: React.FC = () => {
   const [pendingReviewsCount, setPendingReviewsCount] = useState<number>(0);
   const [userOrders, setUserOrders] = useState<any[]>([]);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState<any>(null);
-  const [conversationContext, setConversationContext] = useState<string[]>([]);
   const [showScrollToTop, setShowScrollToTop] = useState<boolean>(false);
   const [counties, setCounties] = useState<any[]>([]);
   const [isComposingEmail, setIsComposingEmail] = useState<boolean>(false);
@@ -511,7 +500,6 @@ const EnhancedServiceChatbot: React.FC = () => {
   // Enhanced bot response system with more personality and intelligence
   const getBotResponse = (userMessage: string): Message => {
     const message = userMessage.toLowerCase();
-    setConversationContext(prev => [...prev.slice(-5), message]);
 
     if (productsLoading) {
       return {
@@ -968,7 +956,7 @@ const EnhancedServiceChatbot: React.FC = () => {
       };
     }
 
-    if (message.includes("what is my name") || message.includes("what's my name") || message.includes("my name")) {
+    if (message.includes("what is my name") || message.includes("what's my name") || message.includes("my name") || message.includes("my names")) {
       if (isAuthenticated && userData) {
         return {
           id: Date.now(),
