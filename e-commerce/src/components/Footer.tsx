@@ -85,7 +85,7 @@ const Footer: React.FC = () => {
             <span className="text-sm text-gray-500 sm:text-center dark:text-gray-400">
               © 2025{" "}
               <a
-                href="https://www.instagram.com/flowtechs_ltd"
+                href="/termsconditions"
                 className="hover:underline"
               >
                 FlowTech™

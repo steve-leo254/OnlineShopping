@@ -358,6 +358,68 @@ async def delete_product(product_id: int, db: db_dependency, user: user_dependen
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+
+@app.delete("/categories/{category_id}", status_code=status.HTTP_200_OK)
+async def delete_category(category_id: int, db: db_dependency, user: user_dependency):
+    """Delete a category - Admin only"""
+    require_admin(user)
+    try:
+        # Check if category exists
+        category = (
+            db.query(models.Categories)
+            .filter(models.Categories.id == category_id)
+            .first()
+        )
+        if not category:
+            logger.info(f"Category not found: ID {category_id}")
+            raise HTTPException(status_code=404, detail="Category not found")
+        
+        # Check if category has associated products
+        products_count = (
+            db.query(models.Products)
+            .filter(models.Products.category_id == category_id)
+            .count()
+        )
+        if products_count > 0:
+            logger.info(f"Cannot delete category {category_id}: has {products_count} associated products")
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Cannot delete category with {products_count} associated products"
+            )
+        
+        # Check if category has associated specifications
+        specs_count = (
+            db.query(models.Specification)
+            .filter(models.Specification.category_id == category_id)
+            .count()
+        )
+        if specs_count > 0:
+            logger.info(f"Cannot delete category {category_id}: has {specs_count} associated specifications")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete category with {specs_count} associated specifications"
+            )
+        
+        # Delete the category
+        db.delete(category)
+        db.commit()
+        
+        logger.info(f"Category {category_id} deleted successfully by user {user.get('id')}")
+        return {"message": "Category deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error deleting category {category_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error deleting category")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Unexpected error deleting category {category_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
 # Update your create_order function to handle the new transaction relationship:
 @app.post("/create_order", status_code=status.HTTP_201_CREATED)
 async def create_order(
