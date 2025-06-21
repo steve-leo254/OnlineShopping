@@ -762,68 +762,70 @@ const ProductDetail: React.FC = () => {
               >
                 {Array.from(
                   { length: Math.ceil(relatedProducts.length / 4) },
-                  (_, slideIndex) => (
-                    <div
-                      key={slideIndex}
-                      className="flex gap-6"
-                      style={{
-                        width: `${
-                          100 / Math.ceil(relatedProducts.length / 4)
-                        }%`,
-                        minWidth: `${
-                          100 / Math.ceil(relatedProducts.length / 4)
-                        }%`,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {relatedProducts
-                        .slice(slideIndex * 4, slideIndex * 4 + 4)
-                        .map((relatedProduct) => (
-                          <div
-                            key={relatedProduct.id}
-                            onClick={() =>
-                              handleRelatedProductClick(relatedProduct)
-                            }
-                            className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex-shrink-0"
-                            style={{ width: "calc(25% - 18px)" }}
-                          >
-                            <img
-                              src={relatedProduct.images[0]}
-                              alt={relatedProduct.name}
-                              className="w-full h-48 object-cover"
-                            />
-                            <div className="p-4">
-                              <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
-                                {relatedProduct.name}
-                              </h3>
-                              <div className="flex items-center gap-2 mb-2">
-                                {renderStars(relatedProduct.rating)}
-                                <span className="text-gray-700 font-semibold">
-                                  {relatedProduct.rating.toFixed(1)}
-                                </span>
-                                <span className="text-sm text-gray-500">
-                                  ({relatedProduct.reviews})
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-gray-900">
-                                  {formatCurrency(relatedProduct.price)}
-                                </span>
-                                {relatedProduct.originalPrice &&
-                                  relatedProduct.originalPrice >
-                                    relatedProduct.price && (
-                                    <span className="text-sm text-gray-500 line-through">
-                                      {formatCurrency(
-                                        relatedProduct.originalPrice
-                                      )}
-                                    </span>
-                                  )}
+                  (_, slideIndex) => {
+                    return (
+                      <div
+                        key={slideIndex}
+                        className="flex gap-6"
+                        style={{
+                          width: `${
+                            100 / Math.ceil(relatedProducts.length / 4)
+                          }%`,
+                          minWidth: `${
+                            100 / Math.ceil(relatedProducts.length / 4)
+                          }%`,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {relatedProducts
+                          .slice(slideIndex * 4, slideIndex * 4 + 4)
+                          .map((relatedProduct) => (
+                            <div
+                              key={relatedProduct.id}
+                              onClick={() =>
+                                handleRelatedProductClick(relatedProduct)
+                              }
+                              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer flex-shrink-0"
+                              style={{ width: "calc(25% - 18px)" }}
+                            >
+                              <img
+                                src={relatedProduct.images[0]}
+                                alt={relatedProduct.name}
+                                className="w-full h-48 object-cover"
+                              />
+                              <div className="p-4">
+                                <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
+                                  {relatedProduct.name}
+                                </h3>
+                                <div className="flex items-center gap-2 mb-2">
+                                  {renderStars(relatedProduct.rating)}
+                                  <span className="text-gray-700 font-semibold">
+                                    {relatedProduct.rating.toFixed(1)}
+                                  </span>
+                                  <span className="text-sm text-gray-500">
+                                    ({relatedProduct.reviews})
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-gray-900">
+                                    {formatCurrency(relatedProduct.price)}
+                                  </span>
+                                  {relatedProduct.originalPrice &&
+                                    relatedProduct.originalPrice >
+                                      relatedProduct.price && (
+                                      <span className="text-sm text-gray-500 line-through">
+                                        {formatCurrency(
+                                          relatedProduct.originalPrice
+                                        )}
+                                      </span>
+                                    )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                    </div>
-                  )
+                          ))}
+                      </div>
+                    );
+                  }
                 )}
               </div>
             </div>
