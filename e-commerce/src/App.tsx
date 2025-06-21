@@ -50,47 +50,39 @@ function App() {
               progressClassName="toast-progress-bar"
             />
             <Routes>
+              {/* Authentication routes without Layout (no chatbot) */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/verify-email" element={<EmailVerification />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/SuperAdmin" element={<SuperAdminRegister />} />
-              <Route path="/termsconditions" element={<TermsAndConditions />} />
-             <Route path="/deletecategory"  element={<CategoryManagement />} />
+              
+              {/* All other routes with Layout (with chatbot) */}
               <Route element={<Layout />}>
+                <Route path="/termsconditions" element={<TermsAndConditions />} />
+                <Route path="/deletecategory" element={<CategoryManagement onClose={() => {}} />} />
                 <Route path="/pending-reviews" element={<ReviewPage />} />
                 <Route path="/wishlist" element={<WishList />} />
                 <Route index element={<Home />} />
-                <Route
-                  path="/product-details/:id"
-                  element={<ProductDetail />}
-                />
+                <Route path="/product-details/:id" element={<ProductDetail />} />
                 <Route path="/store" element={<Store />} />
                 <Route path="/shopping-cart" element={<ShoppingCart />} />
                 <Route path="/about" element={<AboutPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Route>
-              <Route element={<ProtectedRoute />}>
-                <Route element={<Layout />}>
+                
+                {/* Protected routes */}
+                <Route element={<ProtectedRoute />}>
                   <Route path="/products" element={<Products />} />
                   <Route path="/AdminPage" element={<SuperAdminDashboard />} />
                   <Route path="/checkout" element={<Checkout />} />
-
-                  <Route
-                    path="/order-details/:orderId"
-                    element={<OrderDetails />}
-                  />
-
+                  <Route path="/order-details/:orderId" element={<OrderDetails />} />
                   <Route path="/orders-overview" element={<OrdersOverview />} />
-                  <Route
-                    path="/orders-management"
-                    element={<OrdersManagement />}
-                  />
-
+                  <Route path="/orders-management" element={<OrdersManagement />} />
                   <Route path="/MyProfile" element={<AccountProfile />} />
                   <Route path="/address-book" element={<AddressBook />} />
                 </Route>
+                
+                <Route path="*" element={<NotFound />} />
               </Route>
             </Routes>
           </Router>

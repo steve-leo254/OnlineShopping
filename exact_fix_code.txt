@@ -1,0 +1,74 @@
+// REPLACE THE ENTIRE SECTION FROM LINE 599 TO 620 WITH THIS CODE:
+
+    // Handle founder-related queries
+    if (
+      message.includes("founder") || message.includes("founders") ||
+      message.includes("eric") || message.includes("steve") ||
+      message.includes("omondi") || message.includes("leo") ||
+      message.includes("who started") || message.includes("who created") ||
+      message.includes("who owns") || message.includes("started by") ||
+      message.includes("who are the founders") || message.includes("who are founders") ||
+      message.includes("when was flowtechs started") || message.includes("when did flowtechs start") ||
+      message.includes("when was flowtechs founded") || message.includes("when did flowtechs begin")
+    ) {
+      return {
+        id: Date.now(),
+        text: `👥 **Meet Our Founders: Eric Omondi & Steve Leo** ✨
+
+Flowtechs was founded by two young, enthusiastic developers, **Eric Omondi** and **Steve Leo**, who are passionate about joining and shaping the tech revolution in Kenya and beyond.
+
+**Background:**
+Eric and Steve met as university students, both driven by a love for technology and a desire to solve real-world problems. They noticed that many Kenyans, especially in rural areas, struggled to access quality products at fair prices. Inspired by the global e-commerce boom, they decided to build a platform that would make premium shopping accessible to everyone in Kenya.
+
+**Their Vision:**
+- To empower every Kenyan with access to quality products, no matter where they live.
+- To use technology to bridge gaps in commerce, logistics, and customer service.
+- To create a vibrant, trustworthy online marketplace that supports local businesses and delights customers.
+
+**Their Story:**
+Starting with just a laptop and a dream in the heart of Nairobi's Central Business District (CBD), Eric and Steve built Flowtechs from the ground up. Their youthful energy, coding skills, and relentless drive have made Flowtechs one of Kenya's most promising e-commerce startups.
+
+**Message from the Founders:**
+*"We're not just building a business—we're building a community and a movement. We believe in the power of technology to change lives, and we're excited to have you join us on this journey!"*
+
+**Ready to experience the future of shopping?** Let's get started! 🛍️🚀`,
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+    // Handle company information queries
+    if (message.includes("tell me about") && (message.includes("flowtech") || message.includes("company") || message.includes("business"))) {
+      return {
+        id: Date.now(),
+        text: `🏢 **About Flowtechs - Your Premium Shopping Destination** ✨
+
+**Our Story:**
+Flowtechs is a leading e-commerce platform founded in 2023 by two young, passionate developers, **Eric Omondi** and **Steve Leo**, in the heart of Nairobi's Central Business District (CBD). Their mission: to make quality shopping accessible to everyone across Kenya.
+
+**Our Founders:**
+• **Eric Omondi** – Co-Founder & CEO (Visionary, Innovator)
+• **Steve Leo** – Co-Founder & CTO (Tech Genius, Problem Solver)
+
+**What We Do:**
+• 🛍️ Premium Products: Curated selection of high-quality items
+• 💰 Best Prices: Competitive pricing and amazing deals
+• 🚚 Fast Delivery: Quick and reliable shipping nationwide
+• 🛡️ Secure Shopping: 100% safe and protected transactions
+• 🎧 24/7 Support: Always here when you need us
+
+**Our Values:**
+• 💎 Quality First
+• 🤝 Customer Focus
+• 🚀 Innovation
+• 🌍 Accessibility
+• 🔒 Trust
+
+**Our Vision:**
+To become Kenya's most trusted and loved online shopping destination, powered by youthful energy, innovation, and a commitment to customer happiness.
+
+**Join us and experience the future of shopping, built by Kenya's next generation of tech leaders! 🛍️💫`,
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    } 

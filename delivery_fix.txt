@@ -1,0 +1,46 @@
+CORRECTED DELIVERY INFORMATION CODE
+
+Replace the getCostForLocation function (around line 1684) with:
+
+const getCostForLocation = (location: string): string => {
+    const countyInfo = counties.find(c => c.name.toLowerCase() === location || c.towns.some((t:string) => t.toLowerCase() === location));
+    
+    if (!countyInfo) {
+        return "Ksh 1,000 (2-5 business days)";
+    }
+
+    // Use the actual delivery fee calculation from ShoppingCartContext
+    const { getDeliveryFeeForLocation } = useShoppingCart();
+    const deliveryFee = getDeliveryFeeForLocation(countyInfo.name);
+    
+    // Determine delivery time based on location
+    let deliveryTime = "";
+    if (countyInfo.name.toLowerCase() === 'nairobi') {
+        deliveryTime = "1-2 business days";
+    } else if (['kiambu', 'kajiado', 'machakos'].includes(countyInfo.name.toLowerCase())) {
+        deliveryTime = "1-2 business days";
+    } else if (['mombasa', 'kisumu', 'nakuru', 'eldoret', 'thika', 'ruiru'].some(city => 
+        countyInfo.towns.map((t:string) => t.toLowerCase()).includes(city) || 
+        countyInfo.capital.toLowerCase() === city
+    )) {
+        deliveryTime = "2-3 business days";
+    } else {
+        deliveryTime = "3-5 business days";
+    }
+    
+    return `Ksh ${deliveryFee.toLocaleString()} (${deliveryTime})`;
+};
+
+Replace the general delivery info response (around line 1710) with:
+
+text: `🚚 **Flowtechs Delivery Network** 🌍\n\nWe deliver to **all 47 counties** in Kenya! Wherever you are, we've got you covered. 🇰🇪\n\n**Delivery Fee Ranges:**\n• **Nairobi**: Ksh 300\n• **Metropolitan Areas** (Kiambu, Kajiado, Machakos): Ksh 350 - Ksh 450\n• **Major Cities** (Mombasa, Kisumu, Nakuru, Eldoret): Ksh 500 - Ksh 900\n• **Other Counties**: Ksh 600 - Ksh 2,200\n\n**Delivery Times:**\n• **Nairobi & Metropolitan**: 1-2 business days\n• **Major Cities**: 2-3 business days\n• **Other Regions**: 3-5 business days\n\n**How it works:**\nThe exact delivery fee is calculated at checkout based on your specific county and location.\n\n**Want to check a specific location?** Just ask me, for example: "Do you deliver to Nakuru?" or "What's the delivery cost to Mombasa?"`,
+
+CHANGES MADE:
+1. Updated getCostForLocation to use actual delivery fees from ShoppingCartContext
+2. Fixed delivery fee ranges in general info to match actual fees:
+   - Nairobi: Ksh 300 (was Ksh 300-400)
+   - Metropolitan: Ksh 350-450 (was Ksh 300-400)
+   - Major Cities: Ksh 500-900 (was Ksh 500)
+   - Other Counties: Ksh 600-2200 (was "From Ksh 600")
+3. Added proper delivery time estimates
+4. Made the information consistent with the actual delivery fee system 

@@ -74,7 +74,7 @@ const AboutPage: React.FC = () => {
   };
 
   const handlePhoneClick = () => {
-    const phoneNumber = "0758510206";
+    const phoneNumber = "+254 117 802 561";
     window.location.href = `tel:${phoneNumber}`;
   };
 
@@ -431,7 +431,7 @@ const AboutPage: React.FC = () => {
                       <span className="text-xl font-bold tracking-wide">Schedule a Call</span>
                     </div>
                     <div className="text-sm text-white/90 font-medium transition-all duration-300 bg-green-400/20 group-hover:bg-white/20 px-3 py-1 rounded-full">
-                      📞 +254 758 510 206
+                      📞 +254 117 802 561
                     </div>
                   </div>
                   

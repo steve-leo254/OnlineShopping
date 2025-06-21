@@ -1,0 +1,102 @@
+SERVICECHATBOT COMPREHENSIVE FIXES
+
+ISSUES IDENTIFIED:
+1. Hardcoded delivery costs instead of using ShoppingCartContext
+2. Missing founder handler
+3. Redundant functions and inconsistent logic
+4. Unnecessary function calls
+5. Inconsistent delivery information
+
+FIXES NEEDED:
+
+1. FIX DELIVERY COSTS (Lines 1684-1696):
+REPLACE:
+const getCostForLocation = (location: string): string => {
+    const nairobiMetropolitan = ['nairobi', 'kiambu', 'kajiado', 'machakos'];
+    const majorCities = ['mombasa', 'kisumu', 'nakuru', 'eldoret', 'thika', 'ruiru'];
+
+    const countyInfo = counties.find(c => c.name.toLowerCase() === location || c.towns.some((t:string) => t.toLowerCase() === location));
+
+    if (countyInfo && nairobiMetropolitan.includes(countyInfo.name.toLowerCase())) {
+        return "Ksh 300 - Ksh 400 (Next-day delivery)";
+    }
+    if (countyInfo && majorCities.some(city => countyInfo.towns.map((t:string) => t.toLowerCase()).includes(city) || countyInfo.capital.toLowerCase() === city)) {
+         return "Ksh 500 (1-2 business days)";
+    }
+    if (countyInfo) {
+        return "Ksh 600 (2-5 business days)";
+    }
+    return "Ksh 600 (2-5 business days)";
+};
+
+WITH:
+const getCostForLocation = (location: string): string => {
+    const countyInfo = counties.find(c => c.name.toLowerCase() === location || c.towns.some((t:string) => t.toLowerCase() === location));
+    
+    if (!countyInfo) {
+        return "Ksh 1,000 (2-5 business days)";
+    }
+
+    // Use the actual delivery fee calculation from ShoppingCartContext
+    const { getDeliveryFeeForLocation } = useShoppingCart();
+    const deliveryFee = getDeliveryFeeForLocation(countyInfo.name);
+    
+    // Determine delivery time based on location
+    let deliveryTime = "";
+    if (countyInfo.name.toLowerCase() === 'nairobi') {
+        deliveryTime = "1-2 business days";
+    } else if (['kiambu', 'kajiado', 'machakos'].includes(countyInfo.name.toLowerCase())) {
+        deliveryTime = "1-2 business days";
+    } else if (['mombasa', 'kisumu', 'nakuru', 'eldoret'].includes(countyInfo.name.toLowerCase())) {
+        deliveryTime = "2-3 business days";
+    } else {
+        deliveryTime = "3-5 business days";
+    }
+
+    return `Ksh ${deliveryFee.toLocaleString()} (${deliveryTime})`;
+};
+
+2. ADD FOUNDER HANDLER (Add before fallback response in getBotResponse):
+// Handle founder-related queries
+if (
+  message.includes("founder") ||
+  message.includes("founders") ||
+  message.includes("who started") ||
+  message.includes("who created") ||
+  message.includes("developer") ||
+  message.includes("developers") ||
+  message.includes("who are the founders") ||
+  message.includes("who are founders")
+) {
+  return {
+    id: Date.now(),
+    text: `👥 **Meet Our Amazing Founders!** ✨\n\n**Steve Leo & Eric Omondi** - The brilliant minds behind Flowtechs! 🧠💡\n\n**Our Story:**\nWe started Flowtechs with a simple dream: to make quality shopping accessible to everyone in Kenya. 🇰🇪\n\n**Why We Started:**\n• 🎯 **Accessibility**: Bring premium products to every Kenyan\n• 💎 **Quality**: Only the best brands and authentic items\n• 🚀 **Innovation**: Use technology to improve shopping experience\n• 🤝 **Community**: Build lasting relationships with our customers\n\n**Our Vision:**\nTo become Kenya's most trusted and loved online shopping destination, known for quality, reliability, and exceptional customer service! 🌟\n\n**Partnership Openness:**\nWe're always open to partnerships that align with our values of quality, customer satisfaction, and innovation! 🤝\n\n**Ready to experience the Flowtechs difference?** I'm here to help you discover amazing products! 🛍️💫`,
+    sender: "bot",
+    timestamp: new Date(),
+  };
+}
+
+3. FIX GENERAL DELIVERY INFO (Line 1710):
+REPLACE:
+text: `🚚 **Flowtechs Delivery Network** 🌍\n\nWe deliver to **all 47 counties** in Kenya! Wherever you are, we've got you covered. 🇰🇪\n\n**Delivery Costs:**\n• **Nairobi & Metropolitan**: Ksh 300 - Ksh 400\n• **Major Towns**: Ksh 500\n• **Other Regions**: From Ksh 600\n\n**How it works:**\nThe final delivery cost is calculated at checkout based on your exact location and the weight of your order.\n\n**Want to check a specific location?** Just ask me, for example: "Do you deliver to Nakuru?" or "What's the shipping cost to Mombasa?"`,
+
+WITH:
+text: `🚚 **Flowtechs Delivery Network** 🌍\n\nWe deliver to **all 47 counties** in Kenya! Wherever you are, we've got you covered. 🇰🇪\n\n**Delivery Fee Ranges:**\n• **Nairobi**: Ksh 300\n• **Metropolitan Areas** (Kiambu, Kajiado, Machakos): Ksh 350 - Ksh 450\n• **Major Cities** (Mombasa, Kisumu, Nakuru, Eldoret): Ksh 500 - Ksh 900\n• **Other Counties**: Ksh 600 - Ksh 2,200\n\n**Delivery Times:**\n• **Nairobi & Metropolitan**: 1-2 business days\n• **Major Cities**: 2-3 business days\n• **Other Regions**: 3-5 business days\n\n**How it works:**\nThe exact delivery fee is calculated at checkout based on your specific county and location.\n\n**Want to check a specific location?** Just ask me, for example: "Do you deliver to Nakuru?" or "What's the delivery cost to Mombasa?"`,
+
+4. REMOVE REDUNDANT FUNCTIONS:
+- Remove duplicate getProblemHelpResponse (it's defined but never used)
+- Remove unused email composition functions
+- Consolidate similar response functions
+
+5. OPTIMIZE FUNCTION CALLS:
+- Move getDeliveryFeeForLocation call outside of getCostForLocation to avoid repeated calls
+- Cache county data lookups
+- Use memoization for expensive operations
+
+6. ADD MISSING IMPORTS:
+- Ensure useShoppingCart is properly imported and used
+
+7. FIX INCONSISTENCIES:
+- Standardize delivery time formats
+- Use consistent currency formatting
+- Ensure all contact information is consistent 

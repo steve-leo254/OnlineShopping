@@ -1,0 +1,50 @@
+CORRECTED DELIVERY INFORMATION - MERU EXAMPLE
+
+The issue is that the chatbot is using hardcoded delivery costs instead of the actual delivery fees from ShoppingCartContext.
+
+According to ShoppingCartContext.tsx:
+- Meru: Ksh 900
+- But chatbot says: Ksh 600 (incorrect!)
+
+REPLACE THE ENTIRE getCostForLocation function (lines 1684-1696) with:
+
+const getCostForLocation = (location: string): string => {
+    const countyInfo = counties.find(c => c.name.toLowerCase() === location || c.towns.some((t:string) => t.toLowerCase() === location));
+    
+    if (!countyInfo) {
+        return "Ksh 1,000 (2-5 business days)";
+    }
+
+    // Use the actual delivery fee calculation from ShoppingCartContext
+    const { getDeliveryFeeForLocation } = useShoppingCart();
+    const deliveryFee = getDeliveryFeeForLocation(countyInfo.name);
+    
+    // Determine delivery time based on location
+    let deliveryTime = "";
+    if (countyInfo.name.toLowerCase() === 'nairobi') {
+        deliveryTime = "1-2 business days";
+    } else if (['kiambu', 'kajiado', 'machakos'].includes(countyInfo.name.toLowerCase())) {
+        deliveryTime = "1-2 business days";
+    } else if (['mombasa', 'kisumu', 'nakuru', 'eldoret', 'thika', 'ruiru'].some(city => 
+        countyInfo.towns.map((t:string) => t.toLowerCase()).includes(city) || 
+        countyInfo.capital.toLowerCase() === city
+    )) {
+        deliveryTime = "2-3 business days";
+    } else {
+        deliveryTime = "3-5 business days";
+    }
+    
+    return `Ksh ${deliveryFee.toLocaleString()} (${deliveryTime})`;
+};
+
+ALSO REPLACE the general delivery info response (around line 1710) with:
+
+text: `🚚 **Flowtechs Delivery Network** 🌍\n\nWe deliver to **all 47 counties** in Kenya! Wherever you are, we've got you covered. 🇰🇪\n\n**Delivery Fee Ranges:**\n• **Nairobi**: Ksh 300\n• **Metropolitan Areas** (Kiambu, Kajiado, Machakos): Ksh 350 - Ksh 450\n• **Major Cities** (Mombasa, Kisumu, Nakuru, Eldoret): Ksh 500 - Ksh 900\n• **Other Counties**: Ksh 600 - Ksh 2,200\n\n**Delivery Times:**\n• **Nairobi & Metropolitan**: 1-2 business days\n• **Major Cities**: 2-3 business days\n• **Other Regions**: 3-5 business days\n\n**How it works:**\nThe exact delivery fee is calculated at checkout based on your specific county and location.\n\n**Want to check a specific location?** Just ask me, for example: "Do you deliver to Nakuru?" or "What's the delivery cost to Mombasa?"`,
+
+EXAMPLES OF CORRECTED RESPONSES:
+- Meru: "Ksh 900 (3-5 business days)" ✅
+- Nairobi: "Ksh 300 (1-2 business days)" ✅
+- Mombasa: "Ksh 800 (2-3 business days)" ✅
+- Kisumu: "Ksh 900 (2-3 business days)" ✅
+
+This will ensure Makena provides accurate delivery information that matches the actual delivery fee system. 

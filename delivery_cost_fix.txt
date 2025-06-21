@@ -1,0 +1,29 @@
+DELIVERY COST FIX
+
+Replace the getCostForLocation function (lines 1685-1696) with this corrected version:
+
+    const getCostForLocation = (location: string): string => {
+        const countyInfo = counties.find(c => c.name.toLowerCase() === location || c.towns.some((t:string) => t.toLowerCase() === location));
+        
+        if (!countyInfo) {
+            return "Ksh 1,000 (2-5 business days)";
+        }
+
+        // Use the actual delivery fee function from ShoppingCartContext
+        const { getDeliveryFeeForLocation } = useShoppingCart();
+        const deliveryFee = getDeliveryFeeForLocation(countyInfo.name);
+        
+        // Determine delivery time based on location
+        let deliveryTime = "";
+        if (countyInfo.name.toLowerCase() === 'nairobi') {
+            deliveryTime = "1-2 business days";
+        } else if (['kiambu', 'kajiado', 'machakos'].includes(countyInfo.name.toLowerCase())) {
+            deliveryTime = "1-2 business days";
+        } else if (['mombasa', 'kisumu', 'nakuru', 'eldoret'].includes(countyInfo.name.toLowerCase())) {
+            deliveryTime = "2-3 business days";
+        } else {
+            deliveryTime = "3-5 business days";
+        }
+        
+        return `Ksh ${deliveryFee.toLocaleString()} (${deliveryTime})`;
+    }; 

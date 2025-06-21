@@ -1,0 +1,18 @@
+// Handle founder-related queries
+if (
+  message.includes("founder") ||
+  message.includes("founders") ||
+  message.includes("who started") ||
+  message.includes("who created") ||
+  message.includes("developer") ||
+  message.includes("developers") ||
+  message.includes("who are the founders") ||
+  message.includes("who are founders")
+) {
+  return {
+    id: Date.now(),
+    text: `👥 **Meet Our Amazing Founders!** ✨\n\n**Steve Leo & Eric Omondi** - The brilliant minds behind Flowtechs! 🧠💡\n\n**Our Story:**\nWe started Flowtechs with a simple dream: to make quality shopping accessible to everyone in Kenya. 🇰🇪\n\n**Why We Started:**\n• 🎯 **Accessibility**: Bring premium products to every Kenyan\n• 💎 **Quality**: Only the best brands and authentic items\n• 🚀 **Innovation**: Use technology to improve shopping experience\n• 🤝 **Community**: Build lasting relationships with our customers\n\n**Our Vision:**\nTo become Kenya's most trusted and loved online shopping destination, known for quality, reliability, and exceptional customer service! 🌟\n\n**Partnership Openness:**\nWe're always open to partnerships that align with our values of quality, customer satisfaction, and innovation! 🤝\n\n**Ready to experience the Flowtechs difference?** I'm here to help you discover amazing products! 🛍️💫`,
+    sender: "bot",
+    timestamp: new Date(),
+  };
+} 

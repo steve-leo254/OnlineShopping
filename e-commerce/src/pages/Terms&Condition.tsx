@@ -223,8 +223,8 @@ const TermsAndConditions: React.FC = () => {
                 <Phone className="w-8 h-8 text-white" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Call Us</h3>
-              <a href="tel:+254758510206" className="text-gray-600">
-                +254 758510206
+              <a href="tel:+254117802561" className="text-gray-600">
+                +254 117 802 561
               </a>
             </div>
             <div className="text-center group">
