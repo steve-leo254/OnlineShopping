@@ -1,11 +1,73 @@
-import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Search, Menu, X, Star, ArrowRight, Heart, User, Truck, Shield, Headphones, RotateCcw } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import {
+  ShoppingCart,
+  Search,
+  Menu,
+  X,
+  Star,
+  ArrowRight,
+  Heart,
+  User,
+  Truck,
+  Shield,
+  Headphones,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
+// Define types for our data
+type Category = {
+  id: number;
+  name: string;
+  description: string | null;
+};
+
+type Product = {
+  id: number;
+  name: string;
+  price: number;
+  original_price: number;
+  rating: number;
+  stock_quantity: number;
+  category_id: number;
+  subcategory_id: number | null;
+  brand: string;
+  description: string;
+  discount: number;
+  is_new: boolean;
+  category: Category;
+  subcategory?: {
+    id: number;
+    name: string;
+    description: string | null;
+  };
+  images: Array<{
+    id: number;
+    img_url: string;
+  }>;
+  reviews: Array<{
+    id: number;
+    rating: number;
+    comment: string;
+  }>;
+};
 
 const ModernEcommerceHomepage = () => {
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [cartCount, setCartCount] = useState(0);
   const [wishlistItems, setWishlistItems] = useState(new Set());
+
+  // Database state
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [topRatedProducts, setTopRatedProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [categoryCarouselIndex, setCategoryCarouselIndex] = useState(0);
 
   const heroSlides = [
     {
@@ -13,115 +75,110 @@ const ModernEcommerceHomepage = () => {
       subtitle: "Discover the latest trends",
       cta: "Shop Now",
       bg: "from-purple-600 via-pink-600 to-blue-600",
-      image: "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800&h=600&fit=crop"
+      image:
+        "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800&h=600&fit=crop",
     },
     {
       title: "Premium Quality",
       subtitle: "Crafted for perfection",
       cta: "Explore",
       bg: "from-emerald-600 via-teal-600 to-cyan-600",
-      image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&h=600&fit=crop"
+      image:
+        "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&h=600&fit=crop",
     },
     {
       title: "Exclusive Deals",
       subtitle: "Up to 70% off",
       cta: "Save Now",
       bg: "from-orange-600 via-red-600 to-pink-600",
-      image: "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=800&h=600&fit=crop"
-    }
+      image:
+        "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=800&h=600&fit=crop",
+    },
   ];
 
-  const featuredProducts = [
-    {
-      id: 1,
-      name: "Premium Wireless Headphones",
-      price: 299,
-      originalPrice: 399,
-      rating: 4.8,
-      reviews: 1250,
-      image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop",
-      tag: "Best Seller"
-    },
-    {
-      id: 2,
-      name: "Smart Watch Pro",
-      price: 199,
-      originalPrice: 299,
-      rating: 4.9,
-      reviews: 892,
-      image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop",
-      tag: "New"
-    },
-    {
-      id: 3,
-      name: "Designer Sunglasses",
-      price: 149,
-      originalPrice: 199,
-      rating: 4.7,
-      reviews: 634,
-      image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=400&fit=crop",
-      tag: "Trending"
-    },
-    {
-      id: 4,
-      name: "Leather Backpack",
-      price: 129,
-      originalPrice: 179,
-      rating: 4.6,
-      reviews: 445,
-      image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop",
-      tag: "Limited"
-    },
-    {
-      id: 5,
-      name: "Wireless Earbuds Pro",
-      price: 179,
-      originalPrice: 229,
-      rating: 4.9,
-      reviews: 1456,
-      image: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=400&h=400&fit=crop",
-      tag: "Top Rated"
-    },
-    {
-      id: 6,
-      name: "Gaming Mechanical Keyboard",
-      price: 159,
-      originalPrice: 199,
-      rating: 4.8,
-      reviews: 789,
-      image: "https://images.unsplash.com/photo-1541140532154-b024d705b90a?w=400&h=400&fit=crop",
-      tag: "Popular"
-    },
-    {
-      id: 7,
-      name: "Ultra HD Webcam",
-      price: 89,
-      originalPrice: 129,
-      rating: 4.7,
-      reviews: 523,
-      image: "https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=400&h=400&fit=crop",
-      tag: "Bestseller"
-    },
-    {
-      id: 8,
-      name: "Portable Power Bank",
-      price: 49,
-      originalPrice: 69,
-      rating: 4.6,
-      reviews: 1123,
-      image: "https://images.unsplash.com/photo-1609592827849-3c06c4682003?w=400&h=400&fit=crop",
-      tag: "Value"
+  // Fetch categories from database
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get<Category[]>(
+        `${import.meta.env.VITE_API_BASE_URL}/public/categories`
+      );
+      setCategories(response.data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
     }
-  ];
+  };
 
-  const categories = [
-    { name: "Electronics", icon: "📱", color: "bg-blue-500" },
-    { name: "Fashion", icon: "👗", color: "bg-pink-500" },
-    { name: "Home & Garden", icon: "🏠", color: "bg-green-500" },
-    { name: "Sports", icon: "⚽", color: "bg-orange-500" },
-    { name: "Books", icon: "📚", color: "bg-purple-500" },
-    { name: "Beauty", icon: "💄", color: "bg-red-500" }
-  ];
+  // Fetch featured products (one per category, max 6)
+  const fetchFeaturedProducts = async () => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/public/products?limit=50`
+      );
+
+      const products = response.data.items;
+
+      // Group products by category and select one from each
+      const productsByCategory = products.reduce(
+        (acc: Record<number, Product[]>, product: Product) => {
+          if (!acc[product.category_id]) {
+            acc[product.category_id] = [];
+          }
+          acc[product.category_id].push(product);
+          return acc;
+        },
+        {}
+      );
+
+      // Select one product from each category (preferably with highest rating)
+      const featured = Object.values(productsByCategory)
+        .map(
+          (categoryProducts: any) =>
+            categoryProducts.sort(
+              (a: Product, b: Product) => (b.rating || 0) - (a.rating || 0)
+            )[0]
+        )
+        .slice(0, 6); // Max 6 products
+
+      setFeaturedProducts(featured);
+    } catch (error) {
+      console.error("Error fetching featured products:", error);
+    }
+  };
+
+  // Fetch top rated products
+  const fetchTopRatedProducts = async () => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/public/products?limit=50`
+      );
+
+      const products = response.data.items;
+
+      // Sort by rating and take top 5
+      const topRated = products
+        .sort((a: Product, b: Product) => (b.rating || 0) - (a.rating || 0))
+        .slice(0, 5);
+
+      setTopRatedProducts(topRated);
+    } catch (error) {
+      console.error("Error fetching top rated products:", error);
+    }
+  };
+
+  // Fetch all data on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      await Promise.all([
+        fetchCategories(),
+        fetchFeaturedProducts(),
+        fetchTopRatedProducts(),
+      ]);
+      setIsLoading(false);
+    };
+
+    fetchData();
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -130,12 +187,12 @@ const ModernEcommerceHomepage = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const addToCart = (productId) => {
-    setCartCount(prev => prev + 1);
+  const addToCart = (productId: number) => {
+    setCartCount((prev) => prev + 1);
   };
 
-  const toggleWishlist = (productId) => {
-    setWishlistItems(prev => {
+  const toggleWishlist = (productId: number) => {
+    setWishlistItems((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(productId)) {
         newSet.delete(productId);
@@ -144,6 +201,81 @@ const ModernEcommerceHomepage = () => {
       }
       return newSet;
     });
+  };
+
+  // Navigate to category page
+  const handleCategoryClick = (categoryName: string) => {
+    navigate(`/category/${categoryName.toLowerCase().replace(/\s+/g, "-")}`, {
+      state: { categoryName },
+    });
+  };
+
+  // Category carousel navigation
+  const nextCategorySlide = () => {
+    setCategoryCarouselIndex((prev) =>
+      prev + 3 >= categories.length ? 0 : prev + 3
+    );
+  };
+
+  const prevCategorySlide = () => {
+    setCategoryCarouselIndex((prev) =>
+      prev - 3 < 0 ? Math.max(0, categories.length - 3) : prev - 3
+    );
+  };
+
+  // Get product image URL
+  const getProductImage = (product: Product) => {
+    if (product.images && product.images.length > 0) {
+      const imageUrl = product.images[0].img_url;
+      return imageUrl.startsWith("http")
+        ? imageUrl
+        : `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`;
+    }
+    return "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop"; // Default image
+  };
+
+  // Calculate discount percentage
+  const calculateDiscount = (product: Product) => {
+    if (product.original_price && product.original_price > product.price) {
+      return Math.round(
+        ((product.original_price - product.price) / product.original_price) *
+          100
+      );
+    }
+    return 0;
+  };
+
+  // Get category color based on name
+  const getCategoryColor = (categoryName: string) => {
+    const colors = [
+      "bg-blue-500",
+      "bg-pink-500",
+      "bg-green-500",
+      "bg-orange-500",
+      "bg-purple-500",
+      "bg-red-500",
+      "bg-indigo-500",
+      "bg-yellow-500",
+    ];
+    const index = categoryName.length % colors.length;
+    return colors[index];
+  };
+
+  // Get category icon based on name
+  const getCategoryIcon = (categoryName: string) => {
+    const iconMap: Record<string, string> = {
+      Electronics: "📱",
+      Fashion: "👗",
+      "Home & Garden": "🏠",
+      Sports: "⚽",
+      Books: "📚",
+      Beauty: "💄",
+      Laptops: "💻",
+      Smartphones: "📱",
+      "PC Components": "🔧",
+      Accessories: "🎧",
+    };
+    return iconMap[categoryName] || "📦";
   };
 
   return (
@@ -161,7 +293,7 @@ const ModernEcommerceHomepage = () => {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-8">
-              {['Home', 'Shop', 'Categories', 'Deals', 'About'].map((item) => (
+              {["Home", "Shop", "Categories", "Deals", "About"].map((item) => (
                 <a
                   key={item}
                   href="#"
@@ -204,7 +336,11 @@ const ModernEcommerceHomepage = () => {
                 className="md:hidden p-2 hover:bg-gray-100 rounded-full transition-colors"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
               >
-                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                {isMenuOpen ? (
+                  <X className="w-6 h-6" />
+                ) : (
+                  <Menu className="w-6 h-6" />
+                )}
               </button>
             </div>
           </div>
@@ -214,7 +350,7 @@ const ModernEcommerceHomepage = () => {
         {isMenuOpen && (
           <div className="md:hidden bg-white border-t">
             <div className="px-4 py-2 space-y-2">
-              {['Home', 'Shop', 'Categories', 'Deals', 'About'].map((item) => (
+              {["Home", "Shop", "Categories", "Deals", "About"].map((item) => (
                 <a
                   key={item}
                   href="#"
@@ -230,9 +366,11 @@ const ModernEcommerceHomepage = () => {
 
       {/* Hero Section */}
       <section className="relative h-[50vh] flex items-center justify-center overflow-hidden">
-        <div className={`absolute inset-0 bg-gradient-to-br ${heroSlides[currentSlide].bg} opacity-90`} />
+        <div
+          className={`absolute inset-0 bg-gradient-to-br ${heroSlides[currentSlide].bg} opacity-90`}
+        />
         <div className="absolute inset-0 bg-black/20" />
-        
+
         <div className="relative z-10 text-center text-white max-w-4xl mx-auto px-4">
           <h1 className="text-3xl md:text-5xl font-bold mb-4">
             {heroSlides[currentSlide].title}
@@ -252,7 +390,7 @@ const ModernEcommerceHomepage = () => {
             <button
               key={index}
               className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                index === currentSlide ? 'bg-white' : 'bg-white/50'
+                index === currentSlide ? "bg-white" : "bg-white/50"
               }`}
               onClick={() => setCurrentSlide(index)}
             />
@@ -265,10 +403,26 @@ const ModernEcommerceHomepage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { icon: Truck, title: "Free Shipping", desc: "On orders over $100" },
-              { icon: Shield, title: "Secure Payment", desc: "100% secure transactions" },
-              { icon: Headphones, title: "24/7 Support", desc: "Expert customer service" },
-              { icon: RotateCcw, title: "Easy Returns", desc: "30-day return policy" }
+              {
+                icon: Truck,
+                title: "Free Shipping",
+                desc: "On orders over $100",
+              },
+              {
+                icon: Shield,
+                title: "Secure Payment",
+                desc: "100% secure transactions",
+              },
+              {
+                icon: Headphones,
+                title: "24/7 Support",
+                desc: "Expert customer service",
+              },
+              {
+                icon: RotateCcw,
+                title: "Easy Returns",
+                desc: "30-day return policy",
+              },
             ].map((feature, index) => (
               <div key={index} className="text-center group">
                 <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200 transition-colors">
@@ -285,19 +439,74 @@ const ModernEcommerceHomepage = () => {
       {/* Categories Section */}
       <section className="py-6 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12">Shop by Category</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-            {categories.map((category, index) => (
-              <div
-                key={index}
-                className="group cursor-pointer"
-              >
-                <div className={`${category.color} rounded-2xl p-8 text-center hover:shadow-2xl transform hover:scale-105 transition-all duration-300`}>
-                  <div className="text-4xl mb-4">{category.icon}</div>
-                  <h3 className="text-white font-semibold">{category.name}</h3>
-                </div>
-              </div>
-            ))}
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Shop by Category
+          </h2>
+
+          {/* Category Carousel */}
+          <div className="relative">
+            {/* Navigation Buttons */}
+            <button
+              onClick={prevCategorySlide}
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
+            >
+              <ChevronLeft className="w-6 h-6 text-gray-700" />
+            </button>
+
+            <button
+              onClick={nextCategorySlide}
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
+            >
+              <ChevronRight className="w-6 h-6 text-gray-700" />
+            </button>
+
+            {/* Categories Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 overflow-hidden">
+              {categories
+                .slice(categoryCarouselIndex, categoryCarouselIndex + 6)
+                .map((category, index) => (
+                  <div
+                    key={category.id}
+                    className="group cursor-pointer"
+                    onClick={() => handleCategoryClick(category.name)}
+                  >
+                    <div
+                      className={`${getCategoryColor(
+                        category.name
+                      )} rounded-2xl p-8 text-center hover:shadow-2xl transform hover:scale-105 transition-all duration-300`}
+                    >
+                      <div className="text-4xl mb-4">
+                        {getCategoryIcon(category.name)}
+                      </div>
+                      <h3 className="text-white font-semibold">
+                        {category.name}
+                      </h3>
+                      {category.description && (
+                        <p className="text-white/80 text-sm mt-2 line-clamp-2">
+                          {category.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            {/* Carousel Indicators */}
+            <div className="flex justify-center mt-6 space-x-2">
+              {Array.from({ length: Math.ceil(categories.length / 6) }).map(
+                (_, index) => (
+                  <button
+                    key={index}
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      index === Math.floor(categoryCarouselIndex / 6)
+                        ? "bg-purple-600"
+                        : "bg-gray-300 hover:bg-gray-400"
+                    }`}
+                    onClick={() => setCategoryCarouselIndex(index * 6)}
+                  />
+                )
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -316,67 +525,111 @@ const ModernEcommerceHomepage = () => {
             {/* Main Products Grid */}
             <div className="flex-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                {featuredProducts.slice(0, 6).map((product) => (
-                  <div
-                    key={product.id}
-                    className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 overflow-hidden group"
-                  >
-                    <div className="relative">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
-                      />
-                      <div className="absolute top-4 left-4">
-                        <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                          {product.tag}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => toggleWishlist(product.id)}
-                        className="absolute top-4 right-4 p-2 bg-white/80 rounded-full hover:bg-white transition-colors"
+                {isLoading
+                  ? // Loading skeleton
+                    Array.from({ length: 6 }).map((_, index) => (
+                      <div
+                        key={index}
+                        className="bg-white rounded-2xl shadow-lg p-6 animate-pulse"
                       >
-                        <Heart
-                          className={`w-5 h-5 ${
-                            wishlistItems.has(product.id) ? 'fill-red-500 text-red-500' : 'text-gray-600'
-                          }`}
-                        />
-                      </button>
-                    </div>
-
-                    <div className="p-6">
-                      <h3 className="font-semibold text-lg mb-2 line-clamp-2">{product.name}</h3>
-                      
-                      <div className="flex items-center mb-3">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`w-4 h-4 ${
-                                i < Math.floor(product.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                        <div className="w-full h-64 bg-gray-200 rounded-xl mb-4"></div>
+                        <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                        <div className="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
+                        <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+                      </div>
+                    ))
+                  : featuredProducts.map((product) => (
+                      <div
+                        key={product.id}
+                        className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 overflow-hidden group"
+                      >
+                        <div className="relative">
+                          <img
+                            src={getProductImage(product)}
+                            alt={product.name}
+                            className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
+                          />
+                          <div className="absolute top-4 left-4">
+                            <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                              {product.is_new
+                                ? "New"
+                                : calculateDiscount(product) > 0
+                                ? `${calculateDiscount(product)}% OFF`
+                                : "Featured"}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => toggleWishlist(product.id)}
+                            className="absolute top-4 right-4 p-2 bg-white/80 rounded-full hover:bg-white transition-colors"
+                          >
+                            <Heart
+                              className={`w-5 h-5 ${
+                                wishlistItems.has(product.id)
+                                  ? "fill-red-500 text-red-500"
+                                  : "text-gray-600"
                               }`}
                             />
-                          ))}
+                          </button>
                         </div>
-                        <span className="text-sm text-gray-600 ml-2">({product.rating}) • {product.reviews} reviews</span>
-                      </div>
 
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-2xl font-bold text-purple-600">${product.price}</span>
-                          <span className="text-gray-500 line-through">${product.originalPrice}</span>
+                        <div className="p-6">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-gray-500 font-medium">
+                              {product.category?.name}
+                            </span>
+                            {product.subcategory && (
+                              <span className="text-xs text-gray-400">
+                                {product.subcategory.name}
+                              </span>
+                            )}
+                          </div>
+
+                          <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+                            {product.name}
+                          </h3>
+
+                          <div className="flex items-center mb-3">
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${
+                                    i < Math.floor(product.rating || 0)
+                                      ? "text-yellow-400 fill-current"
+                                      : "text-gray-300"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm text-gray-600 ml-2">
+                              ({(product.rating || 0).toFixed(1)}) •{" "}
+                              {product.reviews?.length || 0} reviews
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-2xl font-bold text-purple-600">
+                                ${(product.price || 0).toFixed(2)}
+                              </span>
+                              {product.original_price &&
+                                product.original_price > product.price && (
+                                  <span className="text-gray-500 line-through">
+                                    ${(product.original_price || 0).toFixed(2)}
+                                  </span>
+                                )}
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => addToCart(product.id)}
+                            className="w-full bg-purple-600 text-white py-3 rounded-xl hover:bg-purple-700 transition-colors font-semibold"
+                          >
+                            Add to Cart
+                          </button>
                         </div>
                       </div>
-
-                      <button
-                        onClick={() => addToCart(product.id)}
-                        className="w-full bg-purple-600 text-white py-3 rounded-xl hover:bg-purple-700 transition-colors font-semibold"
-                      >
-                        Add to Cart
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                    ))}
               </div>
             </div>
 
@@ -391,60 +644,79 @@ const ModernEcommerceHomepage = () => {
                 </div>
 
                 <div className="space-y-4">
-                  {featuredProducts
-                    .sort((a, b) => b.rating - a.rating)
-                    .slice(0, 5)
-                    .map((product, index) => (
-                      <div
-                        key={product.id}
-                        className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group"
-                      >
-                        <div className="relative">
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="w-16 h-16 object-cover rounded-lg group-hover:scale-105 transition-transform duration-200"
-                          />
-                          <div className="absolute -top-2 -left-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
-                            {index + 1}
-                          </div>
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm truncate">{product.name}</h4>
-                          <div className="flex items-center mt-1">
-                            <div className="flex items-center">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`w-3 h-3 ${
-                                    i < Math.floor(product.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                            <span className="text-xs text-gray-600 ml-1">
-                              {product.rating} ({product.reviews})
-                            </span>
-                          </div>
-                          <div className="flex items-center mt-1">
-                            <span className="text-lg font-bold text-purple-600">${product.price}</span>
-                            {product.originalPrice > product.price && (
-                              <span className="text-xs text-gray-500 line-through ml-2">
-                                ${product.originalPrice}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={() => addToCart(product.id)}
-                          className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition-colors opacity-0 group-hover:opacity-100"
+                  {isLoading
+                    ? // Loading skeleton for top rated
+                      Array.from({ length: 5 }).map((_, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center space-x-3 p-3 rounded-xl animate-pulse"
                         >
-                          <ShoppingCart className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
+                          <div className="w-16 h-16 bg-gray-200 rounded-lg"></div>
+                          <div className="flex-1">
+                            <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                            <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                          </div>
+                        </div>
+                      ))
+                    : topRatedProducts.map((product, index) => (
+                        <div
+                          key={product.id}
+                          className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group"
+                        >
+                          <div className="relative">
+                            <img
+                              src={getProductImage(product)}
+                              alt={product.name}
+                              className="w-16 h-16 object-cover rounded-lg group-hover:scale-105 transition-transform duration-200"
+                            />
+                            <div className="absolute -top-2 -left-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                              {index + 1}
+                            </div>
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-sm truncate">
+                              {product.name}
+                            </h4>
+                            <div className="flex items-center mt-1">
+                              <div className="flex items-center">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`w-3 h-3 ${
+                                      i < Math.floor(product.rating || 0)
+                                        ? "text-yellow-400 fill-current"
+                                        : "text-gray-300"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-xs text-gray-600 ml-1">
+                                {(product.rating || 0).toFixed(1)} (
+                                {product.reviews?.length || 0})
+                              </span>
+                            </div>
+                            <div className="flex items-center mt-1">
+                              <span className="text-lg font-bold text-purple-600">
+                                ${(product.price || 0).toFixed(2)}
+                              </span>
+                              {product.original_price &&
+                                product.original_price > product.price && (
+                                  <span className="text-xs text-gray-500 line-through ml-2">
+                                    ${(product.original_price || 0).toFixed(2)}
+                                  </span>
+                                )}
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => addToCart(product.id)}
+                            className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <ShoppingCart className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
                 </div>
 
                 <button className="w-full mt-6 bg-gradient-to-r from-yellow-400 to-orange-500 text-white py-3 rounded-xl font-semibold hover:from-yellow-500 hover:to-orange-600 transition-all duration-300 transform hover:scale-105">
@@ -460,7 +732,9 @@ const ModernEcommerceHomepage = () => {
       <section className="py-16 bg-gradient-to-r from-purple-600 to-pink-600">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">Stay Updated</h2>
-          <p className="text-purple-100 mb-8">Get the latest deals and product updates delivered to your inbox</p>
+          <p className="text-purple-100 mb-8">
+            Get the latest deals and product updates delivered to your inbox
+          </p>
           <div className="flex flex-col sm:flex-row max-w-md mx-auto gap-4">
             <input
               type="email"
@@ -483,30 +757,40 @@ const ModernEcommerceHomepage = () => {
                 LUXE
               </h3>
               <p className="text-gray-400 mb-4">
-                Your premier destination for premium products and exceptional shopping experience.
+                Your premier destination for premium products and exceptional
+                shopping experience.
               </p>
             </div>
-            
+
             {[
               {
                 title: "Quick Links",
-                links: ["Home", "Shop", "About", "Contact", "FAQ"]
+                links: ["Home", "Shop", "About", "Contact", "FAQ"],
               },
               {
                 title: "Categories",
-                links: ["Electronics", "Fashion", "Home", "Sports", "Beauty"]
+                links: ["Electronics", "Fashion", "Home", "Sports", "Beauty"],
               },
               {
                 title: "Customer Service",
-                links: ["Shipping Info", "Returns", "Size Guide", "Support", "Track Order"]
-              }
+                links: [
+                  "Shipping Info",
+                  "Returns",
+                  "Size Guide",
+                  "Support",
+                  "Track Order",
+                ],
+              },
             ].map((section, index) => (
               <div key={index}>
                 <h4 className="font-semibold mb-4">{section.title}</h4>
                 <ul className="space-y-2">
                   {section.links.map((link) => (
                     <li key={link}>
-                      <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                      <a
+                        href="#"
+                        className="text-gray-400 hover:text-white transition-colors"
+                      >
                         {link}
                       </a>
                     </li>
@@ -515,7 +799,7 @@ const ModernEcommerceHomepage = () => {
               </div>
             ))}
           </div>
-          
+
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
             <p>&copy; 2025 LUXE. All rights reserved.</p>
           </div>
