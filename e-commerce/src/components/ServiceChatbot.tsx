@@ -553,10 +553,164 @@ const EnhancedServiceChatbot: React.FC = () => {
     }
 
     // Handle Kiswahili greetings
+    
+
+    // Handle comprehensive Kiswahili responses
     if (['sasa', 'mambo', 'uko aje', 'niaje', 'vipi'].includes(message)) {
       return {
         id: Date.now(),
-        text: "Poa Sana Ukoaje! 😊 I see you're speaking Swahili! That's awesome! While I'm still learning and not yet fluent, I hope to chat with you in Swahili soon. For now, how can I help you in English? 🇰🇪",
+        text: "Poa sana! Ukoaje? 😊✨ Karibu sana Flowtechs! Mimi ni Makena, your shopping assistant! 🇰🇪\n\nNimefurahi kukuona hapa! (I'm happy to see you here!)\n\nNiko tayari kukusaidia na:\n• 🛍️ Kupata bidhaa (Find products)\n• 📦 Kufuatilia oda (Track orders)\n• 💡 Mapendekezo (Recommendations)\n• 🎧 Msaada wa wateja (Customer support)\n• 🏷️ Bei nzuri (Best deals)\n• 💳 Malipo (Payment help)\n\nTuanze safari ya manunuzi pamoja! 🚀💫\n\n(PS: I'm still learning Swahili, so feel free to mix with English!)",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+    // Handle Kiswahili product search
+    if (
+      message.includes("tafuta") || message.includes("natafuta bidhaa ") || message.includes("ninaweza pata") ||
+      message.includes("nisaidie kupata") || message.includes("ninaomba bidhaa")
+    ) {
+      return {
+        id: Date.now(),
+        text: "Unatafuta bidhaa gani leo? 🛍️ Andika jina la bidhaa au aina unayotaka, na nitakusaidia kuipata haraka!",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+    // Handle Kiswahili order tracking
+    if (
+      message.includes("oda yangu iko wapi") || message.includes("fuatilia oda") || message.includes("ninaweza fuatilia") ||
+      message.includes("oda yangu") || message.includes("nisaidie kufuatilia")
+    ) {
+      // Check if user provided an order number
+      const orderNumberMatch = message.match(/(?:oda|order)\s*(?:#|nambari\s*)?(\d+)/i);
+      const specificOrderId = orderNumberMatch ? parseInt(orderNumberMatch[1]) : null;
+      
+      if (specificOrderId && isAuthenticated) {
+        const order = userOrders.find(o => o.order_id === specificOrderId);
+        if (order) {
+          const getOrderStatusSwahili = (status: string) => {
+            switch (status) {
+              case 'pending': return 'Inasubiri (Pending)';
+              case 'processing': return 'Inachakatwa (Processing)';
+              case 'delivered': return 'Imepelekwa (Delivered)';
+              case 'cancelled': return 'Imeghairiwa (Cancelled)';
+              default: return status;
+            }
+          };
+
+          const getEstimatedDeliverySwahili = (orderDate: string, status: string) => {
+            const orderDateTime = new Date(orderDate);
+            const now = new Date();
+            
+            if (status === 'delivered') {
+              return "✅ **Imepelekwa**";
+            }
+            
+            if (status === 'cancelled') {
+              return "❌ **Oda Imeghairiwa**";
+            }
+            
+            const daysSinceOrder = Math.floor((now.getTime() - orderDateTime.getTime()) / (1000 * 60 * 60 * 24));
+            
+            if (status === 'pending') {
+              const estimatedDelivery = new Date(orderDateTime.getTime() + (3 * 24 * 60 * 60 * 1000));
+              return `📦 **Tarehe ya kusambaza inayotarajiwa**: ${estimatedDelivery.toLocaleDateString()} (siku 2-5 za kazi)`;
+            }
+            
+            if (status === 'processing') {
+              const estimatedDelivery = new Date(orderDateTime.getTime() + (2 * 24 * 60 * 60 * 1000));
+              return `🚚 **Tarehe ya kusambaza inayotarajiwa**: ${estimatedDelivery.toLocaleDateString()} (siku 1-2 za kazi)`;
+            }
+            
+            return "📋 **Inachakatwa oda yako**";
+          };
+
+          return {
+            id: Date.now(),
+            text: `📦 **Taarifa za Oda #${order.order_id}** 🚚\n\n**Hali ya Oda**: ${getOrderStatusSwahili(order.status)}\n**Tarehe ya Oda**: ${new Date(order.datetime).toLocaleDateString()}\n**Jumla ya Malipo**: Ksh ${order.total?.toLocaleString()}\n\n${getEstimatedDeliverySwahili(order.datetime, order.status)}\n\n**Maelezo za Usambazaji:**\n• 📱 Utapokea ujumbe wa SMS katika kila hatua\n• 📍 Ufuatiliaji wa wakati halisi unapatikana\n• 🎧 Wasiliana na msaada kwa msaada wa haraka\n\n**Hujambo na kitu kingine?** 😊`,
+            sender: "bot",
+            timestamp: new Date(),
+          };
+        } else {
+          return {
+            id: Date.now(),
+            text: `🔍 **Oda #${specificOrderId} Haijapatikana** 🤔\n\nSikuweza kupata oda #${specificOrderId} kwenye akaunti yako. Hapa kuna mambo ya kuangalia:\n\n**Sababu zinazowezekana:**\n• 📝 Nambari ya oda inaweza kuwa si sahihi\n• ⏰ Oda inaweza kuwa kutoka kwenye akaunti tofauti\n• 🗑️ Oda inaweza kuwa imeghairiwa\n• 📅 Oda inaweza kuwa ya zamani sana\n\n**Ninachoweza kukusaidia:**\n• 📋 Onyesha oda zako zote za hivi karibuni\n• 🔍 Kusaidia kupata nambari sahihi ya oda\n• 📞 Kuwasiliana na msaada wa wateja\n• 🛍️ Kuanza oda mpya\n\n**Je, ungependa nionyeshe oda zako zote za hivi karibuni?** 📦✨`,
+            sender: "bot",
+            timestamp: new Date(),
+          };
+        }
+      }
+
+      // If no order number provided or user not authenticated
+      if (!isAuthenticated) {
+        return {
+          id: Date.now(),
+          text: "🚀 **Msaada wa Kufuatilia Oda** 📦✨\n\nNingependa kukusaidia kufuatilia oda zako! Lakini kwanza, unahitaji **kuingia** ili niweze kufikia historia ya oda zako. Mara tu ukiingia, nitaweza kukusaidia na:\n\n• 📊 Hali ya oda kwa wakati halisi\n• 🚚 Taarifa za usambazaji\n• 📋 Historia kamili ya oda\n• 💳 Hali ya malipo\n• 📞 Msaada wa wateja kwa oda\n\n**Faida za Kuingia:**\n✅ Ufuatiliaji wa oda binafsi\n✅ Chaguo za kughairi oda\n✅ Arifa za usambazaji\n✅ Ufikiaji wa historia ya oda\n\n**Ingia tu na nitakuwa na dashboard kamili ya oda yako tayari!** 🔐💫",
+          sender: "bot",
+          timestamp: new Date(),
+        };
+      }
+
+      if (userOrders.length === 0) {
+        return {
+          id: Date.now(),
+          text: "🛍️ **Hakuna Oda Bado - Tuanze Kununua!** ✨\n\nHuna oda yoyote bado, lakini hiyo ni sawa kabisa! Tuanze safari yako ya kununua! 🚀\n\n**Je, unapenda nini zaidi?**\n• 📱 Vifaa vya Elektroniki\n• 👗 Mavazi na Nguo\n• 🎮 Michezo na Burudani\n\nNinaweza kukusaidia kupata bidhaa nzuri, kupata makubaliano bora, na kufanya ununuzi wako wa kwanza! Ni aina gani inayokuvutia? 💫",
+          sender: "bot",
+          timestamp: new Date(),
+        };
+      }
+
+      // Show all orders summary in Swahili
+      return {
+        id: Date.now(),
+        text: `🚀 **Dashboard ya Kufuatilia Oda Iko Tayari!** 📦✨\n\nNimepata taarifa kamili za oda zako! Una **${userOrders.length} oda** kwenye akaunti yako na hali ya wakati halisi. Hapa kuna dashboard yako binafsi ya kufuatilia ambapo unaweza:\n\n• 📊 Kuona muhtasari wa hali ya oda\n• 🚚 Kufuatilia usambazaji wa hivi karibuni\n• 📋 Kuona maelezo kamili ya oda\n• ❌ Kughairi oda zinazosubiri (ikiwa inahitajika)\n• 💡 Kupata msaada kwa maswali yoyote ya oda\n\nKila kitu unachohitaji kujua kuhusu ununuzi wako! 🎉\n\n**Je, ungependa nionyeshe oda zako zote?** 📦✨`,
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+    // Handle Kiswahili recommendations
+    if (
+      message.includes("pendekezo") || message.includes("nisaidie kuchagua") || message.includes("nini bora") ||
+      message.includes("unapendekeza nini")
+    ) {
+      return {
+        id: Date.now(),
+        text: "Ningependa kukupendekezea bidhaa bora! Niambie unachopenda au bajeti yako, na nitakutafutia chaguo nzuri. 💡",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+    // Handle Kiswahili customer support/help
+    if (
+      message.includes("msaada") || message.includes("nisaidie") || message.includes("shida") ||
+      message.includes("tatizo") || message.includes("nahitaji msaada")
+    ) {
+      return {
+        id: Date.now(),
+        text: "Niko hapa kukusaidia! Eleza shida yako au swali lako, na nitajitahidi kutoa suluhisho haraka. 🎧",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
+    // Handle founder-related queries in Kiswahili
+    if (
+      message.includes("founder") || message.includes("founders") ||
+      message.includes("eric") || message.includes("steve") ||
+      message.includes("omondi") || message.includes("leo") ||
+      message.includes("who started") || message.includes("who created") ||
+      message.includes("who owns") || message.includes("started by") ||
+      message.includes("who are the founders") || message.includes("who are founders") ||
+      message.includes("when was flowtechs started") || message.includes("when did flowtechs start") ||
+      message.includes("when was flowtechs founded") || message.includes("when did flowtechs begin")
+    ) {
+      return {
+        id: Date.now(),
+        text: `👥 **Meet Our Founders: Eric Omondi & Steve Leo** ✨\n\nFlowtechs was founded by two young, enthusiastic developers, **Eric Omondi** and **Steve Leo**, who are passionate about joining and shaping the tech revolution in Kenya and beyond.\n\n**Background:**\nEric and Steve met as university students, both driven by a love for technology and a desire to solve real-world problems. They noticed that many Kenyans, especially in rural areas, struggled to access quality products at fair prices. Inspired by the global e-commerce boom, they decided to build a platform that would make premium shopping accessible to everyone in Kenya.\n\n**Their Vision:**\n- To empower every Kenyan with access to quality products, no matter where they live.\n- To use technology to bridge gaps in commerce, logistics, and customer service.\n- To create a vibrant, trustworthy online marketplace that supports local businesses and delights customers.\n\n**Their Story:**\nStarting with just a laptop and a dream, Eric and Steve worked tirelessly to build Flowtechs from the ground up. They spent countless nights coding, researching market needs, and connecting with suppliers. Their dedication paid off when they launched their first version in 2023, and the response was overwhelming.\n\n**What Makes Them Special:**\n• 🧠 **Young Innovators**: Fresh perspectives and modern approaches to e-commerce\n• 💻 **Tech-Savvy**: Deep understanding of both technology and business\n• 🌍 **Kenya-Focused**: Built specifically for Kenyan market needs and preferences\n• 🚀 **Future-Oriented**: Always thinking about the next big thing in tech\n• 🤝 **Community-Driven**: Believe in giving back and supporting local businesses\n\n**Their Mission Today:**\nEric and Steve continue to lead Flowtechs with the same passion and energy that drove them to start the company. They're constantly exploring new technologies, expanding their reach, and finding innovative ways to serve their customers better.\n\n**Join the Revolution:**\nWhen you shop with Flowtechs, you're not just buying products - you're supporting the vision of two young Kenyans who dared to dream big and are making that dream a reality for everyone! 🇰🇪✨\n\n**Ready to experience the future of shopping, built by Kenya's next generation of tech leaders?** 🛍️💫`,
         sender: "bot",
         timestamp: new Date(),
       };

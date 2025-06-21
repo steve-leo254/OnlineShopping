@@ -15,7 +15,7 @@ if (['sasa', 'mambo', 'uko aje', 'niaje', 'vipi'].includes(message)) {
 
 2. REPLACE IT WITH THIS UPDATED VERSION:
 ```tsx
-// Handle Kiswahili greetings
+// Handle Kiswahili 
 if (['sasa', 'mambo', 'uko aje', 'niaje', 'vipi'].includes(message)) {
   return {
     id: Date.now(),
