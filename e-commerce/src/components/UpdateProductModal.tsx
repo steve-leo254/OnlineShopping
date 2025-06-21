@@ -9,18 +9,36 @@ import {
   Tag,
   DollarSign,
   Package,
-  Star,
   Image as ImageIcon,
+  PlusCircle,
   Settings,
   List,
+  ChevronDown,
+  AlertCircle,
+  CheckCircle,
+  Info,
 } from "lucide-react";
+import CategoryForm from "./AddCategory";
 
-// Define types based on your Pydantic models
-// (Align with AddProduct)
+// Define types based on your database models
 type Category = {
   id: number;
   name: string;
   description: string | null;
+};
+
+type Subcategory = {
+  id: number;
+  name: string;
+  description: string | null;
+  category_id: number;
+};
+
+type Specification = {
+  id: number;
+  name: string;
+  value_type: string;
+  category_id: number;
 };
 
 type ProductForm = {
@@ -28,18 +46,15 @@ type ProductForm = {
   cost: number;
   price: number;
   original_price: number;
-  images: string[];
   stock_quantity: number;
   barcode: number;
   category_id: number | null;
+  subcategory_id: number | null;
   brand: string;
   description: string;
-  rating: number;
   discount: number;
   is_new: boolean;
 };
-
-type Specification = { id: number; name: string; value_type: string };
 
 interface UpdateProductModalProps {
   isOpen: boolean;
@@ -53,45 +68,78 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
   productToEdit,
 }) => {
   const { token, role } = useAuth();
-  const imgEndpoint = import.meta.env.VITE_API_BASE_URL;
-  const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState<ProductForm>({
     name: "",
     cost: 0,
     price: 0,
     original_price: 0,
-    images: [],
     stock_quantity: 0,
     barcode: 0,
     category_id: null,
+    subcategory_id: null,
     brand: "",
     description: "",
-    rating: 0,
     discount: 0,
     is_new: false,
   });
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
+  const [specifications, setSpecifications] = useState<Specification[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<
     { id: number; img_url: string }[]
   >([]);
-  const [specifications, setSpecifications] = useState<Specification[]>([]);
+  const [showCategoryModal, setShowCategoryModal] = useState<boolean>(false);
   const [specValues, setSpecValues] = useState<Record<number, string>>({});
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch categories on mount
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get<Category[]>(
+        `${import.meta.env.VITE_API_BASE_URL}/public/categories`
+      );
+      setCategories(response.data);
+    } catch (err) {
+      toast.error("Failed to fetch categories");
+      console.error("Error fetching categories:", err);
+    }
+  };
+
+  // Fetch subcategories when category changes
+  const fetchSubcategories = async (categoryId: number) => {
+    try {
+      const response = await axios.get<Subcategory[]>(
+        `${
+          import.meta.env.VITE_API_BASE_URL
+        }/categories/${categoryId}/subcategories`
+      );
+      setSubcategories(response.data || []);
+    } catch (err) {
+      setSubcategories([]);
+    }
+  };
+
+  // Fetch specifications when category changes
+  const fetchSpecifications = async (categoryId: number) => {
+    try {
+      const response = await axios.get<Specification[]>(
+        `${
+          import.meta.env.VITE_API_BASE_URL
+        }/categories/${categoryId}/specifications`
+      );
+      setSpecifications(response.data || []);
+    } catch (err) {
+      setSpecifications([]);
+    }
+  };
 
   // Fetch categories, images, and specifications on open
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await axios.get<Category[]>(
-          `${import.meta.env.VITE_API_BASE_URL}/public/categories`
-        );
-        setCategories(response.data);
-      } catch (err) {
-        toast.error("Failed to fetch categories");
-      }
-    };
     const fetchImages = async (productId: number) => {
       try {
         const res = await axios.get(
@@ -114,18 +162,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
         setSpecValues(values);
       } catch {}
     };
-    const fetchCategorySpecs = async (categoryId: number) => {
-      try {
-        const res = await axios.get(
-          `${
-            import.meta.env.VITE_API_BASE_URL
-          }/categories/${categoryId}/specifications`
-        );
-        setSpecifications(res.data);
-      } catch {
-        setSpecifications([]);
-      }
-    };
+
     if (isOpen && productToEdit) {
       fetchCategories();
       fetchImages(productToEdit.id);
@@ -135,37 +172,36 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
         cost: productToEdit.cost,
         price: productToEdit.price,
         original_price: productToEdit.original_price,
-        images: [],
         stock_quantity: productToEdit.stock_quantity,
         barcode: productToEdit.barcode,
         category_id: productToEdit.category_id,
+        subcategory_id: productToEdit.subcategory_id,
         brand: productToEdit.brand || "",
         description: productToEdit.description || "",
-        rating: productToEdit.rating,
         discount: productToEdit.discount,
         is_new: productToEdit.is_new,
       });
-      if (productToEdit.category_id)
-        fetchCategorySpecs(productToEdit.category_id);
+      if (productToEdit.category_id) {
+        fetchSubcategories(productToEdit.category_id);
+        fetchSpecifications(productToEdit.category_id);
+      }
       setImageFiles([]);
       setImagePreviews([]);
-      setError(null);
+      setErrors({});
     }
   }, [isOpen, productToEdit]);
 
-  // Fetch category specs when category changes
+  // Handle category change
   useEffect(() => {
     if (formData.category_id) {
-      axios
-        .get(
-          `${import.meta.env.VITE_API_BASE_URL}/categories/${
-            formData.category_id
-          }/specifications`
-        )
-        .then((res) => setSpecifications(res.data))
-        .catch(() => setSpecifications([]));
+      fetchSubcategories(formData.category_id);
+      fetchSpecifications(formData.category_id);
+      // Reset subcategory when category changes
+      setFormData((prev) => ({ ...prev, subcategory_id: null }));
     } else {
+      setSubcategories([]);
       setSpecifications([]);
+      setFormData((prev) => ({ ...prev, subcategory_id: null }));
     }
   }, [formData.category_id]);
 
@@ -189,25 +225,73 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
     >
   ) => {
     const { name, value, type } = e.target;
+    const newValue =
+      type === "checkbox"
+        ? (e.target as HTMLInputElement).checked
+        : name === "cost" ||
+          name === "price" ||
+          name === "original_price" ||
+          name === "stock_quantity" ||
+          name === "barcode" ||
+          name === "discount"
+        ? Number(value) || 0
+        : name === "category_id" || name === "subcategory_id"
+        ? value
+          ? Number(value)
+          : null
+        : value;
+
     setFormData((prev) => ({
       ...prev,
-      [name]:
-        type === "checkbox"
-          ? (e.target as HTMLInputElement).checked
-          : name === "cost" ||
-            name === "price" ||
-            name === "original_price" ||
-            name === "stock_quantity" ||
-            name === "barcode" ||
-            name === "rating" ||
-            name === "discount"
-          ? Number(value) || 0
-          : name === "category_id"
-          ? value
-            ? Number(value)
-            : null
-          : value,
+      [name]: newValue,
     }));
+
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  // Validate form
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Product name is required";
+    } else if (formData.name.trim().length < 3) {
+      newErrors.name = "Product name must be at least 3 characters";
+    }
+
+    if (formData.cost <= 0) {
+      newErrors.cost = "Cost must be greater than 0";
+    }
+
+    if (formData.original_price <= 0) {
+      newErrors.original_price = "Original price must be greater than 0";
+    }
+
+    if (formData.price <= 0) {
+      newErrors.price = "Selling price must be greater than 0";
+    }
+
+    if (formData.stock_quantity < 0) {
+      newErrors.stock_quantity = "Stock quantity cannot be negative";
+    }
+
+    if (formData.barcode <= 0) {
+      newErrors.barcode = "Barcode must be a positive number";
+    }
+
+    if (formData.discount < 0 || formData.discount > 100) {
+      newErrors.discount = "Discount must be between 0 and 100";
+    }
+
+    if (!formData.category_id) {
+      newErrors.category_id = "Please select a category";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   // Handle image file selection
@@ -224,6 +308,12 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
       }
       return true;
     });
+
+    if (imageFiles.length + validFiles.length > 5) {
+      toast.error("Maximum 5 images allowed");
+      return;
+    }
+
     setImageFiles((prev) => [...prev, ...validFiles]);
     validFiles.forEach((file) => {
       const reader = new FileReader();
@@ -252,49 +342,24 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!token || (role !== "admin" && role !== "SUPERADMIN")) {
       toast.error("Admin access required");
       return;
     }
+
     if (!productToEdit) {
       toast.error("No product selected for update");
       return;
     }
-    // Client-side validation
-    if (!formData.name) {
-      toast.error("Product name is required");
+
+    if (!validateForm()) {
+      toast.error("Please fix the errors in the form");
       return;
     }
-    if (formData.cost <= 0) {
-      toast.error("Cost must be greater than 0");
-      return;
-    }
-    if (formData.price <= 0) {
-      toast.error("Price must be greater than 0");
-      return;
-    }
-    if (formData.original_price <= 0) {
-      toast.error("Original price must be greater than 0");
-      return;
-    }
-    if (formData.stock_quantity < 0) {
-      toast.error("Stock quantity cannot be negative");
-      return;
-    }
-    if (formData.barcode <= 0) {
-      toast.error("Barcode must be a positive number");
-      return;
-    }
-    if (formData.rating < 0 || formData.rating > 5) {
-      toast.error("Rating must be between 0 and 5");
-      return;
-    }
-    if (formData.discount < 0 || formData.discount > 100) {
-      toast.error("Discount must be between 0 and 100");
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
+
+    setIsSubmitting(true);
+
     try {
       // Upload all selected image files
       let uploadedImageUrls: string[] = [];
@@ -321,35 +386,28 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
           { headers: { Authorization: `Bearer ${token}` } }
         );
       }
-      // Prepare images array for API (existing + uploaded)
-      const allImageUrls = [
-        ...existingImages.map((img) => img.img_url),
-        ...uploadedImageUrls,
-        ...formData.images,
-      ].filter((url) => url);
-      // Prepare specifications array for API
-      const specificationsArr = Object.entries(specValues)
-        .filter(([_, value]) => value !== "")
-        .map(([specification_id, value]) => ({
-          specification_id: Number(specification_id),
-          value,
-        }));
+
       // Update product (main fields)
       await axios.put(
         `${import.meta.env.VITE_API_BASE_URL}/update-product/${
           productToEdit.id
         }`,
-        {
-          ...formData,
-          images: undefined, // not used in update
-        },
+        formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
+
       // Add/update specifications
+      const specificationsArr = Object.entries(specValues)
+        .filter(([_, value]) => value.trim() !== "")
+        .map(([specification_id, value]) => ({
+          specification_id: Number(specification_id),
+          value: value.trim(),
+        }));
+
       for (const spec of specificationsArr) {
         await axios.post(
           `${import.meta.env.VITE_API_BASE_URL}/products/${
@@ -359,24 +417,43 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
           { headers: { Authorization: `Bearer ${token}` } }
         );
       }
-      toast.success("Product updated successfully");
+
+      toast.success("Product updated successfully!");
       onClose();
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.detail ||
         "Failed to update product. Please try again.";
-      setError(errorMessage);
       toast.error(errorMessage);
+      console.error("Error updating product:", err);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  useEffect(() => {
-    if (existingImages.length > 0) {
-      console.log("existingImages", existingImages);
+  const handleCategoryAdded = () => {
+    fetchCategories();
+  };
+
+  const getValueTypeColor = (valueType: string) => {
+    switch (valueType) {
+      case "string":
+        return "bg-blue-100 text-blue-700 border-blue-200";
+      case "number":
+        return "bg-green-100 text-green-700 border-green-200";
+      case "boolean":
+        return "bg-purple-100 text-purple-700 border-purple-200";
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-200";
     }
-  }, [existingImages]);
+  };
+
+  const completedSpecs = Object.values(specValues).filter(
+    (val) => val.trim() !== ""
+  ).length;
+  const totalSpecs = specifications.length;
+  const completionPercentage =
+    totalSpecs > 0 ? (completedSpecs / totalSpecs) * 100 : 0;
 
   if (!isOpen) return null;
 
@@ -393,7 +470,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
               <div>
                 <h2 className="text-xl font-bold text-white">Edit Product</h2>
                 <p className="text-blue-100 text-sm">
-                  Fill in the details to update the product
+                  Update the product details and specifications
                 </p>
               </div>
             </div>
@@ -405,13 +482,10 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
             </button>
           </div>
         </div>
+
         {/* Form Container */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-8"
-            encType="multipart/form-data"
-          >
+          <form onSubmit={handleSubmit} className="space-y-8">
             {/* Basic Information */}
             <div className="bg-gray-50 rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-4">
@@ -430,10 +504,20 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                      errors.name
+                        ? "border-red-500 ring-red-200"
+                        : "border-gray-300"
+                    }`}
                     placeholder="Enter product name"
                     required
                   />
+                  {errors.name && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {errors.name}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -444,27 +528,72 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     name="brand"
                     value={formData.brand}
                     onChange={handleChange}
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     placeholder="Product brand"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Category
+                    Category *
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <select
+                      name="category_id"
+                      value={formData.category_id ?? ""}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                        errors.category_id
+                          ? "border-red-500 ring-red-200"
+                          : "border-gray-300"
+                      }`}
+                    >
+                      <option value="">Select category</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setShowCategoryModal(true)}
+                      className="p-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors duration-200 flex items-center justify-center"
+                      title="Add new category"
+                    >
+                      <PlusCircle className="w-5 h-5" />
+                    </button>
+                  </div>
+                  {errors.category_id && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {errors.category_id}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Subcategory
                   </label>
                   <select
-                    name="category_id"
-                    value={formData.category_id ?? ""}
+                    name="subcategory_id"
+                    value={formData.subcategory_id ?? ""}
                     onChange={handleChange}
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    disabled={!formData.category_id}
                   >
-                    <option value="">Select category</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
+                    <option value="">Select subcategory</option>
+                    {subcategories.map((subcategory) => (
+                      <option key={subcategory.id} value={subcategory.id}>
+                        {subcategory.name}
                       </option>
                     ))}
                   </select>
+                  {!formData.category_id && (
+                    <p className="mt-1 text-sm text-gray-500 flex items-center">
+                      <Info className="w-4 h-4 mr-1" />
+                      Select a category first
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -475,10 +604,20 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     name="barcode"
                     value={formData.barcode}
                     onChange={handleChange}
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                      errors.barcode
+                        ? "border-red-500 ring-red-200"
+                        : "border-gray-300"
+                    }`}
                     placeholder="Enter barcode"
                     required
                   />
+                  {errors.barcode && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {errors.barcode}
+                    </p>
+                  )}
                 </div>
                 <div className="lg:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -489,12 +628,13 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     rows={3}
                     value={formData.description}
                     onChange={handleChange}
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
                     placeholder="Product description..."
                   />
                 </div>
               </div>
             </div>
+
             {/* Pricing & Stock */}
             <div className="bg-green-50 rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-4">
@@ -515,10 +655,20 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     onChange={handleChange}
                     min="0"
                     step="0.01"
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 ${
+                      errors.cost
+                        ? "border-red-500 ring-red-200"
+                        : "border-gray-300"
+                    }`}
                     placeholder="0.00"
                     required
                   />
+                  {errors.cost && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {errors.cost}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -531,10 +681,20 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     onChange={handleChange}
                     min="0"
                     step="0.01"
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 ${
+                      errors.original_price
+                        ? "border-red-500 ring-red-200"
+                        : "border-gray-300"
+                    }`}
                     placeholder="0.00"
                     required
                   />
+                  {errors.original_price && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {errors.original_price}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -547,9 +707,19 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     onChange={handleChange}
                     min="0"
                     max="100"
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 ${
+                      errors.discount
+                        ? "border-red-500 ring-red-200"
+                        : "border-gray-300"
+                    }`}
                     placeholder="0"
                   />
+                  {errors.discount && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {errors.discount}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -561,11 +731,19 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     value={formData.price}
                     min="0"
                     step="0.01"
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100 cursor-not-allowed"
+                    className={`w-full px-4 py-3 border rounded-xl bg-gray-100 cursor-not-allowed ${
+                      errors.price ? "border-red-500" : "border-gray-300"
+                    }`}
                     placeholder="0.00"
                     readOnly
                     disabled
                   />
+                  {errors.price && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {errors.price}
+                    </p>
+                  )}
                   <p className="text-xs text-gray-500 mt-1">
                     Calculated as: Original Price - (Original Price × Discount
                     %)
@@ -581,13 +759,24 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     value={formData.stock_quantity}
                     onChange={handleChange}
                     min="0"
-                    className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 ${
+                      errors.stock_quantity
+                        ? "border-red-500 ring-red-200"
+                        : "border-gray-300"
+                    }`}
                     placeholder="0"
                     required
                   />
+                  {errors.stock_quantity && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <AlertCircle className="w-4 h-4 mr-1" />
+                      {errors.stock_quantity}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
+
             {/* Image Upload */}
             <div className="bg-purple-50 rounded-2xl p-6">
               <div className="flex items-center gap-2 mb-4">
@@ -599,7 +788,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
               <div className="flex flex-col lg:flex-row gap-6">
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Choose Images
+                    Choose Images (Max 5)
                   </label>
                   <div className="relative">
                     <input
@@ -607,7 +796,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                       accept="image/jpeg,image/png,image/gif"
                       multiple
                       onChange={handleImageChange}
-                      className="text-gray-500 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
@@ -618,7 +807,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                 {(imagePreviews.length > 0 || existingImages.length > 0) && (
                   <div className="lg:w-48">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Preview
+                      Preview ({imagePreviews.length + existingImages.length}/5)
                     </label>
                     <div className="flex flex-wrap gap-2">
                       {existingImages.map((img, idx) => (
@@ -627,7 +816,9 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                             src={
                               img.img_url.startsWith("http")
                                 ? img.img_url
-                                : `${imgEndpoint}${img.img_url}`
+                                : `${import.meta.env.VITE_API_BASE_URL}${
+                                    img.img_url
+                                  }`
                             }
                             alt={`Product preview ${idx + 1}`}
                             className="w-20 h-20 object-cover rounded-xl border-2 border-gray-200"
@@ -662,6 +853,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                 )}
               </div>
             </div>
+
             {/* Enhanced Specifications Section */}
             {specifications.length > 0 && (
               <div className="bg-gradient-to-br from-indigo-50 to-cyan-50 rounded-2xl p-6 border border-indigo-100">
@@ -679,6 +871,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                     </p>
                   </div>
                 </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {specifications.map((spec, index) => (
                     <div
@@ -706,45 +899,48 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                               placeholder={`Enter ${spec.name.toLowerCase()}...`}
                             />
                             <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                              <div className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-md">
+                              <div
+                                className={`text-xs px-2 py-1 rounded-md border ${getValueTypeColor(
+                                  spec.value_type
+                                )}`}
+                              >
                                 {spec.value_type}
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
+
+                      {/* Subtle animation indicator */}
                       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-t-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                     </div>
                   ))}
                 </div>
+
                 {/* Specifications Summary */}
                 <div className="mt-6 p-4 bg-white/70 rounded-xl border border-indigo-200">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <div className="w-2 h-2 bg-indigo-400 rounded-full"></div>
-                    <span>
-                      {
-                        Object.values(specValues).filter((val) => val !== "")
-                          .length
-                      }{" "}
-                      of {specifications.length} specifications completed
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="w-2 h-2 bg-indigo-400 rounded-full"></div>
+                      <span>
+                        {completedSpecs} of {totalSpecs} specifications
+                        completed
+                      </span>
+                    </div>
+                    <span className="text-sm font-medium text-indigo-600">
+                      {Math.round(completionPercentage)}%
                     </span>
                   </div>
-                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className="bg-gradient-to-r from-indigo-500 to-cyan-500 h-2 rounded-full transition-all duration-300"
-                      style={{
-                        width: `${
-                          (Object.values(specValues).filter((val) => val !== "")
-                            .length /
-                            specifications.length) *
-                          100
-                        }%`,
-                      }}
+                      style={{ width: `${completionPercentage}%` }}
                     ></div>
                   </div>
                 </div>
               </div>
             )}
+
             {/* Product Status */}
             <div className="bg-blue-50 rounded-2xl p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -765,18 +961,19 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                 </label>
               </div>
             </div>
+
             {/* Submit Button */}
             <div className="sticky bottom-0 bg-white pt-4 border-t border-gray-200">
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isSubmitting}
                 className={`w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 ${
-                  isLoading
+                  isSubmitting
                     ? "opacity-50 cursor-not-allowed"
                     : "hover:from-blue-700 hover:to-purple-700"
                 }`}
               >
-                {isLoading ? (
+                {isSubmitting ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
                     Updating Product...
@@ -788,15 +985,22 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                   </>
                 )}
               </button>
-              {error && (
-                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
-                  <p className="text-red-700 text-sm">{error}</p>
-                </div>
-              )}
             </div>
           </form>
         </div>
       </div>
+
+      {/* Category Modal */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <CategoryForm
+              onClose={() => setShowCategoryModal(false)}
+              onCategoryAdded={handleCategoryAdded}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
