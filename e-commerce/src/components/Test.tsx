@@ -281,88 +281,7 @@ const ModernEcommerceHomepage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="fixed top-0 w-full bg-white/95 backdrop-blur-lg shadow-sm z-50 transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex-shrink-0">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                LUXE
-              </h1>
-            </div>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-8">
-              {["Home", "Shop", "Categories", "Deals", "About"].map((item) => (
-                <a
-                  key={item}
-                  href="#"
-                  className="text-gray-700 hover:text-purple-600 transition-colors duration-200 font-medium"
-                >
-                  {item}
-                </a>
-              ))}
-            </nav>
-
-            {/* Search Bar */}
-            <div className="hidden md:flex flex-1 max-w-md mx-8">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            {/* Right Side Icons */}
-            <div className="flex items-center space-x-4">
-              <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                <User className="w-6 h-6 text-gray-700" />
-              </button>
-              <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                <Heart className="w-6 h-6 text-gray-700" />
-              </button>
-              <button className="p-2 hover:bg-gray-100 rounded-full transition-colors relative">
-                <ShoppingCart className="w-6 h-6 text-gray-700" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {cartCount}
-                  </span>
-                )}
-              </button>
-              <button
-                className="md:hidden p-2 hover:bg-gray-100 rounded-full transition-colors"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-              >
-                {isMenuOpen ? (
-                  <X className="w-6 h-6" />
-                ) : (
-                  <Menu className="w-6 h-6" />
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden bg-white border-t">
-            <div className="px-4 py-2 space-y-2">
-              {["Home", "Shop", "Categories", "Deals", "About"].map((item) => (
-                <a
-                  key={item}
-                  href="#"
-                  className="block py-2 text-gray-700 hover:text-purple-600 transition-colors"
-                >
-                  {item}
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-      </header>
+    
 
       {/* Hero Section */}
       <section className="relative h-[50vh] flex items-center justify-center overflow-hidden">
@@ -398,43 +317,7 @@ const ModernEcommerceHomepage = () => {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-8 bg-white mt-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              {
-                icon: Truck,
-                title: "Free Shipping",
-                desc: "On orders over $100",
-              },
-              {
-                icon: Shield,
-                title: "Secure Payment",
-                desc: "100% secure transactions",
-              },
-              {
-                icon: Headphones,
-                title: "24/7 Support",
-                desc: "Expert customer service",
-              },
-              {
-                icon: RotateCcw,
-                title: "Easy Returns",
-                desc: "30-day return policy",
-              },
-            ].map((feature, index) => (
-              <div key={index} className="text-center group">
-                <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200 transition-colors">
-                  <feature.icon className="w-8 h-8 text-purple-600" />
-                </div>
-                <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
-                <p className="text-gray-600">{feature.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+     
 
       {/* Categories Section */}
       <section className="py-6 bg-gray-50">
@@ -724,6 +607,44 @@ const ModernEcommerceHomepage = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+       {/* Features Section */}
+       <section className="py-8 bg-white mt-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              {
+                icon: Truck,
+                title: "Free Shipping",
+                desc: "On orders over $100",
+              },
+              {
+                icon: Shield,
+                title: "Secure Payment",
+                desc: "100% secure transactions",
+              },
+              {
+                icon: Headphones,
+                title: "24/7 Support",
+                desc: "Expert customer service",
+              },
+              {
+                icon: RotateCcw,
+                title: "Easy Returns",
+                desc: "30-day return policy",
+              },
+            ].map((feature, index) => (
+              <div key={index} className="text-center group">
+                <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200 transition-colors">
+                  <feature.icon className="w-8 h-8 text-purple-600" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
+                <p className="text-gray-600">{feature.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
