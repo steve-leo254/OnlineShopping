@@ -1,11 +1,11 @@
-import React, { useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import CartDropdown from "./CartDropdown";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
-import { Heart } from "lucide-react";
+import { Heart, ChevronDown, X, Menu } from "lucide-react";
 import { useUserStats } from "../context/UserStatsContext";
 
 declare global {
@@ -14,12 +14,26 @@ declare global {
   }
 }
 
+// Define types for categories
+type Category = {
+  id: number;
+  name: string;
+  description: string | null;
+};
+
 // Define the component as a React Functional Component (React.FC) for TypeScript compliance
 const Bar: React.FC = () => {
   const { isAuthenticated, logout, role, token } = useAuth();
   const { cartQuantity } = useShoppingCart();
   const { pendingReviewsCount, activeOrdersCount, wishlistCount } =
     useUserStats();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // State for mobile navigation
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   // Initialize Flowbite (if available) on component mount
   useEffect(() => {
@@ -27,6 +41,27 @@ const Bar: React.FC = () => {
       window.initFlowbite();
     }
   }, []);
+
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get<Category[]>(
+          `${import.meta.env.VITE_API_BASE_URL}/public/categories`
+        );
+        setCategories(response.data);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setIsCategoryDropdownOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!isAuthenticated || !token) {
@@ -111,6 +146,20 @@ const Bar: React.FC = () => {
     window.location.href = "/login";
   };
 
+  // Handle category navigation
+  const handleCategoryClick = (categoryName: string) => {
+    const categoryPath = categoryName.toLowerCase().replace(/\s+/g, "-");
+    navigate(`/category/${categoryPath}`, {
+      state: { categoryName },
+      replace: true,
+    });
+  };
+
+  // Handle shop navigation (goes to all categories)
+  const handleShopClick = () => {
+    navigate("/shop", { replace: true });
+  };
+
   return (
     <>
       {/* Navigation Bar */}
@@ -143,6 +192,50 @@ const Bar: React.FC = () => {
                     Home
                     <span className="absolute inset-x-0 bottom-0 h-0.5 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
                   </Link>
+
+                  {/* Shop Dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() =>
+                        setIsCategoryDropdownOpen(!isCategoryDropdownOpen)
+                      }
+                      className="relative text-white/90 hover:text-white px-3 py-2 text-sm font-medium transition-all duration-200 group flex items-center gap-1"
+                    >
+                      Shop
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          isCategoryDropdownOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                      <span className="absolute inset-x-0 bottom-0 h-0.5 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
+                    </button>
+
+                    {/* Category Dropdown */}
+                    {isCategoryDropdownOpen && (
+                      <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                        <div className="px-4 py-2">
+                          <button
+                            onClick={handleShopClick}
+                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200 font-medium"
+                          >
+                            All Categories
+                          </button>
+                        </div>
+                        <div className="border-t border-gray-100 my-2"></div>
+                        {categories.map((category) => (
+                          <div key={category.id} className="px-4 py-1">
+                            <button
+                              onClick={() => handleCategoryClick(category.name)}
+                              className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
+                            >
+                              {category.name}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <Link
                     to="/store"
                     className="relative text-white/90 hover:text-white px-3 py-2 text-sm font-medium transition-all duration-200 group"
@@ -337,7 +430,7 @@ const Bar: React.FC = () => {
                       </Link>
                       <Link
                         to="/wishlist"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-pink-600 transition-colors duration-200 relative"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors duration-200 relative"
                       >
                         <Heart className="w-4 h-4 mr-3 text-pink-500" />
                         Wishlist
@@ -486,56 +579,71 @@ const Bar: React.FC = () => {
 
               {/* Mobile Menu Toggle */}
               <button
-                type="button"
-                data-collapse-toggle="ecommerce-navbar-menu-1"
-                aria-controls="ecommerce-navbar-menu-1"
-                aria-expanded="false"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="md:hidden p-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200"
               >
-                <span className="sr-only">Open main menu</span>
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
+                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
             </div>
           </div>
 
           {/* Mobile Navigation Menu */}
-          <div
-            id="ecommerce-navbar-menu-1"
-            className="md:hidden hidden bg-white/10 backdrop-blur border-t border-white/20 rounded-lg mt-2 mx-4 mb-2"
-          >
-            <div className="space-y-2 p-4">
-              <Link
-                to="/"
-                className="block px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
-              >
-                Home
-              </Link>
-              <Link
-                to="/store"
-                className="block px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
-              >
-                Today's Deals
-              </Link>
-              <Link
-                to="/about"
-                className="block px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
-              >
-                About Us
-              </Link>
+          {isMobileMenuOpen && (
+            <div className="md:hidden bg-white/10 backdrop-blur border-t border-white/20 rounded-lg mt-2 mx-4 mb-2">
+              <div className="space-y-2 p-4">
+                <Link
+                  to="/"
+                  className="block px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Home
+                </Link>
+
+                {/* Mobile Shop Section */}
+                <div className="border-t border-white/20 pt-2">
+                  <div className="px-3 py-2 text-white/70 text-sm font-medium">
+                    Shop
+                  </div>
+                  <button
+                    onClick={() => {
+                      handleShopClick();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="block w-full text-left px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
+                  >
+                    All Categories
+                  </button>
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => {
+                        handleCategoryClick(category.name);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="block w-full text-left px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                </div>
+
+                <Link
+                  to="/store"
+                  className="block px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Today's Deals
+                </Link>
+                <Link
+                  to="/about"
+                  className="block px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  About Us
+                </Link>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </nav>
 
