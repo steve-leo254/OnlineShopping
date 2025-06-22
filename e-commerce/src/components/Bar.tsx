@@ -7,6 +7,7 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { Heart, ChevronDown, X, Menu } from "lucide-react";
 import { useUserStats } from "../context/UserStatsContext";
+import { useFavorites } from "../context/FavoritesContext";
 
 declare global {
   interface Window {
@@ -25,8 +26,8 @@ type Category = {
 const Bar: React.FC = () => {
   const { isAuthenticated, logout, role, token } = useAuth();
   const { cartQuantity } = useShoppingCart();
-  const { pendingReviewsCount, activeOrdersCount, wishlistCount } =
-    useUserStats();
+  const { pendingReviewsCount, activeOrdersCount } = useUserStats();
+  const { favorites } = useFavorites();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -125,18 +126,8 @@ const Bar: React.FC = () => {
         // If there's an error, set activeOrdersCount to 0
       }
     };
-    const fetchWishlistCount = async () => {
-      try {
-        const favRes = await axios.get(`${API_BASE_URL}/favorites`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      } catch {
-        // If there's an error, set wishlistCount to 0
-      }
-    };
     fetchPendingReviewsCount();
     fetchActiveOrdersCount();
-    fetchWishlistCount();
     return () => {
       isMounted = false;
     };
@@ -437,9 +428,9 @@ const Bar: React.FC = () => {
                       >
                         <Heart className="w-4 h-4 mr-3 text-pink-500" />
                         Wishlist
-                        {wishlistCount > 0 && (
+                        {favorites.size > 0 && (
                           <span className="absolute left-5 -top-1 bg-pink-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center animate-pulse shadow-lg">
-                            {wishlistCount > 99 ? "99+" : wishlistCount}
+                            {favorites.size > 99 ? "99+" : favorites.size}
                           </span>
                         )}
                       </Link>
