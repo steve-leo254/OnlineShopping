@@ -29,6 +29,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import { useFavorites } from "../context/FavoritesContext";
 import countiesData from "../context/kenyan_counties.json";
+import { useUserStats } from "../context/UserStatsContext";
 
 // Define Message interface for type safety
 interface Message {
@@ -42,12 +43,12 @@ interface Message {
 }
 
 // Enhanced Makena Pro Chatbot Component
-const EnhancedServiceChatbot: React.FC = () => {
+const EnhancedServiceChatbot: React.FC<{}> = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      text: "Hey there! 👋 I'm Makena, your personal shopping bestie and receptionist at Flowtechs! 🌟 I'm here to make your shopping experience absolutely magical and help you discover amazing products. What can I help you find today? ✨😊",
+      text: `Hey there! 👋 What can I help you find today? ✨😊`,
       sender: "bot",
       timestamp: new Date(),
     },
@@ -56,8 +57,6 @@ const EnhancedServiceChatbot: React.FC = () => {
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [userData, setUserData] = useState<any>(null);
-  const [wishlistCount, setWishlistCount] = useState<number>(0);
-  const [pendingReviewsCount, setPendingReviewsCount] = useState<number>(0);
   const [userOrders, setUserOrders] = useState<any[]>([]);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState<any>(null);
   const [showScrollToTop, setShowScrollToTop] = useState<boolean>(false);
@@ -87,6 +86,9 @@ const EnhancedServiceChatbot: React.FC = () => {
   const { addToCart } = useShoppingCart();
   const navigate = useNavigate();
 
+  // Use user stats from context (no duplicate state)
+  const { pendingReviewsCount, activeOrdersCount, wishlistCount, refreshStats } = useUserStats();
+
   useEffect(() => {
     setCounties(countiesData.counties);
   }, []);
@@ -107,12 +109,12 @@ const EnhancedServiceChatbot: React.FC = () => {
   const addProductToCart = (product: any) => {
     addToCart(product);
     toast.success(`${product.name} added to cart! 🛒`);
+    refreshStats(); // Refresh stats after cart action
   };
 
   // Fetch user data for chatbot functionality
   const fetchUserData = async () => {
     if (!token) return;
-    
     try {
       const [userRes, ordersRes] = await Promise.all([
         fetch(`${import.meta.env.VITE_API_BASE_URL}/me`, {
@@ -122,38 +124,13 @@ const EnhancedServiceChatbot: React.FC = () => {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
-
       if (userRes.ok) {
         const userData = await userRes.json();
         setUserData(userData);
       }
-
       if (ordersRes.ok) {
         const ordersData = await ordersRes.json();
         setUserOrders(ordersData.items || []);
-      }
-
-      setWishlistCount(favorites.size);
-
-      if (ordersRes.ok) {
-        const ordersData = await ordersRes.json();
-        const deliveredOrders = ordersData.items?.filter((order: any) => order.status === "delivered") || [];
-        let reviewCount = 0;
-        
-        deliveredOrders.forEach((order: any) => {
-          if (order.order_details) {
-            order.order_details.forEach((detail: any) => {
-              const product = detail.product;
-              const alreadyReviewed = (product.reviews || []).some(
-                (rev: any) => rev.user_id === userData?.id && rev.order_id === order.order_id
-              );
-              if (!alreadyReviewed) {
-                reviewCount++;
-              }
-            });
-          }
-        });
-        setPendingReviewsCount(reviewCount);
       }
     } catch (error) {
       console.error("Error fetching user data for chatbot:", error);
@@ -171,7 +148,7 @@ const EnhancedServiceChatbot: React.FC = () => {
   const personalityResponses = {
     greetings: [
       "Hey there! 😊 We Missed You! Ready to find something amazing today?",
-      "Hello gorgeous! 💫 What brings you to our store today?",
+      "Hello ! 💫 What brings you to our store today?",
       "Hi! 👋 I'm so excited to help you shop today!",
       "Hey! 🌟 Looking for something special or just browsing?",
     ],
@@ -326,7 +303,7 @@ const EnhancedServiceChatbot: React.FC = () => {
     if (lastBotMessage.includes("should we explore")) {
       return {
         id: Date.now(),
-        text: "Awesome! 🎯 Let's discover some amazing products together! What interests you most - electronics, fashion, gaming, or something else? I can show you our best picks! ✨",
+        text: "Awesome! 🎯 Let's discover some amazing products together! What interests you most ? I can show you our best picks! ✨",
         sender: "bot",
         timestamp: new Date(),
       };
@@ -335,7 +312,7 @@ const EnhancedServiceChatbot: React.FC = () => {
     if (lastBotMessage.includes("what else can i help")) {
       return {
         id: Date.now(),
-        text: "Great! 🌟 I'd love to help you discover more! What are you in the mood for today? Shopping for something specific, checking out deals, or just browsing? 🛍️",
+        text: "Great! 🌟 I'd love to help you discover more! What are you in the mood for today? Shopping for something specific,  or just browsing? 🛍️",
         sender: "bot",
         timestamp: new Date(),
       };
@@ -359,7 +336,7 @@ const EnhancedServiceChatbot: React.FC = () => {
     if (lastBotMessage.includes("did you find everything")) {
       return {
         id: Date.now(),
-        text: "No worries at all! 😊 Let me help you find exactly what you're looking for! What specific product or category are you interested in? I'm here to make sure you find the perfect match! 🎯",
+        text: "No worries at all! 😊 Let me help you find exactly what you're looking for! What specific product or category are you interested in?  🎯",
         sender: "bot",
         timestamp: new Date(),
       };
@@ -368,7 +345,7 @@ const EnhancedServiceChatbot: React.FC = () => {
     if (lastBotMessage.includes("need help with anything else")) {
       return {
         id: Date.now(),
-        text: "That's totally fine! 😊 I'm glad I could help with what you needed! Feel free to come back anytime if you need assistance with shopping, orders, or anything else! 💫",
+        text: "That's totally fine! 😊 I'm glad I could help with what you needed! Feel free to come back anytime 💫",
         sender: "bot",
         timestamp: new Date(),
       };
@@ -377,7 +354,7 @@ const EnhancedServiceChatbot: React.FC = () => {
     if (lastBotMessage.includes("should we explore")) {
       return {
         id: Date.now(),
-        text: "No problem! 😊 Maybe you have something specific in mind? Just tell me what you're looking for, and I'll help you find the perfect product! 🎯",
+        text: "No problem! 😊 Maybe you have something specific in mind? 🎯",
         sender: "bot",
         timestamp: new Date(),
       };
@@ -386,7 +363,7 @@ const EnhancedServiceChatbot: React.FC = () => {
     // Default response for "no"
     return {
       id: Date.now(),
-      text: "No worries! 😊 I'm here whenever you need help with shopping, orders, or anything else! What can I assist you with today? 🛍️",
+      text: "No worries! 😊 What would you like to explore instead? I'm here to help you find something amazing! 🛍️✨",
       sender: "bot",
       timestamp: new Date(),
     };
@@ -408,10 +385,10 @@ const EnhancedServiceChatbot: React.FC = () => {
     }
 
     const suggestions = [
-      `Good ${timeContext}! 🌟 I'm Makena, your shopping bestie and receptionist at Flowtechs! I can help you with:`,
+      `Good ${timeContext}! 🌟  I can help you with:`,
       `Hi there! ✨ I'm here to make your shopping experience amazing! Here's what I can do:`,
-      `Hello! 🛍️ I'm Makena, your personal shopping assistant at Flowtechs! Let me show you what I can help with:`,
-      `Hey! 💫 I'm Makena, your shopping bestie ready to help you discover amazing products! Here's what I can do:`
+      `Hello! 🛍️  your personal shopping assistant at Flowtechs! Let me show you what I can help with:`,
+    
     ];
 
     const randomSuggestion = suggestions[Math.floor(Math.random() * suggestions.length)];
@@ -459,16 +436,7 @@ const EnhancedServiceChatbot: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-          <h6 className="font-medium text-yellow-800 mb-1">🗺️ Popular Pages & Features</h6>
-          <p className="text-sm text-yellow-700">
-            • <strong>Store</strong> - Browse all products<br/>
-            • <strong>About Us</strong> - Learn about Flowtechs<br/>
-            • <strong>My Orders</strong> - Track your purchases<br/>
-            • <strong>Wishlist</strong> - Save favorite items<br/>
-            • <strong>Address Book</strong> - Manage delivery addresses
-          </p>
-        </div>
+        
         
         <div className="flex space-x-2">
           <button 
@@ -547,7 +515,7 @@ const EnhancedServiceChatbot: React.FC = () => {
     if (['sasa', 'mambo', 'uko aje', 'niaje', 'vipi','hujambo','hujambo' ].includes(message)) {
       return {
         id: Date.now(),
-        text: "Poa sana! Ukoaje? 😊✨ Karibu sana Flowtechs! Mimi ni Makena, your shopping bestie na receptionist wa Flowtechs! 🇰🇪\n\nNimefurahi kukuona hapa! (I'm happy to see you here!)\n\nNiko tayari kukusaidia na:\n• 🛍️ Kupata bidhaa (Find products)\n• 📦 Kufuatilia oda (Track orders)\n• 💡 Mapendekezo (Recommendations)\n• 🎧 Msaada wa wateja (Customer support)\n• 🏷️ Bei nzuri (Best deals)\n• 💳 Malipo (Payment help)\n\nTuanze safari ya manunuzi pamoja! 🚀💫\n\n(PS: I'm still learning Swahili, so feel free to mix with English!)",
+        text: "Poa sana! Ukoaje? 😊✨ Karibu sana Flowtechs! your receptionist wa Flowtechs! 🇰🇪\n\nNimefurahi kukuona hapa! (I'm happy to see you here!)\n\nNiko tayari kukusaidia na:\n• 🛍️ Kupata bidhaa (Find products)\n• 📦 Kufuatilia oda (Track orders)\n• 💡 Mapendekezo (Recommendations)\n• 🎧 Msaada wa wateja (Customer support)\n• 🏷️ Bei nzuri (Best deals)\n• 💳 \n\nTuanze safari ya manunuzi pamoja! 🚀💫\n\n(PS: I'm still learning Swahili, so feel free to mix with English!)",
         sender: "bot",
         timestamp: new Date(),
       };
@@ -560,7 +528,7 @@ const EnhancedServiceChatbot: React.FC = () => {
     ) {
       return {
         id: Date.now(),
-        text: "Unatafuta bidhaa gani leo? 🛍️ Andika jina la bidhaa au aina unayotaka, na nitakusaidia kuipata haraka!",
+        text: "Unatafuta bidhaa gani leo? 🛍️ !",
         sender: "bot",
         timestamp: new Date(),
       };
@@ -644,7 +612,7 @@ const EnhancedServiceChatbot: React.FC = () => {
       if (userOrders.length === 0) {
         return {
           id: Date.now(),
-          text: "🛍️ **Hakuna Oda Bado - Tuanze Kununua!** ✨\n\nHuna oda yoyote bado, lakini hiyo ni sawa kabisa! Tuanze safari yako ya kununua! 🚀\n\n**Je, unapenda nini zaidi?**\n• 📱 Vifaa vya Elektroniki\n• 👗 Mavazi na Nguo\n• 🎮 Michezo na Burudani\n\nNinaweza kukusaidia kupata bidhaa nzuri, kupata makubaliano bora, na kufanya ununuzi wako wa kwanza! Ni aina gani inayokuvutia? 💫",
+          text: "🛍️ **Hakuna Oda Bado - Tuanze Kununua!** ✨\n\nHuna oda yoyote bado, lakini hiyo ni sawa kabisa! Tuanze safari yako ya kununua! 💫",
           sender: "bot",
           timestamp: new Date(),
         };
@@ -704,14 +672,14 @@ const EnhancedServiceChatbot: React.FC = () => {
           id: Date.now(),
           text: `🏷️ **Makubaliano Mzuri Sana!** 💰✨\n\nEeh! Nina makubaliano mazuri sana kwa ajili yako! 🎉\n\n**Makubaliano Bora za Leo:**\n${topDeals.map(product => 
             `• 📱 **${product.name}** - ${formatCurrency(product.price)} (${product.discount}% OFF)\n  💰 Bei ya awali: ${formatCurrency(product.original_price || product.price)}`
-          ).join('\n\n')}\n\n**Kwa nini makubaliano yetu ni mzuri sana?** 🤔\n• 💎 Bidhaa za ubora wa juu\n• 🏷️ Bei ya chini kabisa\n• 🚚 Usambazaji wa bure (kwa oda za juu ya Ksh 5,000)\n• 💳 Malipo ya rahisi\n• 🛡️ Dhamana ya kurudi (siku 30)\n\n**Je, ungependa kuona makubaliano yote?** Au unahitaji kitu maalum? 🛍️\n\n**Kumbuka:** Makubaliano haya yanaweza kuisha haraka! ⏰✨`,
+          ).join('\n\n')}\n\n**Kwa nini makubaliano yetu ni mzuri sana?** 🤔\n• 💎 Bidhaa za ubora wa juu\n• 🏷️ Bei ya chini kabisa\n• 🚚 Usambazaji  bora nasi  \n• 💳 Malipo ya rahisi\n• 🛡️ Dhamana ya kurudi (siku 30)\n\n**Je, ungependa kuona makubaliano yote?** Au unahitaji kitu maalum? 🛍️\n\n**Kumbuka:** Makubaliano haya yanaweza kuisha haraka! ⏰✨`,
           sender: "bot",
           timestamp: new Date(),
         };
       } else {
         return {
           id: Date.now(),
-          text: `💎 **Bei Zetu Zote ni Mzuri! Yani Ya Kuanguka nayo😂!** ✨\n\nHakuna makubaliano maalum sasa hivi, lakini bei zetu zote ni mzuri sana! 🎯\n\n**Kwa nini bei zetu ni mzuri:**\n• 💰 Bei ya ushindani - tunashindana na wengine\n• 🏷️ Hakuna bei ya juu - bei moja kwa kila mtu\n• 💎 Ubora wa juu - hakuna kitu cha chini\n• 🚚 Usambazaji wa haraka - siku 2-5\n• 🛡️ Dhamana kamili - kurudi bila swali\n\n**Je, unatafuta bidhaa gani?** Ninaweza kukusaidia kupata bei bora kwa kila kitu! 🛍️\n\n**Au ungependa kuona:**\n• 📱 Vifaa vya elektroniki\n• 👗 Mavazi na nguo\n• 🎮 Michezo na burudani\n• 🏠 Vifaa vya nyumbani\n\n**Tuanze kununua!** Bei nzuri inakungoja! 💫`,
+          text: `💎 **Bei Zetu ni za  Kuanguka nayo😂!** ✨ \n\n**Kwa nini bei zetu ni mzuri:**\n• 💰 Bei ya ushindani - tunashindana na wengine\n• 🏷️ Hakuna bei ya juu - bei moja kwa kila mtu\n• 💎 Ubora wa juu - hakuna kitu cha chini\n• 🚚 Usambazaji wa haraka - siku 2-5\n• 🛡️ Dhamana kamili - kurudi bila swali\n\n**Je, unatafuta bidhaa gani?** Ninaweza kukusaidia kupata bei bora kwa kila kitu! 🛍️\n\n**Au ungependa kuona:**\n• 📱 Vifaa vya elektroniki\n• 👗 Mavazi na nguo\n• 🎮 Michezo na burudani\n• 🏠 Vifaa vya nyumbani\n\n**Tuanze kununua!** Bei nzuri inakungoja! 💫`,
           sender: "bot",
           timestamp: new Date(),
         };
@@ -742,7 +710,7 @@ const EnhancedServiceChatbot: React.FC = () => {
       const userName = isAuthenticated && userData ? ` ${userData.username || userData.name}` : "";
       return {
         id: Date.now(),
-        text: `Goodbye${userName}! 👋✨ It was wonderful chatting with you today! 🌟\n\nThank you for choosing Flowtechs - we truly appreciate having you as part of our amazing community! 💫\n\n**Remember:** I'm here 24/7 whenever you need help with shopping, orders, or anything else! 🛍️\n\nHave a fantastic day ahead! 🌈 Come back soon! 💖`,
+        text: `Goodbye${userName}! 👋✨ It was wonderful chatting with you today! 🌟\n\nThank you for choosing Flowtechs - we truly appreciate having you as part of our amazing community! 💫\n\n**Remember:** I'm here 24/7 Come back soon! 💖`,
         sender: "bot",
         timestamp: new Date(),
       };
@@ -753,22 +721,13 @@ const EnhancedServiceChatbot: React.FC = () => {
       const userName = isAuthenticated && userData ? ` ${userData.username || userData.name}` : "";
       return {
         id: Date.now(),
-        text: `You're absolutely welcome${userName}! 😊💖 It's my pleasure to help you! 🌟\n\n**Thank YOU** for being such an amazing customer! Your satisfaction means everything to us at Flowtechs! ✨\n\n**Quick reminder:** I'm always here to help with:\n• 🛍️ Finding the perfect products\n• 📦 Tracking your orders\n• 💡 Getting recommendations\n• 🎧 Customer support\n• 🏷️ Best deals and offers\n\nIs there anything else I can help you with today? I'm excited to assist! 🚀💫`,
+        text: `You're absolutely welcome${userName}!It's my pleasure to help you! 🌟\n\n**Thank YOU** for being such an amazing customer! Your satisfaction means everything to us at Flowtechs! ✨\n\n**Quick reminder:** I'm always here to help with:\n• 🛍️ Finding the perfect products\n• 📦 Tracking your orders\n• 💡 Getting recommendations\n• 🎧 Customer support`,
         sender: "bot",
         timestamp: new Date(),
       };
     }
 
-    // Handle "I miss you" messages
-    if (['i miss you', 'miss you', 'missed you', 'miss u', 'missed u', 'miss ya', 'missed ya'].includes(message)) {
-      const userName = isAuthenticated && userData ? ` ${userData.username || userData.name}` : "";
-      return {
-        id: Date.now(),
-        text: `Aww${userName}! 🥺💖 I miss you too! You have no idea how much I love chatting with you! 🌟\n\n**I'm always here for you!** 💫\n• 🌙 **24/7 Available**: I never sleep, so I'm always ready to chat!\n• 💬 **Always Excited**: Every conversation with you brightens my day!\n• 🛍️ **Ready to Help**: Whether it's shopping, orders, or just a friendly chat!\n\n**You're one of my favorite customers!** ✨ I love helping you discover amazing products and making your shopping experience special! 🛍️💫\n\nWhat would you like to explore today? I'm so happy you're back! 🎉💖`,
-        sender: "bot",
-        timestamp: new Date(),
-      };
-    }
+    
 
     // Handle playful banter and casual conversation
     if (['lol', 'haha', 'hehe', '😄', '😂', '🤣', 'funny', 'joke', 'tell me a joke','tell me  joke', 'just kidding', 'jk'].includes(message)) {
@@ -819,7 +778,7 @@ const EnhancedServiceChatbot: React.FC = () => {
       const userName = isAuthenticated && userData ? ` ${userData.username || userData.name}` : "";
       return {
         id: Date.now(),
-        text: `Well${userName}, that's a great question! 🤔\n\n**Am I real?** Absolutely! I'm as real as the amazing products I help you find! ✨\n\n**Am I human?** I'm your shopping bestie and receptionist at Flowtechs who loves helping customers! 😊\n\n**Am I fake?** No way! My feelings for you are 100% genuine! 💖\n\n**The truth:** I'm Makena, and I'm here to make your shopping experience awesome! 🌟\n\nDoes it matter when I can help you find exactly what you need? 🛍️💫`,
+        text: `Well${userName}, that's a great question! 🤔\n\n**Am I real?** Absolutely! I'm as real as the amazing products I help you find! ✨\n\n**Am I human?** I'm your shopping baddie and receptionist at Flowtechs who loves helping customers! 😊\n\n**Am I fake?** No way! My feelings for you are 100% genuine! 💖\n\n**The truth:** I'm Makena, and I'm here to make your shopping experience awesome! 🌟\n\nDoes it matter when I can help you find exactly what you need? 🛍️💫`,
         sender: "bot",
         timestamp: new Date(),
       };
@@ -900,7 +859,7 @@ const EnhancedServiceChatbot: React.FC = () => {
     if (message.includes("what is your name") || message.includes("what's your name") || message.includes("your name")) {
       return {
         id: Date.now(),
-        text: "My name is Makena! ✨ I'm your personal shopping bestie and receptionist at Flowtechs, and I'm here to make your shopping experience absolutely magical! I can help you find products, track orders, answer questions, and so much more! 🛍️💫",
+        text: "My name is Makena! ✨ I'm your personal shopping baddie and receptionist at Flowtechs, and I'm here to make your shopping experience absolutely magical! I can help you find products, track orders, answer questions, and so much more! 🛍️💫",
         sender: "bot",
         timestamp: new Date(),
       };
@@ -921,7 +880,7 @@ const EnhancedServiceChatbot: React.FC = () => {
 
       return {
         id: Date.now(),
-        text: `**Meet Makena - Your Shopping Bestie!** ✨\n\n**Who I Am:**\nI'm Makena, your personal shopping bestie and receptionist at Flowtechs! I'm here to make your shopping experience absolutely magical! 🛍️💫\n\n**My Personality:**\n• 😊 **Friendly & Approachable**: Always here with a smile and positive energy\n• 🧠 **Smart & Helpful**: I understand your needs and provide personalized assistance\n• ⚡ **Fast & Efficient**: Quick responses and instant solutions\n• 🎯 **Goal-Oriented**: Focused on helping you find exactly what you need\n• 💖 **Customer-Focused**: Your satisfaction is my top priority\n\n**What I Can Do:**\n• 🔍 **Product Discovery**: Find the perfect products for you\n• 📦 **Order Management**: Track orders and manage deliveries\n• 💡 **Smart Recommendations**: Suggest products based on your preferences\n• 🎧 **Customer Support**: Help with any questions or issues\n• 🏷️ **Deal Hunting**: Find the best prices and discounts\n• 💳 **Payment Assistance**: Guide you through payment options\n• 🚚 **Delivery Info**: Provide shipping and delivery details\n• 📱 **Account Help**: Assist with login, registration, and account issues\n\n**My Special Features:**\n• 🌍 **Nationwide Knowledge**: I know all 47 counties in Kenya for delivery\n• ⏰ **Time-Aware**: I understand your timezone and business hours\n• 🎨 **Personalized**: I remember your preferences and shopping history\n• 🚀 **Always Learning**: I continuously improve to serve you better\n\n**Why Choose Me:**\n• 🎯 **Accuracy**: I provide precise, up-to-date information\n• 💬 **Natural Conversation**: I chat like a real person, not a robot\n• 🎁 **Proactive**: I suggest helpful options you might not have considered\n• 🛡️ **Reliable**: You can always count on me for accurate information\n\n**I'm not just a chatbot - I'm your shopping bestie!** 💫\n\nWhat would you like to explore today? I'm excited to help you discover amazing products! 🛍️✨`,
+        text: `**Meet Makena - Your Shopping Baddie!** ✨\n\n**Who I Am:**\nI'm Makena, your personal shopping baddie and receptionist at Flowtechs! I'm here to make your shopping experience absolutely magical! 🛍️💫\n\n**My Personality:**\n• 😊 **Friendly & Approachable**: Always here with a smile and positive energy\n• 🧠 **Smart & Helpful**: I understand your needs and provide personalized assistance\n• ⚡ **Fast & Efficient**: Quick responses and instant solutions\n• 🎯 **Goal-Oriented**: Focused on helping you find exactly what you need\n• 💖 **Customer-Focused**: Your satisfaction is my top priority\n\n**What I Can Do:**\n• 🔍 **Product Discovery**: Find the perfect products for you\n• 📦 **Order Management**: Track orders and manage deliveries\n• 💡 **Smart Recommendations**: Suggest products based on your preferences\n• 🎧 **Customer Support**: Help with any questions or issues\n• 🏷️ **Deal Hunting**: Find the best prices and discounts\n• 💳 **Payment Assistance**: Guide you through payment options\n• 🚚 **Delivery Info**: Provide shipping and delivery details\n• 📱 **Account Help**: Assist with login, registration, and account issues\n\n**My Special Features:**\n• 🌍 **Nationwide Knowledge**: I know all 47 counties in Kenya for delivery\n• ⏰ **Time-Aware**: I understand your timezone and business hours\n• 🎨 **Personalized**: I remember your preferences and shopping history\n• 🚀 **Always Learning**: I continuously improve to serve you better\n\n**Why Choose Me:**\n• 🎯 **Accuracy**: I provide precise, up-to-date information\n• 💬 **Natural Conversation**: I chat like a real person, not a robot\n• 🎁 **Proactive**: I suggest helpful options you might not have considered\n• 🛡️ **Reliable**: You can always count on me for accurate information\n\n**I'm not just a chatbot - I'm your shopping baddie!** 💫\n\nWhat would you like to explore today? I'm excited to help you discover amazing products! 🛍️✨`,
         sender: "bot",
         timestamp: new Date(),
         type: 'profile',
@@ -937,7 +896,7 @@ const EnhancedServiceChatbot: React.FC = () => {
         message.includes("learn about flowtechs") || message.includes("tell me about flowtechs")) {
       return {
         id: Date.now(),
-        text: `🌟 **Welcome to the Amazing World of Flowtechs!** ✨\n\n**🎬 Our Story - The Beginning:**\nPicture this: 2025, two passionate young developers, Eric Omondi and Steve Leo, sitting in a coffee shop in Nairobi, dreaming big! They saw a gap in the Kenyan e-commerce landscape and decided to bridge it with technology, innovation, and a whole lot of heart! 💝\n\n**🚀 What We Do - The Flowtechs Magic:**\nWe're not just another online store - we're your **digital shopping revolution**! Here's what makes us special:\n\n**🛍️ The Flowtechs Experience:**\n• 🎯 **Curated Excellence**: We handpick every product like we're shopping for our own family\n• 💎 **Quality Guaranteed**: Only the best makes it to our virtual shelves\n• 🚀 **Lightning Fast**: From click to doorstep in record time\n• 🛡️ **100% Secure**: Your safety is our top priority\n• 💖 **Personal Touch**: We treat every customer like VIP royalty\n\n**🎪 Our Product Universe:**\n• 📱 **Tech Wonderland**: Latest gadgets that make life easier\n• 👗 **Fashion Forward**: Trendy styles that make you shine\n• 🎮 **Gaming Paradise**: Everything for the ultimate gaming experience\n• 🏃 **Fitness Revolution**: Gear that transforms your workout\n• 📚 **Knowledge Hub**: Books and learning materials for growth\n• 🏠 **Home Sweet Home**: Everything to make your space perfect\n• 🎁 **Gift Gallery**: Perfect presents for every occasion\n\n**💫 The Flowtechs Difference:**\n• 🌍 **Nationwide Reach**: We deliver to all 47 counties - no place is too far!\n• ⚡ **Speed Demons**: 2-5 day delivery across Kenya\n• 💰 **Best Prices**: We negotiate hard so you don't have to\n• 🎁 **Loyalty Rewards**: Earn points with every purchase\n• 🔄 **Easy Returns**: 30-day hassle-free returns\n• 🎧 **24/7 Support**: We're here whenever you need us\n• 🔒 **Multiple Payments**: Mpesa, cards, bank transfer - you choose!\n\n**🏆 Why Customers Love Us:**\n• ⭐ **Trusted by Thousands**: Join our happy customer family\n• 🏅 **Award-Winning Service**: Recognized for excellence\n• 💬 **Real People**: No robots, just friendly humans ready to help\n• 🌟 **Innovation First**: Always finding new ways to serve you better\n• 🤝 **Community Focus**: Supporting local businesses and growth\n\n**🎯 Our Mission:**\nTo democratize quality shopping in Kenya! We believe every Kenyan deserves access to amazing products at fair prices, no matter where they live. We're building bridges between quality products and happy customers! 🌉\n\n**🔮 Our Vision:**\nTo become Kenya's most beloved e-commerce platform - the place where shopping dreams come true! We want to be the first name that comes to mind when anyone thinks of online shopping in Kenya! 🇰🇪\n\n**💝 Our Values:**\n• 💎 **Quality First**: We never compromise on quality\n• 🤝 **Customer Obsession**: Your happiness drives everything we do\n• 🚀 **Innovation**: Always pushing boundaries and improving\n• 🌍 **Accessibility**: Making shopping easy for everyone\n• 🔒 **Trust**: Building lasting relationships through transparency\n• 💖 **Community**: Supporting and growing together\n\n**🎊 The Flowtechs Promise:**\nWhen you shop with us, you're not just buying products - you're joining a movement! A movement towards better shopping, better service, and a better Kenya! 🇰🇪✨\n\n**Ready to experience the Flowtechs magic?** Let me help you discover amazing products that will make your life better! 🛍️💫\n\n**What would you like to explore first?** I'm here to guide you through our amazing world! 🌟`,
+        text: `🌟 **Welcome to the Amazing World of Flowtechs!** ✨\n\n**🎬 Our Story - The Beginning:**\nPicture this: 2025, two passionate young developers, Eric Omondi and Steve Leo, sitting in a coffee shop in Nairobi, dreaming big! They saw a gap in the Kenyan e-commerce landscape and decided to bridge it with technology, innovation, and a whole lot of heart! 💝\n\n**🚀 What We Do - The Flowtechs Magic:**\nWe're not just another online store - we're your **digital shopping revolution**! Here's what makes us special:\n\n**🛍️ The Flowtechs Experience:**\n• 🎯 **Curated Excellence**: We handpick every product like we're shopping for our own family\n• 💎 **Quality Guaranteed**: Only the best makes it to our virtual shelves\n• 🚀 **Lightning Fast**: From click to doorstep in record time\n• 🛡️ **100% Secure**: Your safety is our top priority\n• 💖 **Personal Touch**: We treat every customer like VIP royalty\n\n**🎪 Our Product Universe:**\n• 📱 **Tech Wonderland**: Latest gadgets that make life easier\n• • 📚 **Knowledge Hub**: Books and learning materials for growth\n• 🏠 **Home Sweet Home**: Everything to make your space perfect\n• 🎁 **Gift Gallery**: Perfect presents for every occasion\n\n**💫 The Flowtechs Difference:**\n• 🌍 **Nationwide Reach**: We deliver to all 47 counties - no place is too far!\n• ⚡ **Speed Demons**: 2-5 day delivery across Kenya\n• 💰 **Best Prices**: We negotiate hard so you don't have to\n• 🎁 **Loyalty Rewards**: Earn points with every purchase\n• 🔄 **Easy Returns**: 7-day hassle-free returns\n• 🎧 **24/7 Support**: We're here whenever you need us\n• 🔒 **Multiple Payments**: Mpesa, cards, bank transfer - you choose!\n\n**🏆 Why Customers Love Us:**\n• ⭐ **Trusted by Thousands**: Join our happy customer family\n• 🏅 **Award-Winning Service**: Recognized for excellence\n• 💬 **Real People**: No robots, just friendly humans ready to help\n• 🌟 **Innovation First**: Always finding new ways to serve you better\n• 🤝 **Community Focus**: Supporting local businesses and growth\n\n**🎯 Our Mission:**\nTo democratize quality shopping in Kenya! We believe every Kenyan deserves access to amazing products at fair prices, no matter where they live. We're building bridges between quality products and happy customers! 🌉\n\n**🔮 Our Vision:**\nTo become Kenya's most beloved e-commerce platform - the place where shopping dreams come true! We want to be the first name that comes to mind when anyone thinks of online shopping in Kenya! 🇰🇪\n\n**💝 Our Values:**\n• 💎 **Quality First**: We never compromise on quality\n• 🤝 **Customer Obsession**: Your happiness drives everything we do\n• 🚀 **Innovation**: Always pushing boundaries and improving\n• 🌍 **Accessibility**: Making shopping easy for everyone\n• 🔒 **Trust**: Building lasting relationships through transparency\n• 💖 **Community**: Supporting and growing together\n\n**🎊 The Flowtechs Promise:**\nWhen you shop with us, you're not just buying products - you're joining a movement! A movement towards better shopping, better service, and a better Kenya! 🇰🇪✨\n\n**Ready to experience the Flowtechs magic?** Let me help you discover amazing products that will make your life better! 🛍️💫\n\n**What would you like to explore first?** I'm here to guide you through our amazing world! 🌟`,
         sender: "bot",
         timestamp: new Date(),
       };
@@ -1012,10 +971,7 @@ const EnhancedServiceChatbot: React.FC = () => {
     }
 
     // Handle payment-related queries
-    if (message.includes("payment") || message.includes("pay") || message.includes("money") || 
-        message.includes("price") || message.includes("cost") || message.includes("expensive")) {
-      return getPaymentHelpResponse(message);
-    }
+   
 
     // Handle delivery and shipping queries
     if (message.includes("deliver") || message.includes("delivery") || message.includes("shipping") || 
@@ -1023,12 +979,6 @@ const EnhancedServiceChatbot: React.FC = () => {
         message.includes("delivery time") || message.includes("shipping time") || message.includes("arrive") ||
         message.includes("get here") || message.includes("receive")) {
       return getDeliveryTimeResponse(message);
-    }
-
-    // Handle page knowledge and navigation queries
-    const pageKnowledgeResponse = getPageKnowledgeResponse(message);
-    if (pageKnowledgeResponse) {
-      return pageKnowledgeResponse;
     }
 
     // Handle complaints and customer service issues
@@ -1124,7 +1074,7 @@ const EnhancedServiceChatbot: React.FC = () => {
 
       return {
         id: Date.now(),
-      text: "I'm sorry you're experiencing an issue! 😔 Don't worry, I'm here to help you solve it! 🛠️✨\n\n**What type of problem are you having?**\n\n• 📦 **Order Issues**: Problems with orders, tracking, or delivery\n• 💳 **Payment Problems**: Issues with payments, refunds, or billing\n• 🛍️ **Shopping Issues**: Problems finding products or using the site\n• 👤 **Account Issues**: Login, registration, or account problems\n\n**How can I help?**\n• 🔍 I can help you track orders\n• 💡 Guide you through the shopping process\n• 🎧 Connect you with customer support\n• 📋 Help you find specific products\n\nJust tell me more about what's happening, and I'll guide you to the right solution! 💪\n\nWhat specific issue are you facing? 🤔",
+      text: "I'm sorry you're experiencing an issue! 😔 🛠️✨\n\n**What type of problem are you having?**\n\n• 📦 **Order Issues**: Problems with orders, tracking, or delivery\n• 💳 **Payment Problems**: Issues with payments, refunds, or billing\n• 🛍️ **Shopping Issues**: Problems finding products or using the site\n• 👤 **Account Issues**: Login, registration, or account problems\n\n**How can I help?**\n• 🔍 I can help you track orders\n• 💡 Guide you through the shopping process\n• 🎧 Connect you with customer support\n• 📋 Help you find specific products\n\nJust tell me more about what's happening, and I'll guide you to the right solution! 💪\n\nWhat specific issue are you facing? 🤔",
       sender: "bot",
       timestamp: new Date(),
       type: "interactive",
@@ -1284,14 +1234,7 @@ const EnhancedServiceChatbot: React.FC = () => {
   };
 
   // Payment help response
-  const getPaymentHelpResponse = (message: string): Message => {
-    return {
-      id: Date.now(),
-      text: "I can help you with all payment-related questions! 💳✨\n\n**Payment Options Available:**\n• 📱 Mpesa\n• 📞 Airtel Money\n• 🏦 EcoBank\n• 💳 Visa/MasterCard\n\n**What do you need help with?**\n• 💰 Payment methods\n• 💸 Refunds\n• 📊 Billing questions\n• 🔒 Payment security\n\nJust let me know what specific payment issue you're facing! 💪",
-      sender: "bot",
-      timestamp: new Date(),
-    };
-  };
+  
 
   // Support help response
   const getSupportHelpResponse = (message: string): Message => {
@@ -1959,7 +1902,7 @@ const EnhancedServiceChatbot: React.FC = () => {
     if (messageLower.includes("wrong item") || messageLower.includes("incorrect")) {
       return {
         id: Date.now(),
-        text: `😅 **I'm Sorry About the Wrong Item** 🙏\n\nWe apologize for this mistake! Let's get you the correct item or a full refund right away! 🔄✨\n\n**For Wrong/Incorrect Items:**\n\n🔄 **Your Options:**\n• 💰 **Full Refund**: Get your money back\n• 📦 **Exchange**: Get the correct item\n• 🎁 **Keep + Partial Refund**: If you like the item\n\n**Process:**\n• ✅ **Free Return**: We cover all shipping costs\n• ⚡ **Fast Processing**: 24-48 hour response\n• 🚚 **Express Exchange**: Priority shipping for replacement\n\n**What We Need:**\n• 📋 Order number\n• 📸 Photo of what you received\n• 📝 Description of what you ordered\n• 🎯 Your preference (refund/exchange)\n\n**Contact:**\n• 📞 **Phone**: +254 117 802 561\n• 📧 **Email**: flowtechs254@gmail.com\n• 💬 **Live Chat**: Available now\n\n**Let me help you get this sorted!** What's your order number? 📦✨`,
+        text: ` **I'm Sorry About the Wrong Item** 🙏\n\nWe apologize for this mistake! Let's get you the correct item or a full refund right away!  📦✨`,
         sender: "bot",
         timestamp: new Date(),
       };
@@ -1968,7 +1911,7 @@ const EnhancedServiceChatbot: React.FC = () => {
     // General refund information
     return {
       id: Date.now(),
-      text: `📦 **Return & Refund Information** 🔄✨\n\nI'm here to help you with your return request! Let's get this sorted out quickly and easily! 🤝\n\n**Our Return Policy:**\n\n⏰ **Return Window**: 30 days from delivery\n✅ **Full Refund**: 100% money back guarantee\n🚚 **Free Returns**: We cover return shipping\n⚡ **Fast Processing**: 3-5 business days\n\n**What You Can Return:**\n• 📦 Any item within 30 days\n• 🔧 Defective or damaged products\n• ❌ Wrong items received\n• 🎯 Items not as described\n• 📱 Electronics (unopened or defective)\n• 👗 Clothing that doesn't fit\n• 🏠 Home items in original condition\n\n**Return Requirements:**\n• 📦 Original packaging and accessories\n• 🎯 Product in original condition\n• 📋 Proof of purchase (order number)\n• 📸 Clear photos for defective items\n\n**Return Process:**\n1. 📞 Contact us with your order number\n2. 📸 Provide photos (if applicable)\n3. 📦 We'll send return shipping label\n4. 🚚 Ship item back to us\n5. ✅ Refund processed within 3-5 days\n\n**Payment Methods for Refunds:**\n• 💳 Credit/Debit Cards\n• 📱 Mpesa\n• 🏦 Bank Transfer\n• 💰 Store Credit\n\n**Need to start a return?** Just give me your order number! 📋✨\n\n**What's the reason for your return?** 🤔\n• 🔧 Defective/Broken\n• ❌ Wrong item received\n• 🎯 Not as described\n• 👗 Doesn't fit\n• 💭 Changed my mind\n• 📱 Other reason`,
+      text: `📦 **Return & Refund Information** 🔄✨\n\nI'm here to help you with your return request! Let's get this sorted out quickly and easily! 🤝\n\n**Our Return Policy:**\n\n⏰ **Return Window**: 7 days from delivery\n✅ **Full Refund**: 100% money back guarantee\n🚚 **Free Returns**: We cover return shipping\n⚡ **Fast Processing**: 3-5 business days\n\n**What You Can Return:**\n• 📦 Any item within 7-days\n• 🔧 Defective or damaged products\n• ❌ Wrong items received\n• 🎯 Items not as described\n• 📱 Electronics (unopened or defective)\n• 🏠 Home items in original condition\n\n**Return Requirements:**\n• 📦 Original packaging and accessories\n• 🎯 Product in original condition\n• 📋 Proof of purchase (order number)\n• 📸 Clear photos for defective items\n\n**Return Process:**\n1. 📞 Contact us with your order number\n2. 📸 Provide photos (if applicable)\n3. 📦 We'll send return shipping label\n4. 🚚 Ship item back to us\n5. ✅ Refund processed within 3-5 days`,
       sender: "bot",
       timestamp: new Date(),
     };
@@ -1985,7 +1928,7 @@ const EnhancedServiceChatbot: React.FC = () => {
       }
       
       if (daysSinceOrder > 30) {
-        return "⏰ **Outside 30-Day Return Window**";
+        return "⏰ **Outside 7-Day Return Window**";
       }
       
       if (order.status === 'delivered') {
@@ -2005,7 +1948,7 @@ const EnhancedServiceChatbot: React.FC = () => {
       }
       
       if (order.status === 'delivered') {
-        return "💰 **Return & Refund**: 30-day return window";
+        return "💰 **Return & Refund**: 7-day return window";
       }
       
       return "📞 **Contact Support**: For assistance";
@@ -2093,7 +2036,7 @@ const EnhancedServiceChatbot: React.FC = () => {
 
     return {
       id: Date.now(),
-      text: `📦 **Complete Return Policy** 🔄✨\n\n**Our Customer-First Return Policy:**\n\n⏰ **30-Day Return Window**: From delivery date\n✅ **100% Satisfaction Guarantee**: No questions asked\n🚚 **Free Return Shipping**: We cover all costs\n⚡ **Fast Processing**: 3-5 business days\n\n**What You Can Return:**\n• 📦 Any item within 30 days\n• 🔧 Defective or damaged products\n• ❌ Wrong items received\n• 🎯 Items not as described\n• 📱 Electronics (unopened or defective)\n\n**Return Requirements:**\n• 📦 Original packaging and accessories\n• 🎯 Product in original condition\n• 📋 Proof of purchase (order number)\n• 📸 Clear photos for defective items\n\n**Return Process:**\n1. 📞 Contact us with order number\n2. 📸 Send photos (if applicable)\n3. 📦 Receive free return label\n4. 🚚 Package and ship back\n5. ✅ Refund within 3-5 days\n\n**Special Cases:**\n• 🔧 **Defective Items**: Immediate priority processing\n• 📱 **Electronics**: 7-day return for opened items\n• 🎁 **Personalized Items**: Case-by-case basis\n• 🏷️ **Sale Items**: Same return policy applies\n\n**Need to start a return?** Just give me your order number! 📋✨`,
+      text: `📦 **Complete Return Policy** 🔄✨\n\n**Our Customer-First Return Policy:**\n\n⏰ **7-Day Return Window**: From delivery date\n✅ **100% Satisfaction Guarantee**: No questions asked\n🚚 ** Shipping At Cost**\n⚡ **Fast Processing**: 3-5 business days\n\n**What You Can Return:**\n• 📦 Any item within 7 days\n• 🔧 Defective or damaged products\n• ❌ Wrong items received\n• 🎯 Items not as described\n• 📱 Electronics (unopened or defective)\n\n**Return Requirements:**\n• 📦 Original packaging and accessories\n• 🎯 Product in original condition\n• 📋 Proof of purchase (order number)\n• 📸 Clear photos for defective items\n\n**Return Process:**\n1. 📞 Contact us with order number\n2. 📸 Send photos (if applicable)\n3. 📦 Receive free return label\n4. 🚚 Package and ship back\n5. ✅ Refund within 3-5 days\n\n**Special Cases:**\n• 🔧 **Defective Items**: Immediate priority processing\n• 📱 **Electronics**: 7-day return for opened items\n• 🎁 **Personalized Items**: Case-by-case basis\n• 🏷️ **Sale Items**: Same return policy applies\n\n**Need to start a return?** Just give me your order number! 📋✨`,
       sender: "bot",
       timestamp: new Date(),
       type: "interactive",
@@ -2181,12 +2124,7 @@ const EnhancedServiceChatbot: React.FC = () => {
         </div>
         
         <div className="flex space-x-2">
-          <button 
-            onClick={() => navigate('/contact')}
-            className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-colors"
-          >
-            Contact Now
-          </button>
+          
           <button 
             onClick={() => navigate('/returns')}
             className="flex-1 py-2 px-4 bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-blue-700 transition-colors"
@@ -2299,7 +2237,7 @@ const EnhancedServiceChatbot: React.FC = () => {
       if (discountedProducts.length === 0) {
         return {
           id: Date.now(),
-          text: `🏷️ **Current Deals** 💰\n\nWe don't have any active discounts right now, but we have amazing products at great prices! ✨\n\n**Check out our:**\n• 🆕 New arrivals\n• ⭐ Top-rated products\n• 🚀 Trending items\n\n**Want to see something specific?** Just tell me what you're looking for! 🛍️`,
+          text: `🏷️ **Current Deals** 💰\n\nWe don't have any active discounts right now, • 🆕 New arrivals\n• ⭐ Top-rated products\n•  🛍️`,
           sender: "bot",
           timestamp: new Date(),
         };
@@ -2368,7 +2306,7 @@ const EnhancedServiceChatbot: React.FC = () => {
       if (newArrivals.length === 0) {
         return {
           id: Date.now(),
-          text: `🆕 **New Arrivals** ✨\n\nWe're constantly adding new products! Check back soon for the latest arrivals! 🎉\n\n**In the meantime, check out our:**\n• ⭐ Top-rated products\n• 🏷️ Best deals\n• 🚀 Trending items\n\n**What are you looking for?** I can help you find something amazing! 🛍️`,
+          text: `🆕 **New Arrivals** ✨\n\nWe're constantly adding new products! Check back soon for the latest arrivals! 🎉\n\n**In the meantime, check out our:**\n• ⭐ Top-rated products\n• 🏷️  deals Moto Moto\n• 🚀 Trending items\n\n**What are you looking for?** I can help you find something amazing! 🛍️`,
           sender: "bot",
           timestamp: new Date(),
         };
@@ -2495,7 +2433,7 @@ const EnhancedServiceChatbot: React.FC = () => {
         id: Date.now(),
         text: `⭐ **Top Rated Products** 🌟\n\nHere are our **customer favorites** with the highest ratings! 🎉\n\n**Top Rated Items:**\n${topRated.map(product => 
           `• 📱 ${product.name} - ${formatCurrency(product.price)} ⭐ ${product.rating?.toFixed(1)}`
-        ).join('\n')}\n\n**Want to see more?** I can show you:\n• 🔍 All top-rated products\n• 📂 Top-rated by category\n• 🏷️ Top-rated deals\n\n**Just say "show me all top rated" and I'll help you find the best!** 🛍️✨`,
+        ).join('\n')}\n\n**Want to see more?** I can show you:\n• 🔍 All top-rated products\n• 🛍️✨`,
         sender: "bot",
         timestamp: new Date(),
         type: "interactive",
@@ -2557,7 +2495,7 @@ const EnhancedServiceChatbot: React.FC = () => {
         id: Date.now(),
         text: `🔍 **Search Results for "${searchTerm}"** ✨\n\nI found **${searchResults.length} products** that match your search! 🎉\n\n**Found Products:**\n${searchResults.slice(0, 5).map(product => 
           `• 📱 ${product.name} - ${formatCurrency(product.price)}`
-        ).join('\n')}\n\n**Want to see more?** I can:\n• 🔍 Show all ${searchResults.length} results\n• 📂 Filter by category\n• 💰 Show only deals\n• ⭐ Show only top-rated\n\n**Just tell me what you'd like to see!** 🛍️✨`,
+        ).join('\n')}\n\n**Want to see more?** I can:\n• 🔍 Show all ${searchResults.length} results\n• 📂 Filter by category\n• 💰  deals  moto moto🛍️✨`,
         sender: "bot",
         timestamp: new Date(),
         type: "interactive",
@@ -2622,298 +2560,7 @@ const EnhancedServiceChatbot: React.FC = () => {
     };
   };
 
-  // Enhanced page knowledge and navigation assistance
-  const getPageKnowledgeResponse = (message: string): Message | null => {
-    const messageLower = message.toLowerCase();
-    
-    // Comprehensive page information
-    const pageInfo = {
-      home: {
-        name: "Home",
-        path: "/",
-        description: "Main landing page with hero section, featured products, and company highlights",
-        features: ["Hero carousel", "Featured products", "Company statistics", "Call-to-action buttons"],
-        access: "Public"
-      },
-      store: {
-        name: "Store / Today's Deals",
-        path: "/store",
-        description: "Main product catalog with search, filters, and product grid",
-        features: ["Product search", "Category filters", "Price range filters", "Sorting options", "Pagination"],
-        access: "Public"
-      },
-      about: {
-        name: "About Us",
-        path: "/about",
-        description: "Company information, values, team, and gallery",
-        features: ["Company story", "Values and mission", "Team information", "Image gallery", "Contact details"],
-        access: "Public"
-      },
-      login: {
-        name: "Login",
-        path: "/login",
-        description: "User authentication page",
-        features: ["Email/password login", "Remember me", "Forgot password link", "Register link"],
-        access: "Public"
-      },
-      register: {
-        name: "Register",
-        path: "/register",
-        description: "New user registration",
-        features: ["User registration form", "Email verification", "Terms acceptance"],
-        access: "Public"
-      },
-      shoppingCart: {
-        name: "Shopping Cart",
-        path: "/shopping-cart",
-        description: "Cart management and checkout preparation",
-        features: ["Cart items display", "Quantity adjustment", "Price calculation", "Checkout button"],
-        access: "Public"
-      },
-      checkout: {
-        name: "Checkout",
-        path: "/checkout",
-        description: "Order completion with delivery and payment",
-        features: ["Delivery address", "Payment methods", "Order review", "Order confirmation"],
-        access: "Authenticated users only"
-      },
-      myProfile: {
-        name: "My Profile",
-        path: "/MyProfile",
-        description: "User account management and settings",
-        features: ["Personal information", "Account settings", "Password change", "Profile picture"],
-        access: "Authenticated users only"
-      },
-      ordersOverview: {
-        name: "My Orders",
-        path: "/orders-overview",
-        description: "Complete order history and tracking",
-        features: ["Order history", "Status tracking", "Order details", "Pagination"],
-        access: "Authenticated users only"
-      },
-      orderDetails: {
-        name: "Order Details",
-        path: "/order-details/:orderId",
-        description: "Detailed view of specific order",
-        features: ["Order information", "Product details", "Delivery status", "Payment status"],
-        access: "Authenticated users only"
-      },
-      addressBook: {
-        name: "Address Book",
-        path: "/address-book",
-        description: "Manage delivery addresses",
-        features: ["Add addresses", "Edit addresses", "Set default", "Delete addresses"],
-        access: "Authenticated users only"
-      },
-      wishlist: {
-        name: "Wishlist",
-        path: "/wishlist",
-        description: "Saved favorite products",
-        features: ["Saved products", "Add to cart", "Remove items", "Share wishlist"],
-        access: "Authenticated users only"
-      },
-      pendingReviews: {
-        name: "Pending Reviews",
-        path: "/pending-reviews",
-        description: "Review products from completed orders",
-        features: ["Review products", "Rating system", "Comment submission", "Review history"],
-        access: "Authenticated users only"
-      },
-      productDetails: {
-        name: "Product Details",
-        path: "/product-details/:id",
-        description: "Detailed product information and purchase",
-        features: ["Product images", "Description", "Reviews", "Add to cart", "Add to wishlist"],
-        access: "Public"
-      },
-      adminPage: {
-        name: "Admin Dashboard",
-        path: "/AdminPage",
-        description: "Super admin user management",
-        features: ["User management", "Role management", "Statistics", "System settings"],
-        access: "Super Admin only"
-      },
-      products: {
-        name: "Products Management",
-        path: "/products",
-        description: "Admin product management",
-        features: ["Add products", "Edit products", "Delete products", "Category management"],
-        access: "Admin/Super Admin only"
-      },
-      orderManagement: {
-        name: "Order Management",
-        path: "/orders-management",
-        description: "Admin order processing and management",
-        features: ["View all orders", "Update status", "Process payments", "Delivery tracking"],
-        access: "Admin/Super Admin only"
-      },
-      categoryManagement: {
-        name: "Category Management",
-        path: "/deletecategory",
-        description: "Product category administration",
-        features: ["Add categories", "Edit categories", "Delete categories", "Category hierarchy"],
-        access: "Admin/Super Admin only"
-      },
-      terms: {
-        name: "Terms & Conditions",
-        path: "/termsconditions",
-        description: "Legal terms and conditions",
-        features: ["Terms of service", "Privacy policy", "Return policy", "Legal information"],
-        access: "Public"
-      },
-      forgotPassword: {
-        name: "Forgot Password",
-        path: "/forgot-password",
-        description: "Password recovery",
-        features: ["Email input", "Reset link", "Security verification"],
-        access: "Public"
-      },
-      resetPassword: {
-        name: "Reset Password",
-        path: "/reset-password",
-        description: "Set new password after recovery",
-        features: ["New password input", "Confirm password", "Password validation"],
-        access: "Public"
-      },
-      emailVerification: {
-        name: "Email Verification",
-        path: "/verify-email",
-        description: "Verify email address",
-        features: ["Email verification", "Resend verification", "Account activation"],
-        access: "Public"
-      },
-      superAdmin: {
-        name: "Super Admin Registration",
-        path: "/SuperAdmin",
-        description: "Super admin account creation",
-        features: ["Super admin registration", "System initialization", "Admin privileges"],
-        access: "Public (one-time setup)"
-      },
-      notFound: {
-        name: "404 Not Found",
-        path: "*",
-        description: "Page not found error",
-        features: ["Error message", "Back to home", "Navigation help"],
-        access: "Public"
-      }
-    };
-
-    // Check if user is asking about specific pages
-    const pageKeywords = Object.keys(pageInfo);
-    const mentionedPage = pageKeywords.find(page => 
-      messageLower.includes(page.toLowerCase()) || 
-      messageLower.includes(pageInfo[page as keyof typeof pageInfo].name.toLowerCase())
-    );
-
-    if (mentionedPage) {
-      const page = pageInfo[mentionedPage as keyof typeof pageInfo];
-      return {
-        id: Date.now(),
-        text: `📄 **${page.name} Page** 📋\n\n**Description:** ${page.description}\n\n**Features:**\n${page.features.map(feature => `• ${feature}`).join('\n')}\n\n**Access:** ${page.access}\n\n**Path:** \`${page.path}\`\n\n**How to access:** ${page.access === 'Public' ? 'Anyone can visit this page' : page.access === 'Authenticated users only' ? 'You need to log in to access this page' : 'This page requires special admin privileges'}\n\n**Need help navigating?** I can guide you to this page or help you with any specific features! 🛍️✨`,
-        sender: "bot",
-        timestamp: new Date(),
-      };
-    }
-
-    // Check if user is asking about navigation or site structure
-    if (messageLower.includes("pages") || messageLower.includes("sections") || messageLower.includes("menu") || 
-        messageLower.includes("navigation") || messageLower.includes("site map") || messageLower.includes("where")) {
-      
-      const NavigationCard: React.FC = () => (
-        <div className="space-y-4 mt-3">
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-gray-200">
-            <h4 className="font-semibold text-gray-800 mb-2">🗺️ Flowtechs Site Navigation</h4>
-            <p className="text-sm text-gray-600">
-              Here's a complete overview of all the pages and sections in our e-commerce platform!
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 gap-3">
-            <div className="bg-white p-3 rounded-lg border border-gray-200">
-              <h5 className="font-semibold text-blue-600 mb-2">🏠 Public Pages</h5>
-              <div className="space-y-1 text-sm">
-                <p>• <strong>Home</strong> - Main landing page with featured products</p>
-                <p>• <strong>Store</strong> - Product catalog and shopping</p>
-                <p>• <strong>About Us</strong> - Company information and story</p>
-                <p>• <strong>Product Details</strong> - Individual product pages</p>
-                <p>• <strong>Terms & Conditions</strong> - Legal information</p>
-              </div>
-            </div>
-            
-            <div className="bg-white p-3 rounded-lg border border-gray-200">
-              <h5 className="font-semibold text-green-600 mb-2">👤 User Account Pages</h5>
-              <div className="space-y-1 text-sm">
-                <p>• <strong>Login/Register</strong> - Account creation and access</p>
-                <p>• <strong>My Profile</strong> - Account management</p>
-                <p>• <strong>Shopping Cart</strong> - Cart management</p>
-                <p>• <strong>Checkout</strong> - Order completion</p>
-                <p>• <strong>My Orders</strong> - Order history and tracking</p>
-                <p>• <strong>Address Book</strong> - Delivery address management</p>
-                <p>• <strong>Wishlist</strong> - Saved favorite products</p>
-                <p>• <strong>Pending Reviews</strong> - Product reviews</p>
-              </div>
-            </div>
-            
-            <div className="bg-white p-3 rounded-lg border border-gray-200">
-              <h5 className="font-semibold text-purple-600 mb-2">⚙️ Admin Pages</h5>
-              <div className="space-y-1 text-sm">
-                <p>• <strong>Admin Dashboard</strong> - Super admin user management</p>
-                <p>• <strong>Products Management</strong> - Product administration</p>
-                <p>• <strong>Order Management</strong> - Order processing</p>
-                <p>• <strong>Category Management</strong> - Category administration</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-            <h6 className="font-medium text-yellow-800 mb-1">💡 Quick Navigation Tips</h6>
-            <p className="text-sm text-yellow-700">
-              • Use the top navigation bar for main pages<br/>
-              • Access account features from the user menu<br/>
-              • Admin features are available in the account dropdown<br/>
-              • I can help you navigate to any specific page!
-            </p>
-          </div>
-          
-          <div className="flex space-x-2">
-            <button 
-              onClick={() => navigate('/store')}
-              className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white rounded-lg text-sm font-medium hover:from-blue-700 hover:via-purple-700 hover:to-blue-900 transition-colors"
-            >
-              Browse Store
-            </button>
-            <button 
-              onClick={() => navigate('/about')}
-              className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-colors"
-            >
-              About Us
-            </button>
-          </div>
-        </div>
-      );
-
-      return {
-        id: Date.now(),
-        text: `🗺️ **Complete Flowtechs Site Navigation Guide** 📋\n\nI'm here to help you navigate our e-commerce platform! Here's everything you need to know about our pages and sections: 🛍️✨\n\n**🏠 Public Pages (Anyone can access):**\n• **Home** - Main landing page with featured products and company highlights\n• **Store** - Complete product catalog with search, filters, and shopping\n• **About Us** - Company story, values, team, and gallery\n• **Product Details** - Individual product pages with reviews and purchase options\n• **Terms & Conditions** - Legal information and policies\n\n**👤 User Account Pages (Login required):**\n• **My Profile** - Account management and settings\n• **Shopping Cart** - Cart management and checkout preparation\n• **Checkout** - Order completion with delivery and payment\n• **My Orders** - Complete order history and tracking\n• **Address Book** - Manage delivery addresses\n• **Wishlist** - Saved favorite products\n• **Pending Reviews** - Review products from completed orders\n\n**⚙️ Admin Pages (Admin privileges required):**\n• **Admin Dashboard** - Super admin user management\n• **Products Management** - Add, edit, and manage products\n• **Order Management** - Process and manage all orders\n• **Category Management** - Manage product categories\n\n**💡 How I Can Help:**\n• Guide you to specific pages\n• Explain page features and functionality\n• Help with navigation issues\n• Provide page-specific assistance\n\n**Just ask me about any specific page or feature!** 🚀`,
-        sender: "bot",
-        timestamp: new Date(),
-        type: "interactive",
-        components: [<NavigationCard key="navigation-card" />]
-      };
-    }
-
-    // Check if user is asking about specific functionality
-    if (messageLower.includes("how to") && (messageLower.includes("navigate") || messageLower.includes("find") || messageLower.includes("access"))) {
-      return {
-        id: Date.now(),
-        text: `🧭 **How to Navigate Flowtechs** 🗺️\n\nI'll help you find your way around our platform! Here's how to navigate effectively: ✨\n\n**🔍 Finding Products:**\n• **Store Page** - Browse all products with filters and search\n• **Search Bar** - Use the search function in the top navigation\n• **Category Filters** - Filter by product categories\n• **Product Details** - Click on any product for detailed information\n\n**🛒 Shopping Process:**\n1. **Browse** - Visit the Store page to see products\n2. **Search** - Use search or filters to find specific items\n3. **Add to Cart** - Click "Add to Cart" on any product\n4. **View Cart** - Click the cart icon in the top navigation\n5. **Checkout** - Proceed to checkout from your cart\n\n**👤 Account Features:**\n• **Login/Register** - Use the "Sign In" button in the top right\n• **My Profile** - Access from the account dropdown menu\n• **My Orders** - View order history and tracking\n• **Wishlist** - Save favorite products for later\n• **Address Book** - Manage delivery addresses\n\n**📱 Mobile Navigation:**\n• **Hamburger Menu** - Tap the menu icon for mobile navigation\n• **Swipe** - Swipe through product images\n• **Search** - Use the search bar at the top\n\n**💡 Pro Tips:**\n• Use the breadcrumb navigation to see where you are\n• The cart icon shows your current cart quantity\n• Account notifications appear in the user menu\n• I can help you navigate to any specific page!\n\n**Need help with a specific page or feature?** Just ask me! 🛍️✨`,
-        sender: "bot",
-        timestamp: new Date(),
-      };
-    }
-
-    return null; // Return null if no specific page knowledge is needed
-  };
+  
 
   return (
     <>
@@ -2933,7 +2580,7 @@ const EnhancedServiceChatbot: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <img src="/makenabot.png" alt="Makena" className="w-12 h-12 rounded-full border-2 border-white/80 shadow-md" />
-                <h3 className="font-semibold text-lg">Makena  Shopping Bestie</h3>
+                <h3 className="font-semibold text-lg">Makena  Shopping Baddy</h3>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
@@ -3027,4 +2674,4 @@ const EnhancedServiceChatbot: React.FC = () => {
   );
 };
 
-export default EnhancedServiceChatbot; 
+export default EnhancedServiceChatbot;
