@@ -768,16 +768,6 @@ const CategoryProductsPage = () => {
             </button>
           </div>
 
-          {/* Stock Status Indicator */}
-          <div className="absolute bottom-4 left-4">
-            <div
-              className={`px-3 py-1 rounded-full text-xs font-medium ${stockInfo.color} flex items-center gap-1`}
-            >
-              <span>{stockInfo.icon}</span>
-              {stockInfo.message}
-            </div>
-          </div>
-
           {/* Quick View Overlay */}
           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center pointer-events-none">
             <button
