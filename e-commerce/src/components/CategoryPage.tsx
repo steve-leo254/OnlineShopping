@@ -462,11 +462,6 @@ const CategoryProductsPage = () => {
       specs.push(`${product.rating.toFixed(1)}★`);
     }
 
-    // Add subcategory if available
-    if (product.subcategory?.name) {
-      specs.push(product.subcategory.name);
-    }
-
     return specs.join(" • ");
   };
 
