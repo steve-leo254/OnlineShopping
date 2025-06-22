@@ -25,6 +25,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { formatCurrency } from "../cart/formatCurrency";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { toast } from "react-toastify";
+import { useFavorites } from "../context/FavoritesContext";
+import { useAuth } from "../context/AuthContext";
 
 // Define types for our data
 type Category = {
@@ -87,6 +89,8 @@ const CategoryProductsPage = () => {
   const [categoryConfig, setCategoryConfig] = useState<any>(null);
 
   const { addToCart, getItemQuantity } = useShoppingCart();
+  const { isFavorite, addFavorite, removeFavorite } = useFavorites();
+  const { isAuthenticated } = useAuth();
 
   // Get category name from URL or location state
   useEffect(() => {
@@ -402,14 +406,23 @@ const CategoryProductsPage = () => {
     }
   );
 
-  const toggleFavorite = (productId: number) => {
-    const newFavorites = new Set(favorites);
-    if (newFavorites.has(productId)) {
-      newFavorites.delete(productId);
-    } else {
-      newFavorites.add(productId);
+  const handleToggleFavorite = async (product: Product) => {
+    if (!isAuthenticated) {
+      toast.error("You must be logged in to use favorites.");
+      return;
     }
-    setFavorites(newFavorites);
+    const idStr = product.id.toString();
+    try {
+      if (isFavorite(idStr)) {
+        await removeFavorite(idStr);
+        toast.info(`${product.name} removed from favorites.`);
+      } else {
+        await addFavorite(idStr);
+        toast.success(`${product.name} added to favorites!`);
+      }
+    } catch (err) {
+      toast.error("Failed to update favorites. Please try again.");
+    }
   };
 
   const handleViewProduct = (productId: number) => {
@@ -655,15 +668,11 @@ const CategoryProductsPage = () => {
   const ProductCard = ({
     product,
     categoryConfig,
-    favorites,
-    onToggleFavorite,
     onViewProduct,
     index,
   }: {
     product: Product;
     categoryConfig: any;
-    favorites: Set<number>;
-    onToggleFavorite: (productId: number) => void;
     onViewProduct: (productId: number) => void;
     index: number;
   }) => {
@@ -740,14 +749,14 @@ const CategoryProductsPage = () => {
               />
             </button>
             <button
-              onClick={() => onToggleFavorite(product.id)}
+              onClick={handleToggleFavorite}
               className="p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-all duration-300 hover:scale-110 shadow-lg"
               title="Add to Favorites"
             >
               <Heart
                 size={18}
                 className={`transition-colors ${
-                  favorites.has(product.id)
+                  isFavorite(product.id.toString())
                     ? "text-red-500 fill-current"
                     : "text-gray-600 hover:text-red-500"
                 }`}
@@ -896,16 +905,12 @@ const CategoryProductsPage = () => {
   const ProductsGrid = ({
     products,
     categoryConfig,
-    favorites,
-    onToggleFavorite,
     onViewProduct,
     viewMode,
     isLoading,
   }: {
     products: Product[];
     categoryConfig: any;
-    favorites: Set<number>;
-    onToggleFavorite: (productId: number) => void;
     onViewProduct: (productId: number) => void;
     viewMode: string;
     isLoading: boolean;
@@ -955,8 +960,6 @@ const CategoryProductsPage = () => {
             key={product.id}
             product={product}
             categoryConfig={categoryConfig}
-            favorites={favorites}
-            onToggleFavorite={onToggleFavorite}
             onViewProduct={onViewProduct}
             index={index}
           />
@@ -1247,8 +1250,6 @@ const CategoryProductsPage = () => {
         <ProductsGrid
           products={sortedProducts}
           categoryConfig={categoryConfig}
-          favorites={favorites}
-          onToggleFavorite={toggleFavorite}
           onViewProduct={handleViewProduct}
           viewMode={viewMode}
           isLoading={isLoading}
