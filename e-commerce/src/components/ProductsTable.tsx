@@ -13,6 +13,7 @@ import {
 import { useFetchProducts } from "./UseFetchProducts";
 import UpdateProductModal from "./UpdateProductModal";
 import AddProduct from "./AddProduct";
+import { formatCurrency } from "../cart/formatCurrency";
 
 interface Category {
   id: string;
@@ -520,7 +521,7 @@ const ProductsTable: React.FC = () => {
                         </td>
                         <td className="py-4 px-6">
                           <span className="font-semibold text-gray-900">
-                            Ksh {product.price?.toLocaleString() || 0}
+                            {formatCurrency(product.price)}
                           </span>
                           {product.discount !== undefined &&
                             product.discount > 0 && (
@@ -531,7 +532,7 @@ const ProductsTable: React.FC = () => {
                         </td>
                         <td className="py-4 px-6">
                           <span className="text-gray-500 line-through">
-                            Ksh {product.original_price?.toLocaleString() || 0}
+                            {formatCurrency(product.original_price)}
                           </span>
                         </td>
                         <td className="py-4 px-6">
