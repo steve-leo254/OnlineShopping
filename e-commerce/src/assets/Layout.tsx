@@ -13,6 +13,8 @@ const Layout: React.FC = () => {
         <Outlet />
       </main>
       <Footer />
+
+      {/* Chatbot - available on all pages */}
       <ServiceChatbot />
     </div>
   );

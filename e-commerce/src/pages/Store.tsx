@@ -16,6 +16,7 @@ import { formatCurrency } from "../cart/formatCurrency";
 import { toast } from "react-toastify"; // Import toast
 import { useNavigate } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
+import { useRef } from "react";
 
 interface Category {
   id: string | null;
@@ -196,13 +197,11 @@ const Store = () => {
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isFiltering, setIsFiltering] = useState<boolean>(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const productsPerPage = 8;
 
   const navigate = useNavigate();
-
-  // Debounce search term
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const transformedProducts: Product[] = useMemo(
     () => apiProducts.map(transformProduct),
@@ -262,7 +261,7 @@ const Store = () => {
     setCurrentPage(1);
     setIsFiltering(true);
     try {
-      await fetchProducts(1, productsPerPage, debouncedSearchTerm, categoryId);
+      await fetchProducts(1, productsPerPage, searchTerm, categoryId);
     } catch (error) {
       console.error("Error filtering by category:", error);
       toast.error("Failed to filter products. Please try again.");
@@ -360,28 +359,32 @@ const Store = () => {
   };
 
   useEffect(() => {
-    fetchProducts(
-      currentPage,
-      productsPerPage,
-      debouncedSearchTerm,
-      selectedCategoryId
-    );
-  }, [currentPage, debouncedSearchTerm, selectedCategoryId, fetchProducts]);
+    fetchProducts(currentPage, productsPerPage, searchTerm, selectedCategoryId);
+  }, [currentPage, searchTerm, selectedCategoryId, fetchProducts]);
 
   useEffect(() => {
-    if (debouncedSearchTerm.trim()) {
+    if (searchTerm.trim()) {
       setCurrentPage(1);
     }
-  }, [debouncedSearchTerm]);
+  }, [searchTerm]);
 
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
 
+  useEffect(() => {
+    if (
+      searchInputRef.current &&
+      document.activeElement !== searchInputRef.current
+    ) {
+      searchInputRef.current.focus();
+    }
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white py-16">
+      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white py-2">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
             Premium Electronics
@@ -396,7 +399,7 @@ const Store = () => {
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-              <span>30-Day Returns</span>
+              <span>7-Day Returns</span>
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
@@ -443,6 +446,7 @@ const Store = () => {
                     placeholder="Search for products..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    ref={searchInputRef}
                     className="text-gray-600 w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 shadow-sm"
                   />
                 </div>
