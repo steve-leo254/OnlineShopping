@@ -435,6 +435,41 @@ const CategoryProductsPage = () => {
     return 0;
   };
 
+  // Format product specifications into a readable string
+  const formatProductSpecs = (product: Product) => {
+    const specs: string[] = [];
+
+    // Add brand if available
+    if (product.brand) {
+      specs.push(product.brand);
+    }
+
+    // Add stock information
+    if (product.stock_quantity > 0) {
+      specs.push(`In Stock (${product.stock_quantity})`);
+    } else {
+      specs.push("Out of Stock");
+    }
+
+    // Add discount information
+    if (product.original_price && product.original_price > product.price) {
+      const discount = calculateDiscount(product);
+      specs.push(`${discount}% OFF`);
+    }
+
+    // Add rating information
+    if (product.rating > 0) {
+      specs.push(`${product.rating.toFixed(1)}★`);
+    }
+
+    // Add subcategory if available
+    if (product.subcategory?.name) {
+      specs.push(product.subcategory.name);
+    }
+
+    return specs.join(" • ");
+  };
+
   const LoadingSkeleton = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {[...Array(6)].map((_, i) => (
@@ -464,7 +499,7 @@ const CategoryProductsPage = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                TechHub Electronics
+                {categoryConfig.title}
               </h1>
               <nav className="hidden md:flex space-x-6">
                 {categories.map((category) => (
@@ -481,17 +516,6 @@ const CategoryProductsPage = () => {
                   </button>
                 ))}
               </nav>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button className="p-2 text-gray-600 hover:text-blue-600 transition-colors">
-                <Heart size={20} />
-              </button>
-              <button className="p-2 text-gray-600 hover:text-blue-600 transition-colors relative">
-                <ShoppingCart size={20} />
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                  0
-                </span>
-              </button>
             </div>
           </div>
         </div>
@@ -808,7 +832,7 @@ const CategoryProductsPage = () => {
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-gray-500 font-medium">
-                      {product.subcategory?.name}
+                      {formatProductSpecs(product)}
                     </span>
                     {product.is_new && (
                       <span
@@ -824,7 +848,7 @@ const CategoryProductsPage = () => {
                   </h3>
 
                   <p className="text-sm text-gray-600 mb-3">
-                    {product.description}
+                    {formatProductSpecs(product)}
                   </p>
 
                   <div className="flex items-center gap-2 mb-3">
