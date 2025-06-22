@@ -821,13 +821,6 @@ const CategoryProductsPage = () => {
             {renderRating(product.rating, product.reviews?.length)}
           </div>
 
-          {/* Description */}
-          {product.description && (
-            <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-              {product.description}
-            </p>
-          )}
-
           {/* Price Section */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex flex-col">
