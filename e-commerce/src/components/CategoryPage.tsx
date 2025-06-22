@@ -24,6 +24,8 @@ import {
   Tablet,
   Speaker,
   Battery,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import axios from "axios";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
@@ -73,12 +75,14 @@ const CategoryProductsPage = () => {
   const location = useLocation();
   const params = useParams();
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("featured");
   const [viewMode, setViewMode] = useState("grid");
   const [priceRange, setPriceRange] = useState("all");
   const [favorites, setFavorites] = useState(new Set<number>());
   const [isLoading, setIsLoading] = useState(true);
+  const [subcategoryCarouselIndex, setSubcategoryCarouselIndex] = useState(0);
 
   // Database state
   const [categories, setCategories] = useState<Category[]>([]);
@@ -133,8 +137,11 @@ const CategoryProductsPage = () => {
     }
   };
 
-  // Fetch products by category
-  const fetchProductsByCategory = async (categoryName: string) => {
+  // Fetch products by category and subcategory
+  const fetchProductsByCategory = async (
+    categoryName: string,
+    subcategoryName?: string
+  ) => {
     try {
       setIsLoading(true);
 
@@ -149,13 +156,24 @@ const CategoryProductsPage = () => {
         return;
       }
 
-      // Fetch products for this category
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/public/products?category_id=${
-          category.id
-        }&limit=50`
-      );
+      // Build query parameters
+      let url = `${
+        import.meta.env.VITE_API_BASE_URL
+      }/public/products?category_id=${category.id}&limit=50`;
 
+      // Add subcategory filter if specified
+      if (subcategoryName) {
+        const subcategory = subcategories.find(
+          (sub) =>
+            sub.name.toLowerCase() === subcategoryName.toLowerCase() &&
+            sub.category_id === category.id
+        );
+        if (subcategory) {
+          url += `&subcategory_id=${subcategory.id}`;
+        }
+      }
+
+      const response = await axios.get(url);
       setProducts(response.data.items || []);
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -174,6 +192,7 @@ const CategoryProductsPage = () => {
         }/categories/${categoryId}/subcategories`
       );
       setSubcategories(response.data || []);
+      console.log("Fetched subcategories:", response.data);
     } catch (error) {
       console.error("Error fetching subcategories:", error);
       setSubcategories([]);
@@ -191,7 +210,7 @@ const CategoryProductsPage = () => {
   // Fetch products when category changes
   useEffect(() => {
     if (selectedCategory && categories.length > 0) {
-      fetchProductsByCategory(selectedCategory);
+      fetchProductsByCategory(selectedCategory, selectedSubcategory);
 
       // Find category and fetch subcategories
       const category = categories.find(
@@ -201,7 +220,7 @@ const CategoryProductsPage = () => {
         fetchSubcategories(category.id);
       }
     }
-  }, [selectedCategory, categories]);
+  }, [selectedCategory, categories, selectedSubcategory]);
 
   // Set category configuration based on selected category
   useEffect(() => {
@@ -380,6 +399,7 @@ const CategoryProductsPage = () => {
 
   const handleCategoryChange = (categoryName: string) => {
     setSelectedCategory(categoryName);
+    setSelectedSubcategory(""); // Reset subcategory when category changes
     // Don't navigate, just filter the products
     fetchProductsByCategory(categoryName);
 
@@ -390,6 +410,32 @@ const CategoryProductsPage = () => {
     if (category) {
       fetchSubcategories(category.id);
     }
+  };
+
+  const handleSubcategoryChange = (subcategoryName: string) => {
+    setSelectedSubcategory(subcategoryName);
+    fetchProductsByCategory(selectedCategory, subcategoryName);
+  };
+
+  const resetFilters = () => {
+    setSelectedSubcategory("");
+    setSearchTerm("");
+    setPriceRange("all");
+    setSortBy("featured");
+    fetchProductsByCategory(selectedCategory);
+  };
+
+  // Subcategory carousel navigation
+  const nextSubcategorySlide = () => {
+    setSubcategoryCarouselIndex((prev) =>
+      prev + 4 >= subcategories.length ? 0 : prev + 4
+    );
+  };
+
+  const prevSubcategorySlide = () => {
+    setSubcategoryCarouselIndex((prev) =>
+      prev - 4 < 0 ? Math.max(0, subcategories.length - 4) : prev - 4
+    );
   };
 
   // Get product image URL
@@ -539,6 +585,93 @@ const CategoryProductsPage = () => {
           })}
         </div>
 
+        {/* Subcategories Section */}
+        {subcategories.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Browse by Subcategory
+              </h2>
+              <button
+                onClick={resetFilters}
+                className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+              >
+                Show All Categories
+              </button>
+            </div>
+
+            {/* Subcategory Carousel */}
+            <div className="relative">
+              {/* Navigation Buttons */}
+              {subcategories.length > 4 && (
+                <>
+                  <button
+                    onClick={prevSubcategorySlide}
+                    className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
+                  >
+                    <ChevronLeft className="w-6 h-6 text-gray-700" />
+                  </button>
+
+                  <button
+                    onClick={nextSubcategorySlide}
+                    className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
+                  >
+                    <ChevronRight className="w-6 h-6 text-gray-700" />
+                  </button>
+                </>
+              )}
+
+              {/* Subcategories Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 overflow-hidden">
+                {subcategories
+                  .slice(subcategoryCarouselIndex, subcategoryCarouselIndex + 4)
+                  .map((subcategory) => (
+                    <button
+                      key={subcategory.id}
+                      onClick={() => handleSubcategoryChange(subcategory.name)}
+                      className={`p-4 rounded-xl text-center transition-all duration-300 hover:scale-105 ${
+                        selectedSubcategory === subcategory.name
+                          ? `bg-gradient-to-r ${categoryConfig.gradient} text-white shadow-lg`
+                          : "bg-white/60 backdrop-blur-sm border border-white/20 hover:bg-white/80"
+                      }`}
+                    >
+                      <div className="text-2xl mb-2">
+                        {getCategoryIcon(subcategory.name)}
+                      </div>
+                      <h3 className="font-semibold text-sm">
+                        {subcategory.name}
+                      </h3>
+                      {subcategory.description && (
+                        <p className="text-xs mt-1 opacity-75">
+                          {subcategory.description}
+                        </p>
+                      )}
+                    </button>
+                  ))}
+              </div>
+
+              {/* Carousel Indicators */}
+              {subcategories.length > 4 && (
+                <div className="flex justify-center mt-4 space-x-2">
+                  {Array.from({
+                    length: Math.ceil(subcategories.length / 4),
+                  }).map((_, index) => (
+                    <button
+                      key={index}
+                      className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                        index === Math.floor(subcategoryCarouselIndex / 4)
+                          ? "bg-blue-600"
+                          : "bg-gray-300 hover:bg-gray-400"
+                      }`}
+                      onClick={() => setSubcategoryCarouselIndex(index * 4)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Filters Bar */}
         <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-white/20">
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
@@ -557,6 +690,22 @@ const CategoryProductsPage = () => {
                   className="pl-10 pr-4 py-2 w-full sm:w-64 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
               </div>
+
+              {/* Subcategory Filter */}
+              {subcategories.length > 0 && (
+                <select
+                  value={selectedSubcategory}
+                  onChange={(e) => handleSubcategoryChange(e.target.value)}
+                  className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+                >
+                  <option value="">All Subcategories</option>
+                  {subcategories.map((subcategory) => (
+                    <option key={subcategory.id} value={subcategory.name}>
+                      {subcategory.name}
+                    </option>
+                  ))}
+                </select>
+              )}
 
               {/* Price Filter */}
               <select
@@ -616,6 +765,7 @@ const CategoryProductsPage = () => {
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
               {categoryConfig.title} Collection
+              {selectedSubcategory && ` - ${selectedSubcategory}`}
             </h2>
             <p className="text-gray-600">
               {sortedProducts.length} products available
@@ -623,6 +773,7 @@ const CategoryProductsPage = () => {
           </div>
           <div className="text-sm text-gray-500">
             Showing results for "{selectedCategory}"
+            {selectedSubcategory && ` > ${selectedSubcategory}`}
           </div>
         </div>
 
@@ -771,6 +922,38 @@ const CategoryProductsPage = () => {
       </div>
     </div>
   );
+};
+
+// Helper function to get category icon
+const getCategoryIcon = (categoryName: string) => {
+  const iconMap: Record<string, string> = {
+    Electronics: "📱",
+    Fashion: "👗",
+    "Home & Garden": "🏠",
+    Sports: "⚽",
+    Books: "📚",
+    Beauty: "💄",
+    Laptops: "💻",
+    Smartphones: "📱",
+    "PC Components": "🔧",
+    Accessories: "🎧",
+    "Gaming Laptops": "🎮",
+    "Business Laptops": "💼",
+    Ultrabooks: "💻",
+    Workstations: "🖥️",
+    "Android Phones": "📱",
+    iPhones: "📱",
+    "Budget Phones": "📱",
+    Processors: "🔧",
+    "Graphics Cards": "🎮",
+    "Memory & Storage": "💾",
+    Motherboards: "🔌",
+    "Audio & Headphones": "🎧",
+    "Keyboards & Mice": "⌨️",
+    "Monitors & Displays": "🖥️",
+    Networking: "📡",
+  };
+  return iconMap[categoryName] || "📦";
 };
 
 export default CategoryProductsPage;
