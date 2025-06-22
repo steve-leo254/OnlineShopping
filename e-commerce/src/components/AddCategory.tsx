@@ -2,7 +2,15 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
-import { X, Tag, BookOpen, Plus, Trash2, Settings, Sparkles } from "lucide-react";
+import {
+  X,
+  Tag,
+  BookOpen,
+  Plus,
+  Trash2,
+  Settings,
+  Sparkles,
+} from "lucide-react";
 
 // Define the category type to match your API
 type CategoryForm = {
@@ -189,10 +197,25 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
 
   // Delete specification
   const handleDeleteSpec = async (specId: number) => {
-    // You need to implement a DELETE endpoint in your API for this to work
-    // For now, just remove from UI
-    setSpecs((prev) => prev.filter((s) => s.id !== specId));
-    // Optionally: await axios.delete(...)
+    if (!categoryId) {
+      toast.error("No category selected");
+      return;
+    }
+
+    try {
+      await axios.delete(
+        `${
+          import.meta.env.VITE_API_BASE_URL
+        }/categories/${categoryId}/specifications/${specId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSpecs((prev) => prev.filter((s) => s.id !== specId));
+      toast.success("Specification deleted successfully");
+    } catch (err: any) {
+      toast.error(
+        err.response?.data?.detail || "Failed to delete specification"
+      );
+    }
   };
 
   const getValueTypeColor = (valueType: string) => {
@@ -495,12 +518,16 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
               {isSpecLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
-                  <span className="ml-2 text-gray-600">Loading specifications...</span>
+                  <span className="ml-2 text-gray-600">
+                    Loading specifications...
+                  </span>
                 </div>
               ) : specs.length === 0 ? (
                 <div className="text-center py-8">
                   <Settings className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 text-sm">No specifications added yet.</p>
+                  <p className="text-gray-500 text-sm">
+                    No specifications added yet.
+                  </p>
                   <p className="text-gray-400 text-xs mt-1">
                     Add your first specification using the form above.
                   </p>
@@ -523,9 +550,15 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
                             {index + 1}
                           </div>
                           <div>
-                            <h6 className="font-medium text-gray-900">{spec.name}</h6>
+                            <h6 className="font-medium text-gray-900">
+                              {spec.name}
+                            </h6>
                             <div className="flex items-center gap-2 mt-1">
-                              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getValueTypeColor(spec.value_type)}`}>
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getValueTypeColor(
+                                  spec.value_type
+                                )}`}
+                              >
                                 <span className="text-xs font-mono">
                                   {getValueTypeIcon(spec.value_type)}
                                 </span>

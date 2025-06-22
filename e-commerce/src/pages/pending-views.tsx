@@ -12,6 +12,8 @@ import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { useUserStats } from "../context/UserStatsContext";
+import { formatCurrency } from "../cart/formatCurrency";
+import { useNavigate } from "react-router-dom";
 
 // Type definitions
 interface User {
@@ -60,6 +62,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
   const [rating, setRating] = React.useState<number>(0);
   const [hoverRating, setHoverRating] = React.useState<number>(0);
   const [comment, setComment] = React.useState<string>("");
+ 
 
   const handleSubmit = (): void => {
     if (rating === 0) {
@@ -114,7 +117,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
             </h3>
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold text-gray-900">
-                ${product.price}
+                {formatCurrency(product.price)}
               </span>
               <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
                 Recent Purchase
@@ -204,6 +207,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
 
 const ReviewPage: React.FC = () => {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const currentUser = useMemo(() => {
     if (token) {
       try {
@@ -386,11 +390,17 @@ const ReviewPage: React.FC = () => {
               invaluable!
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
-              <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center justify-center gap-2 font-medium">
+              <button
+                onClick={() => navigate("/orders-overview")}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center justify-center gap-2 font-medium"
+              >
                 <Package size={18} />
                 View My Orders
               </button>
-              <button className="bg-white text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 transition-all duration-300 border border-gray-200 flex items-center justify-center gap-2 font-medium">
+              <button
+                onClick={() => navigate("/store")}
+                className="bg-white text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 transition-all duration-300 border border-gray-200 flex items-center justify-center gap-2 font-medium"
+              >
                 <ShoppingBag size={18} />
                 Continue Shopping
               </button>

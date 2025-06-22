@@ -28,6 +28,11 @@ from pydantic_models import (
     ReviewCreate,
     ReviewResponse,
     ProductCreateRequest,
+    SubcategoryBase,
+    SubcategoryResponse,
+    SubcategoryCreate,
+    SubcategoryUpdate,
+    ReviewBase,
 )
 from typing import Annotated, List, Optional
 import models
@@ -150,7 +155,7 @@ async def upload_image(user: user_dependency, file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail="Error uploading image")
 
 
-# Updated endpoint to support category filtering
+# Updated endpoint to support category and subcategory filtering
 @app.get(
     "/public/products",
     response_model=PaginatedProductResponse,
@@ -162,6 +167,7 @@ async def browse_products(
     page: int = 1,
     limit: int = 8,
     category_id: int = None,  # Add category_id parameter
+    subcategory_id: int = None,  # Add subcategory_id parameter
     ids: str = None,  # Add ids parameter for batch fetch
 ):
     try:
@@ -191,8 +197,28 @@ async def browse_products(
             query = query.filter(models.Products.category_id == category_id)
             logger.info(f"Product category filter: {category_id}")
 
+        # Apply subcategory filter
+        if subcategory_id:
+            query = query.filter(models.Products.subcategory_id == subcategory_id)
+            logger.info(f"Product subcategory filter: {subcategory_id}")
+
         total = query.count()
-        products = query.offset(skip).limit(limit).all()
+        products = (
+            query.options(
+                joinedload(models.Products.category),
+                joinedload(models.Products.subcategory),
+                joinedload(models.Products.images),
+                joinedload(models.Products.product_specifications).joinedload(
+                    models.ProductSpecification.specification
+                ),
+                joinedload(models.Products.favorites),
+                joinedload(models.Products.reviews),
+            )
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
         total_pages = ceil(total / limit)
 
         return {
@@ -202,7 +228,7 @@ async def browse_products(
             "limit": limit,
             "pages": total_pages,
         }
-    except SQLAlchemyError as e:
+    except Exception as e:
         logger.error(f"Error fetching products: {str(e)}")
         raise HTTPException(status_code=500, detail="Error fetching products")
 
@@ -215,14 +241,26 @@ async def browse_products(
 async def get_product_by_id(product_id: int, db: db_dependency):
     try:
         product = (
-            db.query(models.Products).filter(models.Products.id == product_id).first()
+            db.query(models.Products)
+            .options(
+                joinedload(models.Products.category),
+                joinedload(models.Products.subcategory),
+                joinedload(models.Products.images),
+                joinedload(models.Products.product_specifications).joinedload(
+                    models.ProductSpecification.specification
+                ),
+                joinedload(models.Products.favorites),
+                joinedload(models.Products.reviews).joinedload(models.Review.user),
+            )
+            .filter(models.Products.id == product_id)
+            .first()
         )
         if not product:
-            logger.info(f"Product not found: ID {product_id}")
             raise HTTPException(status_code=404, detail="Product not found")
+
         return product
-    except SQLAlchemyError as e:
-        logger.error(f"Error fetching product by ID {product_id}: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error fetching product: {str(e)}")
         raise HTTPException(status_code=500, detail="Error fetching product")
 
 
@@ -238,6 +276,23 @@ async def browse_categories(db: db_dependency):
     except SQLAlchemyError as e:
         logger.error(f"Error fetching categories: {str(e)}")
         raise HTTPException(status_code=500, detail="Error fetching categories")
+
+
+@app.get(
+    "/public/subcategories",
+    response_model=List[SubcategoryResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def browse_subcategories(db: db_dependency, category_id: int = None):
+    try:
+        query = db.query(models.Subcategory)
+        if category_id:
+            query = query.filter(models.Subcategory.category_id == category_id)
+        subcategories = query.all()
+        return subcategories
+    except SQLAlchemyError as e:
+        logger.error(f"Error fetching subcategories: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error fetching subcategories")
 
 
 @app.post(
@@ -1188,6 +1243,168 @@ async def get_category_specifications(category_id: int, db: db_dependency):
     return specs
 
 
+@app.delete(
+    "/categories/{category_id}/specifications/{spec_id}",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_category_specification(
+    category_id: int,
+    spec_id: int,
+    db: db_dependency,
+    user: user_dependency,
+):
+    """Delete a specification from a category"""
+    require_admin(user)
+    try:
+        spec = (
+            db.query(models.Specification)
+            .filter(
+                models.Specification.id == spec_id,
+                models.Specification.category_id == category_id,
+            )
+            .first()
+        )
+        if not spec:
+            raise HTTPException(status_code=404, detail="Specification not found")
+
+        # Check if any products are using this specification
+        product_specs_count = (
+            db.query(models.ProductSpecification)
+            .filter(models.ProductSpecification.specification_id == spec_id)
+            .count()
+        )
+        if product_specs_count > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete specification. {product_specs_count} products are using this specification.",
+            )
+
+        db.delete(spec)
+        db.commit()
+        return {"message": "Specification deleted successfully"}
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error deleting specification: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error deleting specification")
+
+
+@app.put(
+    "/categories/{category_id}/specifications/{spec_id}",
+    response_model=SpecificationResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def update_category_specification(
+    category_id: int,
+    spec_id: int,
+    spec_update: SpecificationCreate,
+    db: db_dependency,
+    user: user_dependency,
+):
+    """Update a specification"""
+    require_admin(user)
+    try:
+        spec = (
+            db.query(models.Specification)
+            .filter(
+                models.Specification.id == spec_id,
+                models.Specification.category_id == category_id,
+            )
+            .first()
+        )
+        if not spec:
+            raise HTTPException(status_code=404, detail="Specification not found")
+
+        update_data = spec_update.dict()
+        for field, value in update_data.items():
+            setattr(spec, field, value)
+
+        db.commit()
+        db.refresh(spec)
+        return spec
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error updating specification: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error updating specification")
+
+
+# --- Category Management ---
+@app.put(
+    "/categories/{category_id}",
+    response_model=CategoryResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def update_category(
+    category_id: int,
+    category_update: CategoryBase,
+    user: user_dependency,
+    db: db_dependency,
+):
+    """Update a category"""
+    require_admin(user)
+    try:
+        category = (
+            db.query(models.Categories)
+            .filter(models.Categories.id == category_id)
+            .first()
+        )
+        if not category:
+            raise HTTPException(status_code=404, detail="Category not found")
+
+        update_data = category_update.dict()
+        for field, value in update_data.items():
+            setattr(category, field, value)
+
+        db.commit()
+        db.refresh(category)
+        return category
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error updating category: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error updating category")
+
+
+@app.delete(
+    "/categories/{category_id}",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_category(
+    category_id: int,
+    user: user_dependency,
+    db: db_dependency,
+):
+    """Delete a category"""
+    require_admin(user)
+    try:
+        category = (
+            db.query(models.Categories)
+            .filter(models.Categories.id == category_id)
+            .first()
+        )
+        if not category:
+            raise HTTPException(status_code=404, detail="Category not found")
+
+        # Check if any products are using this category
+        products_count = (
+            db.query(models.Products)
+            .filter(models.Products.category_id == category_id)
+            .count()
+        )
+        if products_count > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete category. {products_count} products are using this category.",
+            )
+
+        # The cascade delete will handle subcategories and specifications automatically
+        db.delete(category)
+        db.commit()
+        return {"message": "Category deleted successfully"}
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error deleting category: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error deleting category")
+
+
 # --- Product Specification Values ---
 @app.post(
     "/products/{product_id}/specifications", response_model=ProductSpecificationResponse
@@ -1257,20 +1474,69 @@ async def delete_favorite(favorite_id: int, db: db_dependency, user: user_depend
     return {"message": "Favorite removed successfully"}
 
 
-# --- Reviews ---
+# Utility function to calculate and update product rating from reviews
+def update_product_rating(db: Session, product_id: int):
+    """Calculate average rating from reviews and update product rating"""
+    try:
+        # Calculate average rating from all reviews for this product
+        avg_rating = (
+            db.query(func.avg(models.Review.rating))
+            .filter(models.Review.product_id == product_id)
+            .scalar()
+        )
+
+        # Update product rating
+        product = (
+            db.query(models.Products).filter(models.Products.id == product_id).first()
+        )
+        if product:
+            product.rating = float(avg_rating) if avg_rating else 0.0
+            db.commit()
+            return product.rating
+    except Exception as e:
+        logger.error(f"Error updating product rating: {str(e)}")
+        db.rollback()
+        return 0.0
+
+
 @app.post("/reviews", response_model=ReviewResponse)
 async def add_review(review: ReviewCreate, db: db_dependency, user: user_dependency):
-    db_review = models.Review(
-        user_id=user.get("id"),
-        product_id=review.product_id,
-        order_id=review.order_id,
-        rating=review.rating,
-        comment=review.comment,
-    )
-    db.add(db_review)
-    db.commit()
-    db.refresh(db_review)
-    return db_review
+    try:
+        # Check if user has already reviewed this product
+        existing_review = (
+            db.query(models.Review)
+            .filter(
+                models.Review.user_id == user.get("id"),
+                models.Review.product_id == review.product_id,
+            )
+            .first()
+        )
+
+        if existing_review:
+            raise HTTPException(
+                status_code=400, detail="You have already reviewed this product"
+            )
+
+        # Create new review
+        db_review = models.Review(
+            user_id=user.get("id"),
+            product_id=review.product_id,
+            order_id=review.order_id,
+            rating=review.rating,
+            comment=review.comment,
+        )
+        db.add(db_review)
+        db.commit()
+        db.refresh(db_review)
+
+        # Update product rating
+        update_product_rating(db, review.product_id)
+
+        return db_review
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error adding review: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error adding review")
 
 
 @app.get("/products/{product_id}/reviews", response_model=List[ReviewResponse])
@@ -1278,16 +1544,312 @@ async def get_product_reviews(product_id: int, db: db_dependency):
     reviews = (
         db.query(models.Review).filter(models.Review.product_id == product_id).all()
     )
-    # Attach username to each review
-    result = []
-    for review in reviews:
-        user = db.query(models.Users).filter(models.Users.id == review.user_id).first()
-        review_dict = review.__dict__.copy()
-        review_dict["username"] = user.username if user else None
-        # Remove SQLAlchemy state if present
-        review_dict.pop("_sa_instance_state", None)
-        result.append(review_dict)
-    return result
+    return reviews
+
+
+@app.put("/reviews/{review_id}", response_model=ReviewResponse)
+async def update_review(
+    review_id: int, review_update: ReviewBase, db: db_dependency, user: user_dependency
+):
+    """Update a review and recalculate product rating"""
+    try:
+        # Find the review and ensure it belongs to the user
+        review = (
+            db.query(models.Review)
+            .filter(
+                models.Review.id == review_id, models.Review.user_id == user.get("id")
+            )
+            .first()
+        )
+
+        if not review:
+            raise HTTPException(status_code=404, detail="Review not found")
+
+        # Update review fields
+        review.rating = review_update.rating
+        review.comment = review_update.comment
+
+        db.commit()
+        db.refresh(review)
+
+        # Recalculate product rating
+        update_product_rating(db, review.product_id)
+
+        return review
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error updating review: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error updating review")
+
+
+@app.delete("/reviews/{review_id}", status_code=status.HTTP_200_OK)
+async def delete_review(review_id: int, db: db_dependency, user: user_dependency):
+    """Delete a review and recalculate product rating"""
+    try:
+        # Find the review and ensure it belongs to the user
+        review = (
+            db.query(models.Review)
+            .filter(
+                models.Review.id == review_id, models.Review.user_id == user.get("id")
+            )
+            .first()
+        )
+
+        if not review:
+            raise HTTPException(status_code=404, detail="Review not found")
+
+        product_id = review.product_id
+
+        # Delete the review
+        db.delete(review)
+        db.commit()
+
+        # Recalculate product rating
+        update_product_rating(db, product_id)
+
+        return {"message": "Review deleted successfully"}
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error deleting review: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error deleting review")
+
+
+@app.post(
+    "/subcategories",
+    response_model=SubcategoryResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_subcategory(
+    user: user_dependency, db: db_dependency, subcategory: SubcategoryBase
+):
+    require_admin(user)
+    try:
+        db_subcategory = models.Subcategory(**subcategory.dict())
+        db.add(db_subcategory)
+        db.commit()
+        db.refresh(db_subcategory)
+        return db_subcategory
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error creating subcategory: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get(
+    "/categories/{category_id}/subcategories",
+    response_model=List[SubcategoryResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def get_category_subcategories(category_id: int, db: db_dependency):
+    try:
+        subcategories = (
+            db.query(models.Subcategory)
+            .filter(models.Subcategory.category_id == category_id)
+            .all()
+        )
+        return subcategories
+    except SQLAlchemyError as e:
+        logger.error(f"Error fetching subcategories: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error fetching subcategories")
+
+
+def format_specifications_to_string(
+    product_specifications: List[models.ProductSpecification],
+) -> str:
+    """
+    Convert product specifications to a formatted string for UI display
+    """
+    if not product_specifications:
+        return ""
+
+    spec_parts = []
+    for ps in product_specifications:
+        if ps.specification and ps.value:
+            spec_parts.append(f"{ps.specification.name}: {ps.value}")
+
+    return ", ".join(spec_parts)
+
+
+# Enhanced subcategory endpoints
+@app.get(
+    "/subcategories",
+    response_model=List[SubcategoryResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def get_all_subcategories(db: db_dependency, category_id: int = None):
+    """Get all subcategories, optionally filtered by category"""
+    try:
+        query = db.query(models.Subcategory)
+        if category_id:
+            query = query.filter(models.Subcategory.category_id == category_id)
+
+        subcategories = query.all()
+        return subcategories
+    except SQLAlchemyError as e:
+        logger.error(f"Error fetching subcategories: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error fetching subcategories")
+
+
+@app.get(
+    "/subcategories/{subcategory_id}",
+    response_model=SubcategoryResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_subcategory_by_id(subcategory_id: int, db: db_dependency):
+    """Get a specific subcategory by ID"""
+    try:
+        subcategory = (
+            db.query(models.Subcategory)
+            .filter(models.Subcategory.id == subcategory_id)
+            .first()
+        )
+        if not subcategory:
+            raise HTTPException(status_code=404, detail="Subcategory not found")
+        return subcategory
+    except SQLAlchemyError as e:
+        logger.error(f"Error fetching subcategory: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error fetching subcategory")
+
+
+@app.put(
+    "/subcategories/{subcategory_id}",
+    response_model=SubcategoryResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def update_subcategory(
+    subcategory_id: int,
+    subcategory_update: SubcategoryUpdate,
+    user: user_dependency,
+    db: db_dependency,
+):
+    """Update a subcategory"""
+    require_admin(user)
+    try:
+        subcategory = (
+            db.query(models.Subcategory)
+            .filter(models.Subcategory.id == subcategory_id)
+            .first()
+        )
+        if not subcategory:
+            raise HTTPException(status_code=404, detail="Subcategory not found")
+
+        update_data = subcategory_update.dict(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(subcategory, field, value)
+
+        db.commit()
+        db.refresh(subcategory)
+        return subcategory
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error updating subcategory: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error updating subcategory")
+
+
+@app.delete(
+    "/subcategories/{subcategory_id}",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_subcategory(
+    subcategory_id: int,
+    user: user_dependency,
+    db: db_dependency,
+):
+    """Delete a subcategory"""
+    require_admin(user)
+    try:
+        subcategory = (
+            db.query(models.Subcategory)
+            .filter(models.Subcategory.id == subcategory_id)
+            .first()
+        )
+        if not subcategory:
+            raise HTTPException(status_code=404, detail="Subcategory not found")
+
+        # Check if any products are using this subcategory
+        products_count = (
+            db.query(models.Products)
+            .filter(models.Products.subcategory_id == subcategory_id)
+            .count()
+        )
+        if products_count > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete subcategory. {products_count} products are using this subcategory.",
+            )
+
+        db.delete(subcategory)
+        db.commit()
+        return {"message": "Subcategory deleted successfully"}
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error deleting subcategory: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error deleting subcategory")
+
+
+@app.get(
+    "/public/products/by-subcategory/{subcategory_id}",
+    response_model=PaginatedProductResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_products_by_subcategory(
+    subcategory_id: int,
+    db: db_dependency,
+    page: int = 1,
+    limit: int = 8,
+    search: str = None,
+):
+    """Get products filtered by subcategory"""
+    try:
+        skip = (page - 1) * limit
+        query = db.query(models.Products).filter(
+            models.Products.subcategory_id == subcategory_id
+        )
+
+        if search:
+            query = query.filter(models.Products.name.ilike(f"%{search}%"))
+
+        total = query.count()
+        products = query.offset(skip).limit(limit).all()
+        total_pages = ceil(total / limit)
+
+        return {
+            "items": products,
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "pages": total_pages,
+        }
+    except Exception as e:
+        logger.error(f"Error fetching products by subcategory: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error fetching products")
+
+
+@app.post("/admin/recalculate-product-ratings", status_code=status.HTTP_200_OK)
+async def recalculate_all_product_ratings(db: db_dependency, user: user_dependency):
+    """Recalculate ratings for all products from their reviews"""
+    require_admin(user)
+    try:
+        # Get all products
+        products = db.query(models.Products).all()
+        updated_count = 0
+
+        for product in products:
+            old_rating = product.rating
+            new_rating = update_product_rating(db, product.id)
+            if old_rating != new_rating:
+                updated_count += 1
+
+        return {
+            "message": f"Product ratings recalculated successfully",
+            "products_updated": updated_count,
+            "total_products": len(products),
+        }
+    except Exception as e:
+        logger.error(f"Error recalculating product ratings: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail="Error recalculating product ratings"
+        )
 
 
 if __name__ == "__main__":

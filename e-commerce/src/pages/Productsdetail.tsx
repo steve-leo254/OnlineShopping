@@ -22,6 +22,7 @@ import { useShoppingCart } from "../context/ShoppingCartContext";
 import { useAuth } from "../context/AuthContext";
 import { useUserStats } from "../context/UserStatsContext";
 import { useFavorites } from "../context/FavoritesContext";
+import { toast } from "react-toastify";
 
 // Types
 interface Product {
@@ -89,20 +90,13 @@ const ProductDetail: React.FC = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<TabType>("description");
   const [showImageModal, setShowImageModal] = useState<boolean>(false);
-  const [notification, setNotification] = useState<{
-    show: boolean;
-    message: string;
-    type: NotificationType;
-  }>({
-    show: false,
-    message: "",
-    type: "success",
-  });
+  const [currentSlide, setCurrentSlide] = useState<number>(0);
   const {
     addToCart,
     increaseCartQuantity,
     decreaseCartQuantity,
     getItemQuantity,
+    removeFromCart,
   } = useShoppingCart();
   const { isAuthenticated, token } = useAuth();
   const { refreshStats } = useUserStats();
@@ -268,22 +262,11 @@ const ProductDetail: React.FC = () => {
     fetchProduct();
   }, [id, API_BASE_URL, isAuthenticated, token]);
 
-  const showNotification = (
-    message: string,
-    type: NotificationType = "success"
-  ): void => {
-    setNotification({ show: true, message, type });
-    setTimeout(() => {
-      setNotification((prev) => ({ ...prev, show: false }));
-    }, 4000);
-  };
-
   const handleAddToCart = (): void => {
     if (!product) return;
     if (getItemQuantity(product.id) >= product.stockQuantity) {
-      showNotification(
-        `Cannot add more than available stock (${product.stockQuantity})`,
-        "error"
+      toast.error(
+        `Cannot add more than available stock (${product.stockQuantity})`
       );
       return;
     }
@@ -294,7 +277,13 @@ const ProductDetail: React.FC = () => {
       img_url: product.images[0] || null,
       stockQuantity: product.stockQuantity,
     });
-    showNotification(`${product.name} added to cart!`, "success");
+    toast.success(`${product.name} added to cart!`);
+  };
+
+  const handleRemoveFromCart = (): void => {
+    if (!product) return;
+    removeFromCart(product.id);
+    toast.info(`${product.name} removed from cart.`);
   };
 
   const handleShare = async (): Promise<void> => {
@@ -311,7 +300,7 @@ const ProductDetail: React.FC = () => {
         console.log("Error sharing:", error);
       }
     } else {
-      showNotification("Product link copied to clipboard!", "info");
+      toast.info("Product link copied to clipboard!");
     }
   };
 
@@ -332,7 +321,7 @@ const ProductDetail: React.FC = () => {
   };
 
   const handleBackToProducts = (): void => {
-    showNotification("Navigating back to products", "info");
+    toast.info("Navigating back to products");
   };
 
   const renderStars = (rating: number) => {
@@ -362,36 +351,9 @@ const ProductDetail: React.FC = () => {
     );
   };
 
-  const renderNotification = () => {
-    if (!notification.show) return null;
-
-    const bgColor = {
-      success: "bg-green-500",
-      error: "bg-red-500",
-      info: "bg-blue-500",
-    }[notification.type];
-
-    return (
-      <div
-        className={`fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2`}
-      >
-        {notification.type === "success" && <CheckCircle className="w-5 h-5" />}
-        {notification.type === "error" && <X className="w-5 h-5" />}
-        {notification.type === "info" && <Eye className="w-5 h-5" />}
-        <span>{notification.message}</span>
-        <button
-          onClick={() => setNotification((prev) => ({ ...prev, show: false }))}
-          className="ml-2"
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-    );
-  };
-
   const handleFavoriteToggle = async () => {
     if (!isAuthenticated || !token || !product) {
-      showNotification("You must be logged in to use favorites.", "error");
+      toast.error("You must be logged in to use favorites.");
       return;
     }
     setIsProcessingFavorite(true);
@@ -399,18 +361,62 @@ const ProductDetail: React.FC = () => {
     try {
       if (!isFav) {
         await addFavorite(product.id.toString());
-        showNotification("Added to favorites!", "success");
+        toast.success("Added to favorites!");
       } else {
         await removeFavorite(product.id.toString());
-        showNotification("Removed from favorites", "info");
+        toast.info("Removed from favorites");
       }
       refreshStats();
     } catch (err) {
-      showNotification("Failed to update favorites.", "error");
+      toast.error("Failed to update favorites.");
     } finally {
       setIsProcessingFavorite(false);
     }
   };
+
+  const getProductsPerSlide = () => {
+    if (typeof window !== "undefined") {
+      if (window.innerWidth >= 1024) return 4; // lg screens
+      if (window.innerWidth >= 768) return 2; // md screens
+      return 1; // mobile
+    }
+    return 4; // default fallback
+  };
+
+  const getTotalSlides = () => {
+    const productsPerSlide = getProductsPerSlide();
+    return Math.ceil(relatedProducts.length / productsPerSlide);
+  };
+
+  const getCurrentSlideProducts = () => {
+    const productsPerSlide = getProductsPerSlide();
+    const startIndex = currentSlide * productsPerSlide;
+    return relatedProducts.slice(startIndex, startIndex + productsPerSlide);
+  };
+
+  // Updated navigation functions:
+  const handleNextSlide = (): void => {
+    const totalSlides = getTotalSlides();
+    setCurrentSlide((prev) => (prev === totalSlides - 1 ? 0 : prev + 1));
+  };
+
+  const handlePrevSlide = (): void => {
+    const totalSlides = getTotalSlides();
+    setCurrentSlide((prev) => (prev === 0 ? totalSlides - 1 : prev - 1));
+  };
+
+  // Add this useEffect to handle screen resize:
+  useEffect(() => {
+    const handleResize = () => {
+      const totalSlides = getTotalSlides();
+      if (currentSlide >= totalSlides) {
+        setCurrentSlide(0);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [currentSlide, relatedProducts.length]);
 
   // Loading state
   if (loading) {
@@ -436,8 +442,6 @@ const ProductDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {renderNotification()}
-
       {/* Header */}
 
       {/* Product Details */}
@@ -603,14 +607,32 @@ const ProductDetail: React.FC = () => {
 
             {/* Action Buttons */}
             <div className="flex gap-4">
-              <button
-                onClick={handleAddToCart}
-                disabled={!product.inStock}
-                className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-              >
-                <ShoppingCart className="w-5 h-5" />
-                Add to Cart
-              </button>
+              {getItemQuantity(product.id) > 0 ? (
+                <button
+                  onClick={handleRemoveFromCart}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-medium shadow-lg shadow-red-200 hover:shadow-red-300 transition-colors flex items-center justify-center gap-2"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  Remove from Cart
+                </button>
+              ) : (
+                <button
+                  onClick={handleAddToCart}
+                  disabled={!product.inStock}
+                  className={`flex-1 w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 text-sm relative overflow-hidden ${
+                    !product.inStock
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-200 hover:shadow-blue-300 transform hover:scale-[1.02] active:scale-[0.98]"
+                  }`}
+                >
+                  <ShoppingCart className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-semibold">Add to Cart</span>
+                  {/* Ripple effect */}
+                  {product.inStock && (
+                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+                  )}
+                </button>
+              )}
 
               <button
                 onClick={handleFavoriteToggle}
@@ -643,7 +665,7 @@ const ProductDetail: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Truck className="w-5 h-5" />
-                <span>Free Shipping</span>
+                <span>Home delivery service</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Shield className="w-5 h-5" />
@@ -651,7 +673,7 @@ const ProductDetail: React.FC = () => {
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <RotateCcw className="w-5 h-5" />
-                <span>30-Day Return</span>
+                <span>7-Day Return</span>
               </div>
             </div>
           </div>
@@ -731,7 +753,8 @@ const ProductDetail: React.FC = () => {
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-gray-500">
-                      No reviews yet. Be the first to review this product!
+                      No reviews yet. Be the first to review by completing an
+                      order!
                     </p>
                   </div>
                 )}
@@ -743,49 +766,113 @@ const ProductDetail: React.FC = () => {
         {/* Related Products */}
         {relatedProducts.length > 0 && (
           <div className="mt-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              Related Products
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {relatedProducts.map((relatedProduct) => (
-                <div
-                  key={relatedProduct.id}
-                  onClick={() => handleRelatedProductClick(relatedProduct)}
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                >
-                  <img
-                    src={relatedProduct.images[0]}
-                    alt={relatedProduct.name}
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="p-4">
-                    <h3 className="font-medium text-gray-900 mb-2 line-clamp-2">
-                      {relatedProduct.name}
-                    </h3>
-                    <div className="flex items-center gap-2 mb-2">
-                      {renderStars(relatedProduct.rating)}
-                      <span className="text-gray-700 font-semibold">
-                        {relatedProduct.rating.toFixed(1)}
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        ({relatedProduct.reviews})
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-gray-900">
-                        {formatCurrency(relatedProduct.price)}
-                      </span>
-                      {relatedProduct.originalPrice &&
-                        relatedProduct.originalPrice > relatedProduct.price && (
-                          <span className="text-sm text-gray-500 line-through">
-                            {formatCurrency(relatedProduct.originalPrice)}
-                          </span>
-                        )}
-                    </div>
-                  </div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+                Related Products
+              </h2>
+              {getTotalSlides() > 1 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handlePrevSlide}
+                    className="p-2 rounded-full bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4 md:w-5 md:h-5 text-gray-600" />
+                  </button>
+                  <button
+                    onClick={handleNextSlide}
+                    className="p-2 rounded-full bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-gray-600" />
+                  </button>
                 </div>
-              ))}
+              )}
             </div>
+
+            <div className="relative overflow-hidden">
+              <div
+                className="flex transition-transform duration-300 ease-in-out"
+                style={{
+                  transform: `translateX(-${currentSlide * 100}%)`,
+                }}
+              >
+                {Array.from({ length: getTotalSlides() }, (_, slideIndex) => {
+                  const productsPerSlide = getProductsPerSlide();
+                  const startIndex = slideIndex * productsPerSlide;
+                  const slideProducts = relatedProducts.slice(
+                    startIndex,
+                    startIndex + productsPerSlide
+                  );
+
+                  return (
+                    <div
+                      key={slideIndex}
+                      className="w-full flex-shrink-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
+                    >
+                      {slideProducts.map((relatedProduct) => (
+                        <div
+                          key={relatedProduct.id}
+                          onClick={() =>
+                            handleRelatedProductClick(relatedProduct)
+                          }
+                          className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer h-full"
+                        >
+                          <img
+                            src={relatedProduct.images[0]}
+                            alt={relatedProduct.name}
+                            className="w-full h-40 md:h-48 object-cover"
+                          />
+                          <div className="p-3 md:p-4">
+                            <h3 className="font-medium text-gray-900 mb-2 text-sm md:text-base line-clamp-2">
+                              {relatedProduct.name}
+                            </h3>
+                            <div className="flex items-center gap-1 md:gap-2 mb-2">
+                              <div className="flex">
+                                {renderStars(relatedProduct.rating)}
+                              </div>
+                              <span className="text-gray-700 font-semibold text-xs md:text-sm">
+                                {relatedProduct.rating.toFixed(1)}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                ({relatedProduct.reviews})
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-gray-900 text-sm md:text-base">
+                                {formatCurrency(relatedProduct.price)}
+                              </span>
+                              {relatedProduct.originalPrice &&
+                                relatedProduct.originalPrice >
+                                  relatedProduct.price && (
+                                  <span className="text-xs md:text-sm text-gray-500 line-through">
+                                    {formatCurrency(
+                                      relatedProduct.originalPrice
+                                    )}
+                                  </span>
+                                )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Slide Indicators */}
+            {getTotalSlides() > 1 && (
+              <div className="flex justify-center mt-4 gap-2">
+                {Array.from({ length: getTotalSlides() }, (_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      currentSlide === index ? "bg-blue-600" : "bg-gray-300"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

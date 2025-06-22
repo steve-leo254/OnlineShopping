@@ -56,6 +56,29 @@ class CategoryResponse(CategoryBase):
     id: int
 
 
+class SubcategoryBase(BaseModel):
+    name: str
+    description: Optional[str]
+    category_id: int
+
+
+class SubcategoryResponse(SubcategoryBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+
+class SubcategoryCreate(SubcategoryBase):
+    pass
+
+
+class SubcategoryUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    category_id: Optional[int] = None
+
+
 class ProductsBase(BaseModel):
     name: str
     cost: float
@@ -64,9 +87,9 @@ class ProductsBase(BaseModel):
     stock_quantity: float
     barcode: int
     category_id: Optional[int]
+    subcategory_id: Optional[int] = None  # New field
     brand: Optional[str]
     description: Optional[str]
-    rating: Optional[float] = 0.0  # New field
     discount: Optional[float] = 0.0  # New field
     is_new: bool = False  # New field
 
@@ -165,6 +188,7 @@ class ProductResponse(ProductsBase):
     created_at: datetime
     user_id: int
     category: Optional[CategoryResponse]
+    subcategory: Optional[SubcategoryResponse]  # New field
     images: Optional[List[ProductImageResponse]] = []
     product_specifications: Optional[List[ProductSpecificationResponse]] = []
     favorites: Optional[List[FavoriteResponse]] = []
@@ -240,7 +264,6 @@ class UpdateProduct(BaseModel):
     category_id: Optional[int]
     brand: Optional[str]
     description: Optional[str]
-    rating: Optional[float] = None  # New field
     discount: Optional[float] = None  # New field
     is_new: Optional[bool] = None  # New field
 
@@ -457,9 +480,9 @@ class ProductCreateRequest(BaseModel):
     stock_quantity: float
     barcode: int
     category_id: Optional[int]
+    subcategory_id: Optional[int] = None  # New field
     brand: Optional[str]
     description: Optional[str]
-    rating: Optional[float] = 0.0
     discount: Optional[float] = 0.0
     is_new: bool = False
     images: Optional[List[ProductImageCreate]] = None
