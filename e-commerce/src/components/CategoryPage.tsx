@@ -994,12 +994,12 @@ const CategoryProductsPage = () => {
         {subcategories.length > 0 && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
                 Browse by Subcategory
               </h2>
               <button
                 onClick={resetFilters}
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                className="text-blue-600 hover:text-blue-700 font-medium text-xs sm:text-sm"
               >
                 Show All Categories
               </button>
@@ -1179,21 +1179,21 @@ const CategoryProductsPage = () => {
         </div>
 
         {/* Products Section Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
               {selectedCategory === "All"
                 ? "All Products"
                 : `${categoryConfig.title} Collection`}
               {selectedSubcategory && ` - ${selectedSubcategory}`}
             </h2>
-            <p className="text-gray-600 flex items-center gap-4">
+            <p className="text-sm sm:text-base text-gray-600 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <span>{sortedProducts.length} products available</span>
               {sortedProducts.length > 0 && (
                 <>
-                  <span className="text-gray-400">•</span>
+                  <span className="hidden sm:inline text-gray-400">•</span>
                   <span className="flex items-center gap-1">
-                    <TrendingUp size={16} />$
+                    <TrendingUp size={14} className="sm:w-4 sm:h-4" />$
                     {Math.min(...sortedProducts.map((p) => p.price || 0))} - $
                     {Math.max(...sortedProducts.map((p) => p.price || 0))}
                   </span>
@@ -1201,7 +1201,7 @@ const CategoryProductsPage = () => {
               )}
             </p>
           </div>
-          <div className="text-sm text-gray-500 bg-white/50 px-3 py-1 rounded-full">
+          <div className="text-xs sm:text-sm text-gray-500 bg-white/50 px-2 sm:px-3 py-1 rounded-full self-start sm:self-auto">
             Showing results for "{selectedCategory}"
             {selectedSubcategory && ` > ${selectedSubcategory}`}
           </div>
