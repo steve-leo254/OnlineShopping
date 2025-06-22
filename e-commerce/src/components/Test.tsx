@@ -422,7 +422,9 @@ const ModernEcommerceHomepage = () => {
             {/* Categories Grid */}
             <div
               className={`grid gap-4 sm:gap-6 overflow-hidden items-stretch transition-all duration-300 ease-in-out ${
-                windowWidth < 640
+                categories.length <= itemsPerSlide
+                  ? `grid-cols-${categories.length}`
+                  : windowWidth < 640
                   ? "grid-cols-2"
                   : windowWidth < 768
                   ? "grid-cols-3"

@@ -23,6 +23,8 @@ import {
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import { formatCurrency } from "../cart/formatCurrency";
+import { useShoppingCart } from "../context/ShoppingCartContext";
+import { toast } from "react-toastify";
 
 // Define types for our data
 type Category = {
@@ -83,6 +85,8 @@ const CategoryProductsPage = () => {
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [categoryConfig, setCategoryConfig] = useState<any>(null);
+
+  const { addToCart, getItemQuantity } = useShoppingCart();
 
   // Get category name from URL or location state
   useEffect(() => {
@@ -668,6 +672,28 @@ const CategoryProductsPage = () => {
     const badges = getProductBadges(product);
     const keySpecs = getKeySpecs(product);
 
+    const handleAddToCart = (product: Product) => {
+      const currentQuantityInCart = getItemQuantity(product.id);
+      if (currentQuantityInCart >= product.stock_quantity) {
+        toast.error(
+          `Cannot add more than available stock (${product.stock_quantity}) for ${product.name}`
+        );
+        return;
+      }
+      try {
+        addToCart({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          img_url: product.images?.[0] || null,
+          stockQuantity: product.stock_quantity,
+        });
+        toast.success(`${product.name} added to cart!`);
+      } catch (error) {
+        toast.error("Failed to add item to cart. Please try again.");
+      }
+    };
+
     return (
       <div
         className="group bg-white/70 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/20 hover:shadow-2xl hover:shadow-blue-100 transition-all duration-500 hover:-translate-y-2"
@@ -831,6 +857,7 @@ const CategoryProductsPage = () => {
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                   : `bg-gradient-to-r ${categoryConfig.gradient} text-white hover:shadow-lg transform hover:scale-105`
               }`}
+              onClick={() => handleAddToCart(product)}
             >
               <ShoppingCart size={16} />
               {product.stock_quantity === 0 ? "Out of Stock" : "Add to Cart"}
