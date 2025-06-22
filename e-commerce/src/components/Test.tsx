@@ -20,6 +20,8 @@ import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "../cart/formatCurrency";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { toast } from "react-toastify";
+import { useFavorites } from "../context/FavoritesContext";
+import { useAuth } from "../context/AuthContext";
 
 // Define types for our data
 type Category = {
@@ -76,6 +78,8 @@ const ModernEcommerceHomepage = () => {
   const [touchEnd, setTouchEnd] = useState(0);
 
   const { addToCart, getItemQuantity } = useShoppingCart();
+  const { favorites, isFavorite, addFavorite, removeFavorite } = useFavorites();
+  const { isAuthenticated } = useAuth();
 
   const heroSlides = [
     {
@@ -217,16 +221,23 @@ const ModernEcommerceHomepage = () => {
     }
   };
 
-  const toggleWishlist = (productId: number) => {
-    setWishlistItems((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(productId)) {
-        newSet.delete(productId);
+  const handleToggleFavorite = async (product: Product) => {
+    if (!isAuthenticated) {
+      toast.error("You must be logged in to use favorites.");
+      return;
+    }
+    const idStr = product.id.toString();
+    try {
+      if (isFavorite(idStr)) {
+        await removeFavorite(idStr);
+        toast.info(`${product.name} removed from favorites.`);
       } else {
-        newSet.add(productId);
+        await addFavorite(idStr);
+        toast.success(`${product.name} added to favorites!`);
       }
-      return newSet;
-    });
+    } catch (err) {
+      toast.error("Failed to update favorites. Please try again.");
+    }
   };
 
   // Navigate to category page
@@ -555,12 +566,12 @@ const ModernEcommerceHomepage = () => {
                             </span>
                           </div>
                           <button
-                            onClick={() => toggleWishlist(product.id)}
+                            onClick={() => handleToggleFavorite(product)}
                             className="absolute top-4 right-4 p-2 bg-white/80 rounded-full hover:bg-white transition-colors"
                           >
                             <Heart
                               className={`w-5 h-5 ${
-                                wishlistItems.has(product.id)
+                                isFavorite(product.id.toString())
                                   ? "fill-red-500 text-red-500"
                                   : "text-gray-600"
                               }`}
