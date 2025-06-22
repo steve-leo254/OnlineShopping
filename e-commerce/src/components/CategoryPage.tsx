@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
+import { formatCurrency } from "../cart/formatCurrency";
 
 // Define types for our data
 type Category = {
@@ -803,20 +804,19 @@ const CategoryProductsPage = () => {
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold text-blue-600">
-                  ${product.price.toLocaleString()}
+                  {formatCurrency(product.price)}
                 </span>
                 {product.original_price &&
                   product.original_price > product.price && (
                     <span className="text-sm text-gray-400 line-through">
-                      ${product.original_price.toLocaleString()}
+                      {formatCurrency(product.original_price)}
                     </span>
                   )}
               </div>
               {discount > 0 && (
                 <span className="text-sm text-green-600 font-medium">
-                  Save $
-                  {(product.original_price - product.price).toLocaleString()} (
-                  {discount}% off)
+                  Save {formatCurrency(product.original_price - product.price)}{" "}
+                  ({discount}% off)
                 </span>
               )}
             </div>
@@ -1132,10 +1132,14 @@ const CategoryProductsPage = () => {
                 className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
               >
                 <option value="all">All Prices</option>
-                <option value="under-500">Under $500</option>
-                <option value="500-1000">$500 - $1,000</option>
-                <option value="1000-2000">$1,000 - $2,000</option>
-                <option value="over-2000">Over $2,000</option>
+                <option value="under-500">Under {formatCurrency(500)}</option>
+                <option value="500-1000">
+                  {formatCurrency(500)} - {formatCurrency(1000)}
+                </option>
+                <option value="1000-2000">
+                  {formatCurrency(1000)} - {formatCurrency(2000)}
+                </option>
+                <option value="over-2000">Over {formatCurrency(2000)}</option>
               </select>
 
               {/* Sort */}
@@ -1193,9 +1197,14 @@ const CategoryProductsPage = () => {
                 <>
                   <span className="hidden sm:inline text-gray-400">•</span>
                   <span className="flex items-center gap-1">
-                    <TrendingUp size={14} className="sm:w-4 sm:h-4" />$
-                    {Math.min(...sortedProducts.map((p) => p.price || 0))} - $
-                    {Math.max(...sortedProducts.map((p) => p.price || 0))}
+                    <TrendingUp size={14} className="sm:w-4 sm:h-4" />
+                    {formatCurrency(
+                      Math.min(...sortedProducts.map((p) => p.price || 0))
+                    )}{" "}
+                    -{" "}
+                    {formatCurrency(
+                      Math.max(...sortedProducts.map((p) => p.price || 0))
+                    )}
                   </span>
                 </>
               )}
