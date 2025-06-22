@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { formatCurrency } from "../cart/formatCurrency";
 
 // Define types for our data
 type Category = {
@@ -488,12 +489,12 @@ const ModernEcommerceHomepage = () => {
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center space-x-2">
                               <span className="text-2xl font-bold text-purple-600">
-                                ${(product.price || 0).toFixed(2)}
+                                {formatCurrency(product.price)}
                               </span>
                               {product.original_price &&
                                 product.original_price > product.price && (
                                   <span className="text-gray-500 line-through">
-                                    ${(product.original_price || 0).toFixed(2)}
+                                    {formatCurrency(product.original_price)}
                                   </span>
                                 )}
                             </div>
@@ -576,12 +577,12 @@ const ModernEcommerceHomepage = () => {
                             </div>
                             <div className="flex items-center mt-1">
                               <span className="text-lg font-bold text-purple-600">
-                                ${(product.price || 0).toFixed(2)}
+                                {formatCurrency(product.price)}
                               </span>
                               {product.original_price &&
                                 product.original_price > product.price && (
                                   <span className="text-xs text-gray-500 line-through ml-2">
-                                    ${(product.original_price || 0).toFixed(2)}
+                                    {formatCurrency(product.original_price)}
                                   </span>
                                 )}
                             </div>
@@ -614,7 +615,7 @@ const ModernEcommerceHomepage = () => {
               {
                 icon: Truck,
                 title: "Free Shipping",
-                desc: "On orders over $100",
+                desc: `On orders over ${formatCurrency(100)}`,
               },
               {
                 icon: Shield,
