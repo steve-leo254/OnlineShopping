@@ -30,7 +30,7 @@ import ReviewPage from "./pages/pending-views";
 import WishList from "./pages/WishList";
 import TermsAndConditions from "./pages/Terms&Condition";
 import { FavoritesProvider } from "./context/FavoritesContext";
-import CategoryManagement from "./components/CategoryManagment";
+
 
 function App() {
   return (
@@ -61,7 +61,6 @@ function App() {
               {/* All other routes with Layout (with chatbot) */}
               <Route element={<Layout />}>
                 <Route path="/termsconditions" element={<TermsAndConditions />} />
-                <Route path="/deletecategory" element={<CategoryManagement onClose={() => {}} />} />
                 <Route path="/pending-reviews" element={<ReviewPage />} />
                 <Route path="/wishlist" element={<WishList />} />
                 <Route index element={<Home />} />
