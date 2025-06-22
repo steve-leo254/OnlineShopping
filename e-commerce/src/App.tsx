@@ -61,12 +61,13 @@ function App() {
               <Route path="/termsconditions" element={<TermsAndConditions />} />
 
               <Route element={<Layout />}>
-                <Route path="/test" element={<ModernEcommerceHomepage />} />
+                <Route index element={<ModernEcommerceHomepage />} />
+                <Route path="/shop" element={<CategoryProductsPage />} />
                 <Route
                   path="/category/:categoryName"
                   element={<CategoryProductsPage />}
                 />
-                <Route index element={<Home />} />
+                <Route path="/home" element={<Home />} />
                 <Route
                   path="/product-details/:id"
                   element={<ProductDetail />}
