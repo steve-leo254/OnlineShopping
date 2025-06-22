@@ -75,6 +75,7 @@ const CategoryProductsPage = () => {
   const [favorites, setFavorites] = useState(new Set<number>());
   const [isLoading, setIsLoading] = useState(true);
   const [subcategoryCarouselIndex, setSubcategoryCarouselIndex] = useState(0);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   // Database state
   const [categories, setCategories] = useState<Category[]>([]);
@@ -241,6 +242,16 @@ const CategoryProductsPage = () => {
       setCategoryConfig(config);
     }
   }, [selectedCategory]);
+
+  // Window resize listener for responsive carousel
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Get category configuration
   const getCategoryConfig = (categoryName: string) => {
@@ -431,14 +442,20 @@ const CategoryProductsPage = () => {
 
   // Subcategory carousel navigation
   const nextSubcategorySlide = () => {
+    // Responsive items per slide based on screen size
+    const itemsPerSlide = windowWidth < 640 ? 2 : windowWidth < 1024 ? 3 : 4;
     setSubcategoryCarouselIndex((prev) =>
-      prev + 4 >= subcategories.length ? 0 : prev + 4
+      prev + itemsPerSlide >= subcategories.length ? 0 : prev + itemsPerSlide
     );
   };
 
   const prevSubcategorySlide = () => {
+    // Responsive items per slide based on screen size
+    const itemsPerSlide = windowWidth < 640 ? 2 : windowWidth < 1024 ? 3 : 4;
     setSubcategoryCarouselIndex((prev) =>
-      prev - 4 < 0 ? Math.max(0, subcategories.length - 4) : prev - 4
+      prev - itemsPerSlide < 0
+        ? Math.max(0, subcategories.length - itemsPerSlide)
+        : prev - itemsPerSlide
     );
   };
 
@@ -990,47 +1007,51 @@ const CategoryProductsPage = () => {
 
             {/* Subcategory Carousel */}
             <div className="relative">
-              {/* Navigation Buttons */}
-              {subcategories.length > 4 && (
+              {/* Navigation Buttons - Show when there are more items than can fit */}
+              {subcategories.length > 2 && (
                 <>
                   <button
                     onClick={prevSubcategorySlide}
-                    className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
+                    className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hidden sm:flex"
                   >
                     <ChevronLeft className="w-6 h-6 text-gray-700" />
                   </button>
 
                   <button
                     onClick={nextSubcategorySlide}
-                    className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
+                    className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hidden sm:flex"
                   >
                     <ChevronRight className="w-6 h-6 text-gray-700" />
                   </button>
                 </>
               )}
 
-              {/* Subcategories Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 overflow-hidden">
+              {/* Subcategories Grid - Responsive */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 overflow-hidden">
                 {subcategories
-                  .slice(subcategoryCarouselIndex, subcategoryCarouselIndex + 4)
+                  .slice(
+                    subcategoryCarouselIndex,
+                    subcategoryCarouselIndex +
+                      (windowWidth < 640 ? 2 : windowWidth < 1024 ? 3 : 4)
+                  )
                   .map((subcategory) => (
                     <button
                       key={subcategory.id}
                       onClick={() => handleSubcategoryChange(subcategory.name)}
-                      className={`p-4 rounded-xl text-center transition-all duration-300 hover:scale-105 ${
+                      className={`p-3 sm:p-4 rounded-xl text-center transition-all duration-300 hover:scale-105 ${
                         selectedSubcategory === subcategory.name
                           ? `bg-gradient-to-r ${categoryConfig.gradient} text-white shadow-lg`
                           : "bg-white/60 backdrop-blur-sm border border-white/20 hover:bg-white/80"
                       }`}
                     >
-                      <div className="text-2xl mb-2">
+                      <div className="text-xl sm:text-2xl mb-2">
                         {getCategoryIcon(subcategory.name)}
                       </div>
-                      <h3 className="font-semibold text-sm">
+                      <h3 className="font-semibold text-xs sm:text-sm">
                         {subcategory.name}
                       </h3>
                       {subcategory.description && (
-                        <p className="text-xs mt-1 opacity-75">
+                        <p className="text-xs mt-1 opacity-75 hidden sm:block">
                           {subcategory.description}
                         </p>
                       )}
@@ -1038,22 +1059,43 @@ const CategoryProductsPage = () => {
                   ))}
               </div>
 
-              {/* Carousel Indicators */}
-              {subcategories.length > 4 && (
+              {/* Carousel Indicators - Responsive */}
+              {subcategories.length > 2 && (
                 <div className="flex justify-center mt-4 space-x-2">
                   {Array.from({
-                    length: Math.ceil(subcategories.length / 4),
+                    length: Math.ceil(
+                      subcategories.length /
+                        (windowWidth < 640 ? 2 : windowWidth < 1024 ? 3 : 4)
+                    ),
                   }).map((_, index) => (
                     <button
                       key={index}
-                      className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                        index === Math.floor(subcategoryCarouselIndex / 4)
+                      className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-300 ${
+                        index ===
+                        Math.floor(
+                          subcategoryCarouselIndex /
+                            (windowWidth < 640 ? 2 : windowWidth < 1024 ? 3 : 4)
+                        )
                           ? "bg-blue-600"
                           : "bg-gray-300 hover:bg-gray-400"
                       }`}
-                      onClick={() => setSubcategoryCarouselIndex(index * 4)}
+                      onClick={() =>
+                        setSubcategoryCarouselIndex(
+                          index *
+                            (windowWidth < 640 ? 2 : windowWidth < 1024 ? 3 : 4)
+                        )
+                      }
                     />
                   ))}
+                </div>
+              )}
+
+              {/* Mobile Swipe Instructions */}
+              {subcategories.length > 2 && (
+                <div className="text-center mt-2 sm:hidden">
+                  <p className="text-xs text-gray-500">
+                    Swipe to see more categories
+                  </p>
                 </div>
               )}
             </div>
