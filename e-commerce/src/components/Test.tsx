@@ -18,6 +18,8 @@ import {
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "../cart/formatCurrency";
+import { useShoppingCart } from "../context/ShoppingCartContext";
+import { toast } from "react-toastify";
 
 // Define types for our data
 type Category = {
@@ -72,6 +74,8 @@ const ModernEcommerceHomepage = () => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
+
+  const { addToCart, getItemQuantity } = useShoppingCart();
 
   const heroSlides = [
     {
@@ -191,8 +195,26 @@ const ModernEcommerceHomepage = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const addToCart = (productId: number) => {
-    setCartCount((prev) => prev + 1);
+  const handleAddToCart = (product: Product) => {
+    const currentQuantityInCart = getItemQuantity(product.id);
+    if (currentQuantityInCart >= product.stock_quantity) {
+      toast.error(
+        `Cannot add more than available stock (${product.stock_quantity}) for ${product.name}`
+      );
+      return;
+    }
+    try {
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        img_url: product.images?.[0] || null,
+        stockQuantity: product.stock_quantity,
+      });
+      toast.success(`${product.name} added to cart!`);
+    } catch (error) {
+      toast.error("Failed to add item to cart. Please try again.");
+    }
   };
 
   const toggleWishlist = (productId: number) => {
@@ -596,7 +618,7 @@ const ModernEcommerceHomepage = () => {
                           </div>
 
                           <button
-                            onClick={() => addToCart(product.id)}
+                            onClick={() => handleAddToCart(product)}
                             className="w-full bg-purple-600 text-white py-3 rounded-xl hover:bg-purple-700 transition-colors font-semibold"
                           >
                             Add to Cart
@@ -684,7 +706,7 @@ const ModernEcommerceHomepage = () => {
                           </div>
 
                           <button
-                            onClick={() => addToCart(product.id)}
+                            onClick={() => handleAddToCart(product)}
                             className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition-colors opacity-0 group-hover:opacity-100"
                           >
                             <ShoppingCart className="w-4 h-4" />
