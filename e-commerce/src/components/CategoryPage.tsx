@@ -829,13 +829,6 @@ const CategoryProductsPage = () => {
                     <span className="text-sm text-gray-500 font-medium">
                       {formatProductSpecs(product)}
                     </span>
-                    {product.is_new && (
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full bg-gradient-to-r ${categoryConfig.gradient} text-white font-medium`}
-                      >
-                        New
-                      </span>
-                    )}
                   </div>
 
                   <h3 className="text-xl font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
