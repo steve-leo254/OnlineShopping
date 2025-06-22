@@ -69,6 +69,9 @@ const ModernEcommerceHomepage = () => {
   const [topRatedProducts, setTopRatedProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [categoryCarouselIndex, setCategoryCarouselIndex] = useState(0);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
 
   const heroSlides = [
     {
@@ -214,17 +217,73 @@ const ModernEcommerceHomepage = () => {
     });
   };
 
+  // Calculate items per slide based on screen size
+  const getItemsPerSlide = () => {
+    if (windowWidth < 640) return 2; // mobile: 2 items
+    if (windowWidth < 768) return 3; // small tablet: 3 items
+    if (windowWidth < 1024) return 4; // tablet: 4 items
+    if (windowWidth < 1280) return 5; // small desktop: 5 items
+    return 6; // large desktop: 6 items
+  };
+
+  const itemsPerSlide = getItemsPerSlide();
+  const totalSlides = Math.ceil(categories.length / itemsPerSlide);
+
+  // Touch handlers for mobile swipe
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) {
+      nextCategorySlide();
+    }
+    if (isRightSwipe) {
+      prevCategorySlide();
+    }
+
+    // Reset values
+    setTouchStart(0);
+    setTouchEnd(0);
+  };
+
+  // Update window width on resize
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+      // Reset carousel index when screen size changes to prevent out-of-bounds
+      setCategoryCarouselIndex(0);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   // Category carousel navigation
   const nextCategorySlide = () => {
-    setCategoryCarouselIndex((prev) =>
-      prev + 3 >= categories.length ? 0 : prev + 3
-    );
+    setCategoryCarouselIndex((prev) => {
+      const nextIndex = prev + itemsPerSlide;
+      return nextIndex >= categories.length ? 0 : nextIndex;
+    });
   };
 
   const prevCategorySlide = () => {
-    setCategoryCarouselIndex((prev) =>
-      prev - 3 < 0 ? Math.max(0, categories.length - 3) : prev - 3
-    );
+    setCategoryCarouselIndex((prev) => {
+      const prevIndex = prev - itemsPerSlide;
+      return prevIndex < 0
+        ? Math.max(0, categories.length - itemsPerSlide)
+        : prevIndex;
+    });
   };
 
   // Get product image URL
@@ -329,40 +388,74 @@ const ModernEcommerceHomepage = () => {
 
           {/* Category Carousel */}
           <div className="relative">
+            {/* Mobile Swipe Instruction */}
+            <div className="sm:hidden text-center mb-4">
+              <p className="text-sm text-gray-500 flex items-center justify-center">
+                <span className="mr-2">👆</span>
+                {totalSlides > 1
+                  ? "Swipe to see more categories"
+                  : "All categories shown"}
+              </p>
+              {totalSlides > 1 && (
+                <p className="text-xs text-gray-400 mt-1">
+                  {Math.floor(categoryCarouselIndex / itemsPerSlide) + 1} of{" "}
+                  {totalSlides}
+                </p>
+              )}
+            </div>
+
             {/* Navigation Buttons */}
             <button
               onClick={prevCategorySlide}
-              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hidden sm:flex items-center justify-center"
             >
               <ChevronLeft className="w-6 h-6 text-gray-700" />
             </button>
 
             <button
               onClick={nextCategorySlide}
-              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hidden sm:flex items-center justify-center"
             >
               <ChevronRight className="w-6 h-6 text-gray-700" />
             </button>
 
             {/* Categories Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 overflow-hidden items-stretch">
+            <div
+              className={`grid gap-4 sm:gap-6 overflow-hidden items-stretch transition-all duration-300 ease-in-out ${
+                windowWidth < 640
+                  ? "grid-cols-2"
+                  : windowWidth < 768
+                  ? "grid-cols-3"
+                  : windowWidth < 1024
+                  ? "grid-cols-4"
+                  : windowWidth < 1280
+                  ? "grid-cols-5"
+                  : "grid-cols-6"
+              }`}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
               {categories
-                .slice(categoryCarouselIndex, categoryCarouselIndex + 6)
+                .slice(
+                  categoryCarouselIndex,
+                  categoryCarouselIndex + itemsPerSlide
+                )
                 .map((category, index) => (
                   <div
-                    key={category.id}
-                    className="group cursor-pointer flex"
+                    key={`${category.id}-${categoryCarouselIndex}`}
+                    className="group cursor-pointer flex touch-manipulation animate-fadeIn"
                     onClick={() => handleCategoryClick(category.name)}
                   >
                     <div
                       className={`${getCategoryColor(
                         category.name
-                      )} rounded-2xl p-8 text-center hover:shadow-2xl transform hover:scale-105 transition-all duration-300 h-48 flex flex-col justify-center items-center`}
+                      )} rounded-2xl p-4 sm:p-6 lg:p-8 text-center hover:shadow-2xl transform hover:scale-105 transition-all duration-300 h-32 sm:h-40 lg:h-48 flex flex-col justify-center items-center w-full`}
                     >
-                      <div className="text-4xl mb-4">
+                      <div className="text-2xl sm:text-3xl lg:text-4xl mb-2 sm:mb-3 lg:mb-4">
                         {getCategoryIcon(category.name)}
                       </div>
-                      <h3 className="text-white font-semibold">
+                      <h3 className="text-white font-semibold text-sm sm:text-base">
                         {category.name}
                       </h3>
                     </div>
@@ -371,20 +464,20 @@ const ModernEcommerceHomepage = () => {
             </div>
 
             {/* Carousel Indicators */}
-            <div className="flex justify-center mt-6 space-x-2">
-              {Array.from({ length: Math.ceil(categories.length / 6) }).map(
-                (_, index) => (
-                  <button
-                    key={index}
-                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                      index === Math.floor(categoryCarouselIndex / 6)
-                        ? "bg-purple-600"
-                        : "bg-gray-300 hover:bg-gray-400"
-                    }`}
-                    onClick={() => setCategoryCarouselIndex(index * 6)}
-                  />
-                )
-              )}
+            <div className="flex justify-center mt-4 sm:mt-6 space-x-2">
+              {Array.from({ length: totalSlides }).map((_, index) => (
+                <button
+                  key={index}
+                  className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-300 ${
+                    index === Math.floor(categoryCarouselIndex / itemsPerSlide)
+                      ? "bg-purple-600"
+                      : "bg-gray-300 hover:bg-gray-400"
+                  }`}
+                  onClick={() =>
+                    setCategoryCarouselIndex(index * itemsPerSlide)
+                  }
+                />
+              ))}
             </div>
           </div>
         </div>
