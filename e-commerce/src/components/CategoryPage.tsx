@@ -91,7 +91,7 @@ const CategoryProductsPage = () => {
     if (!categoryName) {
       const pathSegments = location.pathname.split("/");
       const categoryFromUrl = pathSegments[pathSegments.length - 1];
-      
+
       // Handle /shop route - set to "All"
       if (categoryFromUrl === "shop") {
         categoryName = "All";
@@ -932,7 +932,7 @@ const CategoryProductsPage = () => {
       className={`min-h-screen bg-gradient-to-br ${categoryConfig.bgGradient}`}
     >
       {/* Category Hero Banner */}
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden hidden md:block">
         <div
           className="h-80 bg-cover bg-center relative"
           style={{ backgroundImage: `url(${categoryConfig.banner})` }}

@@ -33,6 +33,8 @@ const Bar: React.FC = () => {
   // State for mobile navigation
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [isMobileShopDropdownOpen, setIsMobileShopDropdownOpen] =
+    useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
 
   // Initialize Flowbite (if available) on component mount
@@ -61,6 +63,7 @@ const Bar: React.FC = () => {
   useEffect(() => {
     setIsMobileMenuOpen(false);
     setIsCategoryDropdownOpen(false);
+    setIsMobileShopDropdownOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -561,7 +564,7 @@ const Bar: React.FC = () => {
                   className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur text-white text-sm font-medium rounded-lg hover:bg-white/20 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md border border-white/20"
                 >
                   <svg
-                    className="w-4 h-4 mr-2"
+                    className="w-4 h-4 md:mr-2"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -573,7 +576,7 @@ const Bar: React.FC = () => {
                       d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
                     />
                   </svg>
-                  Sign In
+                  <span className="hidden md:inline">Sign In</span>
                 </Link>
               )}
 
@@ -599,32 +602,52 @@ const Bar: React.FC = () => {
                   Home
                 </Link>
 
-                {/* Mobile Shop Section */}
+                {/* Mobile Shop Dropdown */}
                 <div className="border-t border-white/20 pt-2">
-                  <div className="px-3 py-2 text-white/70 text-sm font-medium">
-                    Shop
-                  </div>
                   <button
-                    onClick={() => {
-                      handleShopClick();
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="block w-full text-left px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
+                    onClick={() =>
+                      setIsMobileShopDropdownOpen(!isMobileShopDropdownOpen)
+                    }
+                    className="flex items-center justify-between w-full px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
                   >
-                    All Categories
+                    <span className="text-white/70 text-sm font-medium">
+                      Shop
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        isMobileShopDropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
                   </button>
-                  {categories.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() => {
-                        handleCategoryClick(category.name);
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="block w-full text-left px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
-                    >
-                      {category.name}
-                    </button>
-                  ))}
+
+                  {/* Mobile Shop Dropdown Content */}
+                  {isMobileShopDropdownOpen && (
+                    <div className="ml-4 mt-2 space-y-1">
+                      <button
+                        onClick={() => {
+                          handleShopClick();
+                          setIsMobileMenuOpen(false);
+                          setIsMobileShopDropdownOpen(false);
+                        }}
+                        className="block w-full text-left px-3 py-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200 text-sm"
+                      >
+                        All Categories
+                      </button>
+                      {categories.map((category) => (
+                        <button
+                          key={category.id}
+                          onClick={() => {
+                            handleCategoryClick(category.name);
+                            setIsMobileMenuOpen(false);
+                            setIsMobileShopDropdownOpen(false);
+                          }}
+                          className="block w-full text-left px-3 py-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200 text-sm"
+                        >
+                          {category.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <Link
