@@ -91,7 +91,11 @@ const CategoryProductsPage = () => {
     if (!categoryName) {
       const pathSegments = location.pathname.split("/");
       const categoryFromUrl = pathSegments[pathSegments.length - 1];
-      if (categoryFromUrl && categoryFromUrl !== "category") {
+      
+      // Handle /shop route - set to "All"
+      if (categoryFromUrl === "shop") {
+        categoryName = "All";
+      } else if (categoryFromUrl && categoryFromUrl !== "category") {
         // Convert URL format back to category name (e.g., "pc-components" -> "PC Components")
         categoryName = categoryFromUrl
           .split("-")
@@ -927,44 +931,6 @@ const CategoryProductsPage = () => {
     <div
       className={`min-h-screen bg-gradient-to-br ${categoryConfig.bgGradient}`}
     >
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-lg border-b border-white/20 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-8">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                {categoryConfig.title}
-              </h1>
-              <nav className="hidden md:flex space-x-6">
-                <button
-                  onClick={() => handleCategoryChange("All")}
-                  className={`px-4 py-2 rounded-full transition-all duration-300 ${
-                    selectedCategory === "All"
-                      ? "bg-blue-100 text-blue-700 font-semibold"
-                      : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
-                  }`}
-                >
-                  All
-                </button>
-                {categories.map((category) => (
-                  <button
-                    key={category.name}
-                    onClick={() => handleCategoryChange(category.name)}
-                    className={`px-4 py-2 rounded-full transition-all duration-300 ${
-                      selectedCategory === category.name
-                        ? "bg-blue-100 text-blue-700 font-semibold"
-                        : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
-                    }`}
-                  >
-                    {category.name}
-                  </button>
-                ))}
-              </nav>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Category Hero Banner */}
       <div className="relative overflow-hidden">
         <div
