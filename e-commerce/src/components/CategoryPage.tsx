@@ -1125,22 +1125,6 @@ const CategoryProductsPage = () => {
                 />
               </div>
 
-              {/* Subcategory Filter */}
-              {subcategories.length > 0 && (
-                <select
-                  value={selectedSubcategory}
-                  onChange={(e) => handleSubcategoryChange(e.target.value)}
-                  className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
-                >
-                  <option value="">All Subcategories</option>
-                  {subcategories.map((subcategory) => (
-                    <option key={subcategory.id} value={subcategory.name}>
-                      {subcategory.name}
-                    </option>
-                  ))}
-                </select>
-              )}
-
               {/* Price Filter */}
               <select
                 value={priceRange}
