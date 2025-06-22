@@ -694,7 +694,7 @@ const CategoryProductsPage = () => {
           id: product.id,
           name: product.name,
           price: product.price,
-          img_url: product.images?.[0] || null,
+          img_url: product.images?.[0]?.img_url || null,
           stockQuantity: product.stock_quantity,
         });
         toast.success(`${product.name} added to cart!`);
@@ -749,9 +749,13 @@ const CategoryProductsPage = () => {
               />
             </button>
             <button
-              onClick={handleToggleFavorite}
+              onClick={() => handleToggleFavorite(product)}
               className="p-2 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-all duration-300 hover:scale-110 shadow-lg"
-              title="Add to Favorites"
+              title={
+                isFavorite(product.id.toString())
+                  ? "Remove from Favorites"
+                  : "Add to Favorites"
+              }
             >
               <Heart
                 size={18}
