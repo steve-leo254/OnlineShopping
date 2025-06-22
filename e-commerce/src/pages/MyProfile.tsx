@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
+import { formatCurrency } from "../cart/formatCurrency";
 
 interface Order {
   order_id: number;
@@ -48,9 +50,12 @@ const AccountProfile: React.FC = () => {
 
       try {
         // Fetch user data
-        const userResponse = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const userResponse = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/me`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         setUser(userResponse.data);
 
         // Fetch user addresses
@@ -564,7 +569,7 @@ const AccountProfile: React.FC = () => {
                           Total
                         </p>
                         <p className="font-bold text-slate-900 text-sm sm:text-lg">
-                          KSh {order.total.toLocaleString()}
+                          {formatCurrency(order.total)}
                         </p>
                       </div>
                     </div>
