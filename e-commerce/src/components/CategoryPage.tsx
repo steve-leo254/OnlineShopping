@@ -249,12 +249,6 @@ const CategoryProductsPage = () => {
           "Full HD+ Displays",
           "2-Year Warranty",
         ],
-        categories: [
-          { name: "Gaming Laptops", icon: Gamepad2, count: 12 },
-          { name: "Business Laptops", icon: Laptop, count: 18 },
-          { name: "Ultrabooks", icon: Laptop, count: 15 },
-          { name: "Workstations", icon: Cpu, count: 8 },
-        ],
       },
       Smartphones: {
         title: "Smartphones & Mobile",
@@ -271,12 +265,6 @@ const CategoryProductsPage = () => {
           "Pro Cameras",
           "Fast Charging",
           "Premium Materials",
-        ],
-        categories: [
-          { name: "Android Phones", icon: Smartphone, count: 25 },
-          { name: "iPhones", icon: Smartphone, count: 12 },
-          { name: "Budget Phones", icon: Smartphone, count: 20 },
-          { name: "Accessories", icon: Battery, count: 35 },
         ],
       },
       "PC Components": {
@@ -295,12 +283,6 @@ const CategoryProductsPage = () => {
           "Overclocking Support",
           "Expert Assembly",
         ],
-        categories: [
-          { name: "Processors", icon: Cpu, count: 16 },
-          { name: "Graphics Cards", icon: Monitor, count: 14 },
-          { name: "Memory & Storage", icon: HardDrive, count: 22 },
-          { name: "Motherboards", icon: Cpu, count: 18 },
-        ],
       },
       Accessories: {
         title: "Electronics Accessories",
@@ -317,12 +299,6 @@ const CategoryProductsPage = () => {
           "Wireless Technology",
           "Ergonomic Design",
           "Multi-Device Support",
-        ],
-        categories: [
-          { name: "Audio & Headphones", icon: Headphones, count: 28 },
-          { name: "Keyboards & Mice", icon: Keyboard, count: 24 },
-          { name: "Monitors & Displays", icon: Monitor, count: 16 },
-          { name: "Networking", icon: Wifi, count: 12 },
         ],
       },
     };
@@ -343,7 +319,6 @@ const CategoryProductsPage = () => {
           "Best Prices",
           "Customer Support",
         ],
-        categories: [],
       }
     );
   };
@@ -564,27 +539,6 @@ const CategoryProductsPage = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Category Statistics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {categoryConfig.categories.map((cat: any, index: number) => {
-            const CatIcon = cat.icon;
-            return (
-              <div
-                key={index}
-                className="bg-white/60 backdrop-blur-sm rounded-xl p-4 text-center border border-white/20"
-              >
-                <div
-                  className={`inline-flex p-3 rounded-full bg-gradient-to-r ${categoryConfig.gradient} text-white mb-2`}
-                >
-                  <CatIcon size={24} />
-                </div>
-                <h3 className="font-semibold text-gray-900">{cat.name}</h3>
-                <p className="text-sm text-gray-600">{cat.count} items</p>
-              </div>
-            );
-          })}
-        </div>
-
         {/* Subcategories Section */}
         {subcategories.length > 0 && (
           <div className="mb-8">
