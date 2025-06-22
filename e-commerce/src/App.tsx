@@ -30,7 +30,7 @@ import ReviewPage from "./pages/pending-views";
 import WishList from "./pages/WishList";
 import TermsAndConditions from "./pages/Terms&Condition";
 import { FavoritesProvider } from "./context/FavoritesContext";
-import CategoryManagement from "./components/CategoryManagment";
+
 
 function App() {
   return (
@@ -60,7 +60,6 @@ function App() {
 
               <Route element={<Layout />}>
                 <Route path="/termsconditions" element={<TermsAndConditions />} />
-                <Route path="/deletecategory" element={<CategoryManagement onClose={() => {}} />} />
                 <Route path="/pending-reviews" element={<ReviewPage />} />
                 <Route path="/wishlist" element={<WishList />} />
                 <Route index element={<Home />} />
@@ -75,10 +74,6 @@ function App() {
               </Route>
               <Route element={<ProtectedRoute />}>
                 <Route element={<Layout />}>
-                  <Route
-                    path="/category-management"
-                    element={<CategoryManagement />}
-                  />
                   <Route path="/pending-reviews" element={<ReviewPage />} />
                   <Route path="/wishlist" element={<WishList />} />
                   <Route path="/products" element={<Products />} />
