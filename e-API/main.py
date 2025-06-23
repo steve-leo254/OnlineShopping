@@ -1887,6 +1887,15 @@ async def get_all_banners(user: user_dependency, db: db_dependency):
         raise HTTPException(status_code=500, detail="Error fetching banners")
 
 
+@app.get("/my-reviews", response_model=List[ReviewResponse])
+async def get_my_reviews(db: db_dependency, user: user_dependency):
+    """Get all reviews by the authenticated user"""
+    reviews = (
+        db.query(models.Review).filter(models.Review.user_id == user.get("id")).all()
+    )
+    return reviews
+
+
 if __name__ == "__main__":
     import uvicorn
 

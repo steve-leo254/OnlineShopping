@@ -230,13 +230,7 @@ const Bar: React.FC = () => {
                     )}
                   </div>
 
-                  <Link
-                    to="/store"
-                    className="relative text-white/90 hover:text-white px-3 py-2 text-sm font-medium transition-all duration-200 group"
-                  >
-                    Today's Deals
-                    <span className="absolute inset-x-0 bottom-0 h-0.5 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
-                  </Link>
+                 
                   <Link
                     to="/about"
                     className="relative text-white/90 hover:text-white px-3 py-2 text-sm font-medium transition-all duration-200 group"
@@ -641,13 +635,6 @@ const Bar: React.FC = () => {
                   )}
                 </div>
 
-                <Link
-                  to="/store"
-                  className="block px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Today's Deals
-                </Link>
                 <Link
                   to="/about"
                   className="block px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"

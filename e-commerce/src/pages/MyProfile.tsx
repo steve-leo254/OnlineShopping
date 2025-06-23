@@ -4,6 +4,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { formatCurrency } from "../cart/formatCurrency";
+import { useFavorites } from "../context/FavoritesContext";
 
 interface Order {
   order_id: number;
@@ -32,6 +33,7 @@ interface User {
 
 const AccountProfile: React.FC = () => {
   const { token } = useAuth();
+  const { favorites } = useFavorites();
   const [user, setUser] = useState<User | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -39,6 +41,7 @@ const AccountProfile: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [reviewCount, setReviewCount] = useState<number>(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -75,6 +78,15 @@ const AccountProfile: React.FC = () => {
           }
         );
         setOrders(ordersResponse.data.items || []);
+
+        // Fetch review count
+        const reviewResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/my-reviews`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (reviewResponse.ok) {
+          const data = await reviewResponse.json();
+          setReviewCount(Array.isArray(data) ? data.length : 0);
+        }
 
         setLoading(false);
       } catch (err) {
@@ -281,14 +293,14 @@ const AccountProfile: React.FC = () => {
             },
             {
               title: "Reviews Added",
-              value: 0,
+              value: reviewCount,
               change: "+2.6%",
               icon: "⭐",
-              color: "from-purple-500 to-purple-600",
+              color: "from-yellow-400 to-yellow-500",
             },
             {
               title: "Favorites",
-              value: 0,
+              value: favorites.size,
               change: "+1.2%",
               icon: "❤️",
               color: "from-pink-500 to-pink-600",
