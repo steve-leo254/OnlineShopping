@@ -222,9 +222,9 @@ const TermsAndConditions: React.FC = () => {
               <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                 <Phone className="w-8 h-8 text-white" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Call Us</h3>
-              <a href="tel:+254758510206" className="text-gray-600">
-                +254 758510206
+              <h3 className="font-semibold text-gray-900 mb-2">Whatsapp Us</h3>
+              <a href="https://wa.me/254117802561" className="text-gray-600">
+                +254117802561
               </a>
             </div>
             <div className="text-center group">
