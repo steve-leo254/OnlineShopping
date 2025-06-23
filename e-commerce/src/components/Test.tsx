@@ -1,482 +1,858 @@
 import React, { useState, useEffect } from "react";
 import {
   ShoppingCart,
-  Search as SearchIcon,
+  Search,
+  Menu,
+  X,
   Star,
+  ArrowRight,
+  Heart,
+  User,
   Truck,
   Shield,
+  Headphones,
   RotateCcw,
   ChevronLeft,
   ChevronRight,
-
-  User,
-  Menu
 } from "lucide-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { formatCurrency } from "../cart/formatCurrency";
+import { useShoppingCart } from "../context/ShoppingCartContext";
+import { toast } from "react-toastify";
+import { useFavorites } from "../context/FavoritesContext";
+import { useAuth } from "../context/AuthContext";
 
-// Types
-interface Category {
+// Define types for our data
+type Category = {
   id: number;
   name: string;
-}
-interface Product {
+  description: string | null;
+};
+
+type Product = {
   id: number;
   name: string;
   price: number;
   original_price: number;
   rating: number;
+  stock_quantity: number;
+  category_id: number;
+  subcategory_id: number | null;
+  brand: string;
+  description: string;
   discount: number;
   is_new: boolean;
   category: Category;
-  images: Array<{ id: number; img_url: string }>;
-}
-
-const categoryIcons: Record<string, React.ReactNode> = {
-  "Kili Featured": <Star className="w-5 h-5 inline-block mr-2 text-yellow-500" />,
-  "TV,Audio&Video": <Truck className="w-5 h-5 inline-block mr-2 text-blue-500" />,
-  "Phones & Accessories": <SearchIcon className="w-5 h-5 inline-block mr-2 text-green-500" />,
-  "Home & Kitchen": <Shield className="w-5 h-5 inline-block mr-2 text-purple-500" />,
-  "Appliances": <RotateCcw className="w-5 h-5 inline-block mr-2 text-indigo-500" />,
-  "Bags": <ShoppingCart className="w-5 h-5 inline-block mr-2 text-orange-500" />,
-  "Clothes": <User className="w-5 h-5 inline-block mr-2 text-gray-500" />,
-  "Watches & Jewellery": <Star className="w-5 h-5 inline-block mr-2 text-yellow-400" />,
-  "Computers & Accessories": <SearchIcon className="w-5 h-5 inline-block mr-2 text-blue-400" />,
+  subcategory?: {
+    id: number;
+    name: string;
+    description: string | null;
+  };
+  images: Array<{
+    id: number;
+    img_url: string;
+  }>;
+  reviews: Array<{
+    id: number;
+    rating: number;
+    comment: string;
+  }>;
 };
 
-const carouselImages = [
-  {
-    url: "https://images.unsplash.com/photo-1513708927688-890a5b7e1d3a?auto=format&fit=crop&w=1200&q=80",
-    caption: "Up to 50% OFF on Home Appliances!",
-    cta: "Shop Appliances",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80",
-    caption: "Get Free Gifts on Select Phones!",
-    cta: "See Phones",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1200&q=80",
-    caption: "New Arrivals: Fashion & More",
-    cta: "Explore Fashion",
-  },
-];
-
-const Test: React.FC = () => {
+const ModernEcommerceHomepage = () => {
   const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [flashSaleEnd, setFlashSaleEnd] = useState<Date | null>(null);
-  const [flashSaleProducts, setFlashSaleProducts] = useState<Product[]>([]);
-  const [carouselIndex, setCarouselIndex] = useState(0);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("What's New");
-  const [flashSalesTimeLeft, setFlashSalesTimeLeft] = useState(25 * 60 + 48); // 25m 48s in seconds
-  const [flippingCardIndex, setFlippingCardIndex] = useState(0); // State to track the flipping card
+  const [cartCount, setCartCount] = useState(0);
+  const [wishlistItems, setWishlistItems] = useState(new Set());
 
-  // Fetch categories and products
+  // Database state
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [topRatedProducts, setTopRatedProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [categoryCarouselIndex, setCategoryCarouselIndex] = useState(0);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
+
+  const { addToCart, getItemQuantity } = useShoppingCart();
+  const { favorites, isFavorite, addFavorite, removeFavorite } = useFavorites();
+  const { isAuthenticated } = useAuth();
+
+  const heroSlides = [
+    {
+      title: "Summer Collection 2025",
+      subtitle: "Discover the latest trends",
+      cta: "Shop Now",
+      bg: "from-purple-600 via-pink-600 to-blue-600",
+      image:
+        "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800&h=600&fit=crop",
+    },
+    {
+      title: "Premium Quality",
+      subtitle: "Crafted for perfection",
+      cta: "Explore",
+      bg: "from-emerald-600 via-teal-600 to-cyan-600",
+      image:
+        "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&h=600&fit=crop",
+    },
+    {
+      title: "Exclusive Deals",
+      subtitle: "Up to 70% off",
+      cta: "Save Now",
+      bg: "from-orange-600 via-red-600 to-pink-600",
+      image:
+        "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=800&h=600&fit=crop",
+    },
+  ];
+
+  // Fetch categories from database
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get<Category[]>(
+        `${import.meta.env.VITE_API_BASE_URL}/public/categories`
+      );
+      setCategories(response.data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
+
+  // Fetch featured products (one per category, max 6)
+  const fetchFeaturedProducts = async () => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/public/products?limit=50`
+      );
+
+      const products = response.data.items;
+
+      // Group products by category and select one from each
+      const productsByCategory = products.reduce(
+        (acc: Record<number, Product[]>, product: Product) => {
+          if (!acc[product.category_id]) {
+            acc[product.category_id] = [];
+          }
+          acc[product.category_id].push(product);
+          return acc;
+        },
+        {}
+      );
+
+      // Select one product from each category (preferably with highest rating)
+      const featured = Object.values(productsByCategory)
+        .map(
+          (categoryProducts: any) =>
+            categoryProducts.sort(
+              (a: Product, b: Product) => (b.rating || 0) - (a.rating || 0)
+            )[0]
+        )
+        .slice(0, 6); // Max 6 products
+
+      setFeaturedProducts(featured);
+    } catch (error) {
+      console.error("Error fetching featured products:", error);
+    }
+  };
+
+  // Fetch top rated products
+  const fetchTopRatedProducts = async () => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/public/products?limit=50`
+      );
+
+      const products = response.data.items;
+
+      // Sort by rating and take top 5
+      const topRated = products
+        .sort((a: Product, b: Product) => (b.rating || 0) - (a.rating || 0))
+        .slice(0, 5);
+
+      setTopRatedProducts(topRated);
+    } catch (error) {
+      console.error("Error fetching top rated products:", error);
+    }
+  };
+
+  // Fetch all data on component mount
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      try {
-        const [catRes, prodRes] = await Promise.all([
-          axios.get(`${import.meta.env.VITE_API_BASE_URL}/public/categories`),
-          axios.get(`${import.meta.env.VITE_API_BASE_URL}/public/products?limit=50`),
-        ]);
-        setCategories(catRes.data);
-        setProducts(prodRes.data.items);
-        setFlashSaleProducts(prodRes.data.items.slice(0, 4));
-        setFlashSaleEnd(new Date(Date.now() + 60 * 60 * 1000));
-      } catch (e) {
-        setCategories([]);
-        setProducts([]);
-        setFlashSaleProducts([]);
-      }
+      await Promise.all([
+        fetchCategories(),
+        fetchFeaturedProducts(),
+        fetchTopRatedProducts(),
+      ]);
       setIsLoading(false);
     };
+
     fetchData();
   }, []);
 
-  // Carousel auto-advance
   useEffect(() => {
     const interval = setInterval(() => {
-      setCarouselIndex((prev) => (prev + 1) % carouselImages.length);
-    }, 4000);
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
 
-  // Flash sale countdown
-  const [flashSaleCountdown, setFlashSaleCountdown] = useState<string>("");
-  useEffect(() => {
-    if (!flashSaleEnd) return;
-    const timer = setInterval(() => {
-      const now = new Date();
-      const diff = flashSaleEnd.getTime() - now.getTime();
-      if (diff <= 0) {
-        setFlashSaleCountdown("Ended");
-        clearInterval(timer);
+  const handleAddToCart = (product: Product) => {
+    const currentQuantityInCart = getItemQuantity(product.id);
+    if (currentQuantityInCart >= product.stock_quantity) {
+      toast.error(
+        `Cannot add more than available stock (${product.stock_quantity}) for ${product.name}`
+      );
+      return;
+    }
+    try {
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        img_url: product.images?.[0] || null,
+        stockQuantity: product.stock_quantity,
+      });
+      toast.success(`${product.name} added to cart!`);
+    } catch (error) {
+      toast.error("Failed to add item to cart. Please try again.");
+    }
+  };
+
+  const handleToggleFavorite = async (product: Product) => {
+    if (!isAuthenticated) {
+      toast.error("You must be logged in to use favorites.");
+      return;
+    }
+    const idStr = product.id.toString();
+    try {
+      if (isFavorite(idStr)) {
+        await removeFavorite(idStr);
+        toast.info(`${product.name} removed from favorites.`);
       } else {
-        const h = Math.floor(diff / (1000 * 60 * 60));
-        const m = Math.floor((diff / (1000 * 60)) % 60);
-        const s = Math.floor((diff / 1000) % 60);
-        setFlashSaleCountdown(`${h.toString().padStart(2, "0")}:${m
-          .toString()
-          .padStart(2, "0")}:${s.toString().padStart(2, "0")}`);
+        await addFavorite(idStr);
+        toast.success(`${product.name} added to favorites!`);
       }
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [flashSaleEnd]);
-
-  useEffect(() => {
-    if (flashSalesTimeLeft <= 0) return;
-    const timer = setInterval(() => {
-      setFlashSalesTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [flashSalesTimeLeft]);
-
-  const formatTimer = (seconds: number) => {
-    if (seconds <= 0) return "Ended";
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    return `${h.toString().padStart(2, "0")}h : ${m.toString().padStart(2, "0")}m : ${s.toString().padStart(2, "0")}s`;
+    } catch (err) {
+      toast.error("Failed to update favorites. Please try again.");
+    }
   };
 
-  // Helpers
-  const getProductImage = (product: Product) =>
-    product.images && product.images.length > 0
-      ? product.images[0].img_url.startsWith("http")
-        ? product.images[0].img_url
-        : `${import.meta.env.VITE_API_BASE_URL}${product.images[0].img_url}`
-      : "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop";
-  const getDiscount = (p: Product) =>
-    p.original_price && p.original_price > p.price
-      ? Math.round(((p.original_price - p.price) / p.original_price) * 100)
-      : 0;
-
-  // Product sections
-  const newArrivals = products.filter((p) => p.is_new).slice(0, 6);
-  const topRated = products
-    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-    .slice(0, 6);
-
-  // Sidebar category click
-  const handleSidebarCategoryClick = (cat: string) => {
-    setSidebarOpen(false);
-    navigate(`/category/${cat.toLowerCase().replace(/\s+/g, "-")}`);
+  // Navigate to category page
+  const handleCategoryClick = (categoryName: string) => {
+    console.log("Test.tsx: Navigating to category:", categoryName);
+    // Navigate to the correct route path with category parameter
+    navigate(`/category/${categoryName.toLowerCase().replace(/\s+/g, "-")}`, {
+      state: { categoryName },
+      replace: true,
+    });
   };
 
-  const flashSaleItems = [
-    { id: 1, name: "Men Cotton Outdoor Baseball Cap", price: 630, oldPrice: 1286, discount: 51, img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80", stock: 1 },
-    { id: 2, name: "Amtec AM-01 2.1CH Multimedia Soundbar", price: 4899, oldPrice: 6607, discount: 19, img: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=400&q=80", stock: 39 },
-    { id: 3, name: "Men's Fashion Shorts And T-Shirt", price: 679, oldPrice: 957, discount: 29, img: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=400&q=80", stock: 50 },
-    { id: 4, name: "Men's Polo Shirt Business", price: 592, oldPrice: 972, discount: 39, img: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=400&q=80", stock: 50 },
-    { id: 5, name: "Men's Fashion 1997 Shorts", price: 832, oldPrice: 1213, discount: 31, img: "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=400&q=80", stock: 50 },
-    { id: 6, name: "Men's Wallet Card Bag", price: 788, oldPrice: 1450, discount: 46, img: "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=400&q=80", stock: 3 },
-  ];
+  // Calculate items per slide based on screen size
+  const getItemsPerSlide = () => {
+    if (windowWidth < 640) return 2; // mobile: 2 items
+    if (windowWidth < 768) return 3; // small tablet: 3 items
+    if (windowWidth < 1024) return 4; // tablet: 4 items
+    if (windowWidth < 1280) return 5; // small desktop: 5 items
+    return 6; // large desktop: 6 items
+  };
 
-  // Auto-flip timer
+  const itemsPerSlide = getItemsPerSlide();
+  const totalSlides = Math.ceil(categories.length / itemsPerSlide);
+
+  // Touch handlers for mobile swipe
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) {
+      nextCategorySlide();
+    }
+    if (isRightSwipe) {
+      prevCategorySlide();
+    }
+
+    // Reset values
+    setTouchStart(0);
+    setTouchEnd(0);
+  };
+
+  // Update window width on resize
   useEffect(() => {
-    const timer = setInterval(() => {
-      setFlippingCardIndex((prevIndex) => (prevIndex + 1) % flashSaleItems.length);
-    }, 5000); // Flip every 5 seconds
-    return () => clearInterval(timer);
-  }, [flashSaleItems.length]);
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+      // Reset carousel index when screen size changes to prevent out-of-bounds
+      setCategoryCarouselIndex(0);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Category carousel navigation
+  const nextCategorySlide = () => {
+    setCategoryCarouselIndex((prev) => {
+      const nextIndex = prev + itemsPerSlide;
+      return nextIndex >= categories.length ? 0 : nextIndex;
+    });
+  };
+
+  const prevCategorySlide = () => {
+    setCategoryCarouselIndex((prev) => {
+      const prevIndex = prev - itemsPerSlide;
+      return prevIndex < 0
+        ? Math.max(0, categories.length - itemsPerSlide)
+        : prevIndex;
+    });
+  };
+
+  // Get product image URL
+  const getProductImage = (product: Product) => {
+    if (product.images && product.images.length > 0) {
+      const imageUrl = product.images[0].img_url;
+      return imageUrl.startsWith("http")
+        ? imageUrl
+        : `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`;
+    }
+    return "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop"; // Default image
+  };
+
+  // Calculate discount percentage
+  const calculateDiscount = (product: Product) => {
+    if (product.original_price && product.original_price > product.price) {
+      return Math.round(
+        ((product.original_price - product.price) / product.original_price) *
+          100
+      );
+    }
+    return 0;
+  };
+
+  // Get category color based on name
+  const getCategoryColor = (categoryName: string) => {
+    const colors = [
+      "bg-blue-500",
+      "bg-pink-500",
+      "bg-green-500",
+      "bg-orange-500",
+      "bg-purple-500",
+      "bg-red-500",
+      "bg-indigo-500",
+      "bg-yellow-500",
+    ];
+    const index = categoryName.length % colors.length;
+    return colors[index];
+  };
+
+  // Get category icon based on name
+  const getCategoryIcon = (categoryName: string) => {
+    const iconMap: Record<string, string> = {
+      Electronics: "📱",
+      Fashion: "👗",
+      "Home & Garden": "🏠",
+      Sports: "⚽",
+      Books: "📚",
+      Beauty: "💄",
+      Laptops: "💻",
+      Smartphones: "📱",
+      "PC Components": "🔧",
+      Accessories: "🎧",
+    };
+    return iconMap[categoryName] || "📦";
+  };
 
   return (
-    <div className="min-h-screen">
-      <div
-        className="pb-8"
-        style={{
-          backgroundImage: `linear-gradient(rgba(25, 25, 25, 0.6), rgba(25, 25, 25, 0.6)), url('https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?auto=format&fit=crop&w=1920&q=80')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundAttachment: "fixed",
-        }}
-      >
-        {/* Header */}
-        <header className="bg-white/80 backdrop-blur-sm shadow sticky top-0 z-30">
-          <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-2">
-            <div className="flex items-center space-x-4">
-              <img src="https://cdn-icons-png.flaticon.com/512/1170/1170678.png" alt="Logo" className="w-10 h-10" />
-              <span className="font-bold text-xl text-gray-800">YourShop</span>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+
+      {/* Hero Section */}
+      <section className="relative h-[50vh] flex items-center justify-center overflow-hidden">
+        <div
+          className={`absolute inset-0 bg-gradient-to-br ${heroSlides[currentSlide].bg} opacity-90`}
+        />
+        <div className="absolute inset-0 bg-black/20" />
+
+        <div className="relative z-10 text-center text-white max-w-4xl mx-auto px-4">
+          <h1 className="text-3xl md:text-5xl font-bold mb-4">
+            {heroSlides[currentSlide].title}
+          </h1>
+          <p className="text-lg md:text-xl mb-6 opacity-90">
+            {heroSlides[currentSlide].subtitle}
+          </p>
+          <button className="bg-white text-purple-600 px-6 py-3 rounded-full font-semibold text-base hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-xl">
+            {heroSlides[currentSlide].cta}
+            <ArrowRight className="inline-block ml-2 w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Slide Indicators */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2">
+          {heroSlides.map((_, index) => (
+            <button
+              key={index}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                index === currentSlide ? "bg-white" : "bg-white/50"
+              }`}
+              onClick={() => setCurrentSlide(index)}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Categories Section */}
+      <section className="py-6 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Shop by Category
+          </h2>
+
+          {/* Category Carousel */}
+          <div className="relative">
+            {/* Mobile Swipe Instruction */}
+            <div className="sm:hidden text-center mb-4">
+              <p className="text-sm text-gray-500 flex items-center justify-center">
+                <span className="mr-2">👆</span>
+                {totalSlides > 1
+                  ? "Swipe to see more categories"
+                  : "All categories shown"}
+              </p>
+              {totalSlides > 1 && (
+                <p className="text-xs text-gray-400 mt-1">
+                  {Math.floor(categoryCarouselIndex / itemsPerSlide) + 1} of{" "}
+                  {totalSlides}
+                </p>
+              )}
             </div>
-            <div className="flex-1 mx-6">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="I'm looking for..."
-                  className="w-full py-2 pl-4 pr-10 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+
+            {/* Navigation Buttons */}
+            <button
+              onClick={prevCategorySlide}
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hidden sm:flex items-center justify-center"
+            >
+              <ChevronLeft className="w-6 h-6 text-gray-700" />
+            </button>
+
+            <button
+              onClick={nextCategorySlide}
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hidden sm:flex items-center justify-center"
+            >
+              <ChevronRight className="w-6 h-6 text-gray-700" />
+            </button>
+
+            {/* Categories Grid */}
+            <div
+              className={`grid gap-4 sm:gap-6 overflow-hidden items-stretch transition-all duration-300 ease-in-out ${
+                categories.length <= itemsPerSlide
+                  ? `grid-cols-${categories.length}`
+                  : windowWidth < 640
+                  ? "grid-cols-2"
+                  : windowWidth < 768
+                  ? "grid-cols-3"
+                  : windowWidth < 1024
+                  ? "grid-cols-4"
+                  : windowWidth < 1280
+                  ? "grid-cols-5"
+                  : "grid-cols-6"
+              }`}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              {categories
+                .slice(
+                  categoryCarouselIndex,
+                  categoryCarouselIndex + itemsPerSlide
+                )
+                .map((category, index) => (
+                  <div
+                    key={`${category.id}-${categoryCarouselIndex}`}
+                    className="group cursor-pointer flex touch-manipulation animate-fadeIn"
+                    onClick={() => handleCategoryClick(category.name)}
+                  >
+                    <div
+                      className={`${getCategoryColor(
+                        category.name
+                      )} rounded-2xl p-4 sm:p-6 lg:p-8 text-center hover:shadow-2xl transform hover:scale-105 transition-all duration-300 h-32 sm:h-40 lg:h-48 flex flex-col justify-center items-center w-full`}
+                    >
+                      <div className="text-2xl sm:text-3xl lg:text-4xl mb-2 sm:mb-3 lg:mb-4">
+                        {getCategoryIcon(category.name)}
+                      </div>
+                      <h3 className="text-white font-semibold text-sm sm:text-base">
+                        {category.name}
+                      </h3>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            {/* Carousel Indicators */}
+            <div className="flex justify-center mt-4 sm:mt-6 space-x-2">
+              {Array.from({ length: totalSlides }).map((_, index) => (
+                <button
+                  key={index}
+                  className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all duration-300 ${
+                    index === Math.floor(categoryCarouselIndex / itemsPerSlide)
+                      ? "bg-purple-600"
+                      : "bg-gray-300 hover:bg-gray-400"
+                  }`}
+                  onClick={() =>
+                    setCategoryCarouselIndex(index * itemsPerSlide)
+                  }
                 />
-                <SearchIcon className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Products */}
+      <section className="py-8 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Featured Products</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Discover our handpicked selection of premium products
+            </p>
+          </div>
+
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* Main Products Grid */}
+            <div className="flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {isLoading
+                  ? // Loading skeleton
+                    Array.from({ length: 6 }).map((_, index) => (
+                      <div
+                        key={index}
+                        className="bg-white rounded-2xl shadow-lg p-6 animate-pulse"
+                      >
+                        <div className="w-full h-64 bg-gray-200 rounded-xl mb-4"></div>
+                        <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                        <div className="h-4 bg-gray-200 rounded w-2/3 mb-4"></div>
+                        <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+                      </div>
+                    ))
+                  : featuredProducts.map((product) => (
+                      <div
+                        key={product.id}
+                        className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 overflow-hidden group"
+                      >
+                        <div className="relative">
+                          <img
+                            src={getProductImage(product)}
+                            alt={product.name}
+                            className="h-24 sm:h-36 w-full object-contain group-hover:scale-110 transition-transform duration-300"
+                          />
+                          <div className="absolute top-4 left-4">
+                            <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                              {product.is_new
+                                ? "New"
+                                : calculateDiscount(product) > 0
+                                ? `${calculateDiscount(product)}% OFF`
+                                : "Featured"}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => handleToggleFavorite(product)}
+                            className="absolute top-4 right-4 p-2 bg-white/80 rounded-full hover:bg-white transition-colors"
+                          >
+                            <Heart
+                              className={`w-5 h-5 ${
+                                isFavorite(product.id.toString())
+                                  ? "fill-red-500 text-red-500"
+                                  : "text-gray-600"
+                              }`}
+                            />
+                          </button>
+                        </div>
+
+                        <div className="p-6">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-gray-500 font-medium">
+                              {product.category?.name}
+                            </span>
+                            {product.subcategory && (
+                              <span className="text-xs text-gray-400">
+                                {product.subcategory.name}
+                              </span>
+                            )}
+                          </div>
+
+                          <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+                            {product.name}
+                          </h3>
+
+                          <div className="flex items-center mb-3">
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${
+                                    i < Math.floor(product.rating || 0)
+                                      ? "text-yellow-400 fill-current"
+                                      : "text-gray-300"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm text-gray-600 ml-2">
+                              ({(product.rating || 0).toFixed(1)}) •{" "}
+                              {product.reviews?.length || 0} reviews
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-2xl font-bold text-purple-600">
+                                {formatCurrency(product.price)}
+                              </span>
+                              {product.original_price &&
+                                product.original_price > product.price && (
+                                  <span className="text-gray-500 line-through">
+                                    {formatCurrency(product.original_price)}
+                                  </span>
+                                )}
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => handleAddToCart(product)}
+                            className="w-full bg-purple-600 text-white py-3 rounded-xl hover:bg-purple-700 transition-colors font-semibold"
+                          >
+                            Add to Cart
+                          </button>
+                        </div>
+                      </div>
+                    ))}
               </div>
             </div>
-            <div className="flex items-center space-x-6">
-              <button className="relative">
-                <ShoppingCart className="w-6 h-6 text-gray-700" />
-                <span className="absolute -top-2 -right-2 bg-pink-600 text-white text-xs rounded-full px-1">5</span>
-              </button>
-              <User className="w-6 h-6 text-gray-700" />
-            </div>
-          </div>
-          <div className="bg-gray-100 border-t border-b border-gray-200">
-            <div className="max-w-7xl mx-auto flex items-center px-4 py-1 text-sm text-gray-700 space-x-6 overflow-x-auto">
-              <span className="font-semibold cursor-pointer" onClick={() => setActiveTab("What's New")}>What's New</span>
-              <span className="font-semibold cursor-pointer" onClick={() => setActiveTab("Flash Sale")}>Flash Sale</span>
-              <span className="cursor-pointer">Smart TV</span>
-              <span className="cursor-pointer">Money Saving Tips</span>
-              <span className="cursor-pointer">All Goods Price Drop</span>
-              <span className="cursor-pointer">Redmi</span>
-              <span className="cursor-pointer">Speaker</span>
-              <span className="cursor-pointer">TV Stand</span>
-              <span className="cursor-pointer">Garnier</span>
-              <span className="cursor-pointer">Fridge</span>
-            </div>
-          </div>
-        </header>
 
-        {/* Main Section: Sidebar + Carousel */}
-        <section className="max-w-7xl mx-auto flex flex-row mt-4 px-4">
-          {/* Sidebar (sticky on desktop, collapsible on mobile) */}
-          <aside className="hidden md:block w-64 mr-4 sticky top-24 self-start bg-white rounded-xl shadow border border-gray-100">
-            <div className="font-semibold text-lg px-4 py-3 border-b border-gray-100 flex items-center">
-              <Menu className="w-5 h-5 mr-2 text-red-500" /> Category
-            </div>
-            <ul className="divide-y divide-gray-100">
-              {categories.slice(0, 11).map((cat) => (
-                <li
-                  key={cat.id}
-                  className="px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-center"
-                  onClick={() => handleSidebarCategoryClick(cat.name)}
-                >
-                  {categoryIcons[cat.name] || <Star className="w-5 h-5 inline-block mr-2 text-gray-300" />} {cat.name}
-                </li>
-              ))}
-            </ul>
-          </aside>
-          {/* Mobile sidebar button */}
-          <button
-            className="md:hidden fixed top-20 left-4 z-40 bg-white p-2 rounded-full shadow border border-gray-200"
-            onClick={() => setSidebarOpen((v) => !v)}
-          >
-            <Menu className="w-6 h-6 text-red-500" />
-          </button>
-          {/* Mobile sidebar drawer */}
-          {sidebarOpen && (
-            <div className="fixed inset-0 z-50 bg-black/30" onClick={() => setSidebarOpen(false)}>
-              <aside className="absolute top-0 left-0 w-64 h-full bg-white shadow-xl border-r border-gray-200">
-                <div className="font-semibold text-lg px-4 py-3 border-b border-gray-100 flex items-center">
-                  <Menu className="w-5 h-5 mr-2 text-red-500" /> Category
+            {/* Top Rated Sidebar */}
+            <div className="lg:w-80">
+              <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
+                <div className="flex items-center mb-6">
+                  <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-2 rounded-lg mr-3">
+                    <Star className="w-6 h-6 text-white fill-current" />
+                  </div>
+                  <h3 className="text-xl font-bold">Top Rated</h3>
                 </div>
-                <ul className="divide-y divide-gray-100">
-                  {categories.slice(0, 11).map((cat) => (
-                    <li
-                      key={cat.id}
-                      className="px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-center"
-                      onClick={() => handleSidebarCategoryClick(cat.name)}
-                    >
-                      {categoryIcons[cat.name] || <Star className="w-5 h-5 inline-block mr-2 text-gray-300" />} {cat.name}
+
+                <div className="space-y-4">
+                  {isLoading
+                    ? // Loading skeleton for top rated
+                      Array.from({ length: 5 }).map((_, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center space-x-3 p-3 rounded-xl animate-pulse"
+                        >
+                          <div className="w-16 h-16 bg-gray-200 rounded-lg"></div>
+                          <div className="flex-1">
+                            <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                            <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                          </div>
+                        </div>
+                      ))
+                    : topRatedProducts.map((product, index) => (
+                        <div
+                          key={product.id}
+                          className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group"
+                        >
+                          <div className="relative">
+                            <img
+                              src={getProductImage(product)}
+                              alt={product.name}
+                              className="h-24 sm:h-36 w-full object-contain rounded-lg group-hover:scale-105 transition-transform duration-200"
+                            />
+                            <div className="absolute -top-2 -left-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                              {index + 1}
+                            </div>
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-sm truncate">
+                              {product.name}
+                            </h4>
+                            <div className="flex items-center mt-1">
+                              <div className="flex items-center">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`w-3 h-3 ${
+                                      i < Math.floor(product.rating || 0)
+                                        ? "text-yellow-400 fill-current"
+                                        : "text-gray-300"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-xs text-gray-600 ml-1">
+                                {(product.rating || 0).toFixed(1)} (
+                                {product.reviews?.length || 0})
+                              </span>
+                            </div>
+                            <div className="flex items-center mt-1">
+                              <span className="text-lg font-bold text-purple-600">
+                                {formatCurrency(product.price)}
+                              </span>
+                              {product.original_price &&
+                                product.original_price > product.price && (
+                                  <span className="text-xs text-gray-500 line-through ml-2">
+                                    {formatCurrency(product.original_price)}
+                                  </span>
+                                )}
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => handleAddToCart(product)}
+                            className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <ShoppingCart className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                </div>
+
+                <button className="w-full mt-6 bg-gradient-to-r from-yellow-400 to-orange-500 text-white py-3 rounded-xl font-semibold hover:from-yellow-500 hover:to-orange-600 transition-all duration-300 transform hover:scale-105">
+                  View All Top Rated
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-8 bg-white mt-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              {
+                icon: Truck,
+                title: "Free Shipping",
+                desc: `On orders over ${formatCurrency(100)}`,
+              },
+              {
+                icon: Shield,
+                title: "Secure Payment",
+                desc: "100% secure transactions",
+              },
+              {
+                icon: Headphones,
+                title: "24/7 Support",
+                desc: "Expert customer service",
+              },
+              {
+                icon: RotateCcw,
+                title: "Easy Returns",
+                desc: "30-day return policy",
+              },
+            ].map((feature, index) => (
+              <div key={index} className="text-center group">
+                <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200 transition-colors">
+                  <feature.icon className="w-8 h-8 text-purple-600" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
+                <p className="text-gray-600">{feature.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Newsletter Section */}
+      <section className="py-16 bg-gradient-to-r from-purple-600 to-pink-600">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold text-white mb-4">Stay Updated</h2>
+          <p className="text-purple-100 mb-8">
+            Get the latest deals and product updates delivered to your inbox
+          </p>
+          <div className="flex flex-col sm:flex-row max-w-md mx-auto gap-4">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="flex-1 px-6 py-3 rounded-full border-0 focus:outline-none focus:ring-2 focus:ring-white"
+            />
+            <button className="bg-white text-purple-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors">
+              Subscribe
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                LUXE
+              </h3>
+              <p className="text-gray-400 mb-4">
+                Your premier destination for premium products and exceptional
+                shopping experience.
+              </p>
+            </div>
+
+            {[
+              {
+                title: "Quick Links",
+                links: ["Home", "Shop", "About", "Contact", "FAQ"],
+              },
+              {
+                title: "Categories",
+                links: ["Electronics", "Fashion", "Home", "Sports", "Beauty"],
+              },
+              {
+                title: "Customer Service",
+                links: [
+                  "Shipping Info",
+                  "Returns",
+                  "Size Guide",
+                  "Support",
+                  "Track Order",
+                ],
+              },
+            ].map((section, index) => (
+              <div key={index}>
+                <h4 className="font-semibold mb-4">{section.title}</h4>
+                <ul className="space-y-2">
+                  {section.links.map((link) => (
+                    <li key={link}>
+                      <a
+                        href="#"
+                        className="text-gray-400 hover:text-white transition-colors"
+                      >
+                        {link}
+                      </a>
                     </li>
                   ))}
                 </ul>
-              </aside>
-            </div>
-          )}
-          {/* Carousel */}
-          <div className="flex-1 relative min-w-0">
-            {/* Tabs above carousel */}
-            <div className="flex space-x-6 mb-2">
-              <button
-                className={`font-semibold text-lg px-2 py-1 border-b-2 ${activeTab === "What's New" ? "border-red-500 text-red-600" : "border-transparent text-gray-700"}`}
-                onClick={() => setActiveTab("What's New")}
-              >
-                What's New
-              </button>
-              <button
-                className={`font-semibold text-lg px-2 py-1 border-b-2 ${activeTab === "Flash Sale" ? "border-red-500 text-red-600" : "border-transparent text-gray-700"}`}
-                onClick={() => setActiveTab("Flash Sale")}
-              >
-                Flash Sale
-              </button>
-            </div>
-            {/* Carousel */}
-            <div className="relative w-full h-[260px] md:h-[340px] rounded-xl overflow-hidden shadow-lg">
-              {carouselImages.map((slide, idx) => (
-                <div
-                  key={idx}
-                  className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${carouselIndex === idx ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
-                  aria-hidden={carouselIndex !== idx}
-                >
-                  <img
-                    src={slide.url}
-                    alt={slide.caption}
-                    className="w-full h-full object-cover object-center"
-                  />
-                  <div className="absolute inset-0 bg-black/30" />
-                  <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 text-center z-20">
-                    <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 drop-shadow-lg">{slide.caption}</h2>
-                    <button className="bg-white text-purple-600 px-6 py-2 rounded-full font-semibold text-base hover:bg-gray-100 shadow-xl transition-all duration-300">
-                      {slide.cta}
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {/* Carousel Arrows */}
-              <button
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg z-20"
-                onClick={() => setCarouselIndex((carouselIndex - 1 + carouselImages.length) % carouselImages.length)}
-              >
-                <ChevronLeft className="w-6 h-6 text-gray-700" />
-              </button>
-              <button
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg z-20"
-                onClick={() => setCarouselIndex((carouselIndex + 1) % carouselImages.length)}
-              >
-                <ChevronRight className="w-6 h-6 text-gray-700" />
-              </button>
-              {/* Carousel Dots */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-20">
-                {carouselImages.map((_, idx) => (
-                  <button
-                    key={idx}
-                    className={`w-3 h-3 rounded-full transition-all duration-300 ${carouselIndex === idx ? "bg-white" : "bg-white/50"}`}
-                    onClick={() => setCarouselIndex(idx)}
-                  />
-                ))}
               </div>
-            </div>
+            ))}
           </div>
-        </section>
 
-        {/* Promo Cards Row (Kilimall style, no product images) */}
-        <div className="flex flex-nowrap gap-2 sm:gap-4 mt-4 overflow-x-auto px-2 justify-center max-w-6xl mx-auto">
-          <div className="flex-1 min-w-[220px] max-w-xs bg-orange-500 rounded-xl p-4 flex flex-col items-center shadow-lg relative min-w-0" style={{ flex: '0 0 220px' }}>
-            <span className="absolute top-2 left-2 bg-white text-orange-600 text-xs font-bold px-2 py-1 rounded">MEN'S FASHION</span>
-            <div className="text-white font-bold text-lg mb-1 mt-8">KSh 799</div>
-            <div className="text-white text-xs line-through mb-1">KSh 1,099</div>
-            <div className="text-yellow-200 text-xs">27% Off 3 Pcs Colored Vests For Men</div>
-          </div>
-          <div className="flex-1 min-w-[220px] max-w-xs bg-pink-500 rounded-xl p-4 flex flex-col items-center shadow-lg relative min-w-0" style={{ flex: '0 0 220px' }}>
-            <span className="absolute top-2 left-2 bg-white text-pink-600 text-xs font-bold px-2 py-1 rounded">LADY'S FASHION</span>
-            <div className="text-white font-bold text-lg mb-1 mt-8">KSh 549</div>
-            <div className="text-white text-xs line-through mb-1">KSh 750</div>
-            <div className="text-yellow-200 text-xs">Brightening Body Cream</div>
-          </div>
-          <div className="flex-1 min-w-[220px] max-w-xs bg-yellow-500 rounded-xl p-4 flex flex-col items-center shadow-lg relative min-w-0" style={{ flex: '0 0 220px' }}>
-            <span className="absolute top-2 left-2 bg-white text-yellow-700 text-xs font-bold px-2 py-1 rounded">LAPTOPS</span>
-            <div className="text-white font-bold text-lg mb-1 mt-8">KSh 10,499</div>
-            <div className="text-white text-xs line-through mb-1">KSh 26,000</div>
-            <div className="text-yellow-200 text-xs">LENOVO YOGA 11E 4GB RAM 128GB SSD</div>
-          </div>
-          <div className="flex-1 min-w-[220px] max-w-xs bg-red-500 rounded-xl p-4 flex flex-col items-center shadow-lg relative min-w-0" style={{ flex: '0 0 220px' }}>
-            <span className="absolute top-2 left-2 bg-white text-red-600 text-xs font-bold px-2 py-1 rounded">HOME & LIVING</span>
-            <div className="text-white font-bold text-lg mb-1 mt-8">KSh 4,799</div>
-            <div className="text-white text-xs line-through mb-1">KSh 6,899</div>
-            <div className="text-yellow-200 text-xs">Jamespot 11PCS Non-stick Cookware Set</div>
+          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+            <p>&copy; 2025 LUXE. All rights reserved.</p>
           </div>
         </div>
+      </footer>
 
-        {/* Flash Sales | Live Now Section */}
-        <section className="max-w-7xl mx-auto px-4 mt-8">
-          <div className="flex items-center justify-between bg-red-600 text-white rounded-t-lg px-4 py-2">
-            <div className="flex items-center gap-2 font-bold text-lg">
-              <span className="text-yellow-300">⚡</span> Flash Sales | Live Now
-            </div>
-            <div className="flex items-center gap-2 text-base font-semibold">
-              Time Left: <span className="font-mono bg-white text-red-600 rounded px-2 py-0.5">{formatTimer(flashSalesTimeLeft)}</span>
-            </div>
-            <a href="#" className="text-white underline font-semibold hover:text-yellow-200">See All</a>
-          </div>
-          <div className="overflow-x-auto bg-transparent rounded-b-lg pb-2">
-            <div className="flex gap-4 py-4 px-2">
-              {flashSaleItems.map((item, index) => (
-                <div key={item.id} className={`w-56 h-48 flex-shrink-0 flip-card ${index === flippingCardIndex ? 'is-flipping' : ''}`}>
-                  <div className="flip-card-inner rounded-lg shadow-lg">
-                    <div className="flip-card-front p-2 border border-gray-100">
-                      {/* --- Original Card Content --- */}
-                      <div className="relative">
-                        <img src={item.img} alt={item.name} className="h-20 w-full object-contain mb-2" />
-                        <span className="absolute top-1 left-1 bg-yellow-400 text-xs font-bold px-2 py-0.5 rounded">-{item.discount}%</span>
-                      </div>
-                      <div className="text-xs text-gray-700 truncate mb-1 font-medium flex-grow">{item.name}</div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-red-600 font-bold text-base">KSh {item.price}</span>
-                        <span className="text-gray-400 line-through text-xs">KSh {item.oldPrice}</span>
-                      </div>
-                      <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden mb-1">
-                        <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${Math.max(5, 100 - item.stock)}%` }} />
-                      </div>
-                      <div className="text-xs text-gray-500">{item.stock} item{item.stock !== 1 ? 's' : ''} left</div>
-                      {/* --- End Original Card Content --- */}
-                    </div>
-                    <div className="flip-card-back">
-                      <h3 className="font-bold text-lg mb-2">{item.name}</h3>
-                      <button
-                        className="bg-white text-red-500 font-semibold px-4 py-2 rounded-full hover:bg-red-100 transition-colors"
-                        onClick={() => navigate(`/product/${item.id}`)}
-                      >
-                        Shop Now
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Sponsored Products Section */}
-        <section className="max-w-7xl mx-auto px-4 mt-8">
-          <div className="flex items-center justify-between bg-red-600 text-white rounded-t-lg px-4 py-2">
-            <div className="flex items-center gap-2 font-bold text-lg">
-              <span className="text-yellow-300">⚡</span>
-              <h2 className="text-xl font-bold">Sponsored products</h2>
-            </div>
-            <div className="flex items-center gap-2 text-base font-semibold">
-              Time Left: <span className="font-mono bg-white text-red-600 rounded px-2 py-0.5">{formatTimer(flashSalesTimeLeft)}</span>
-            </div>
-            <a href="#" className="text-white underline font-semibold hover:text-yellow-200">See All</a>
-          </div>
-          <div className="overflow-x-auto bg-transparent rounded-b-lg pb-2">
-            <div className="flex gap-4 py-4 px-2">
-              {[
-                { id: 1, name: "NIVEA Creme Soft Shower Gel", price: 843, img: "https://images.unsplash.com/photo-1620916566398-39f19383145c?auto=format&fit=crop&w=400&q=80" },
-                { id: 2, name: "NIVEA MEN Cool Kick Antiperspirant", price: 720, img: "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=400&q=80" },
-                { id: 3, name: "Ecoflow 256Wh 300W Power Station", price: 22998, oldPrice: 66965, discount: 66, img: "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=400&q=80" },
-                { id: 4, name: "Minrich F Minrich F Minrich", price: 1615, oldPrice: 3500, discount: 54, img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80" },
-                { id: 5, name: "Dvee Organics Somali Qasil", price: 500, oldPrice: 650, discount: 23, img: "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=400&q=80" },
-                { id: 6, name: "RUTANPUMP 24V 50M", price: 19999, oldPrice: 39999, discount: 50, img: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=400&q=80" },
-              ].map((item) => (
-                <div key={item.id} className="bg-white rounded-lg shadow p-2 border border-gray-100 flex flex-col">
-                  <div className="relative">
-                    <img src={item.img} alt={item.name} className="h-28 w-full object-contain bg-white rounded-lg mb-2" />
-                    {item.discount && <span className="absolute top-2 left-2 bg-yellow-400 text-xs font-bold px-2 py-0.5 rounded">-{item.discount}%</span>}
-                  </div>
-                  <div className="text-xs text-gray-700 truncate mb-1 font-medium">{item.name}</div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-red-600 font-bold text-base">KSh {item.price}</span>
-                    {item.oldPrice && <span className="text-gray-400 line-through text-xs">KSh {item.oldPrice}</span>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      </div>
-      <div
-        className="py-8"
-        style={{
-          backgroundImage: `linear-gradient(rgba(25, 25, 25, 0.7), rgba(25, 25, 25, 0.7)), url('https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1920&q=80')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundAttachment: "fixed",
-        }}
-      >
       {/* Top Selling Items Section */}
-      <section className="max-w-7xl mx-auto px-4">
+      <section className="max-w-7xl mx-auto px-2 sm:px-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
             <span className="text-pink-500 text-2xl mr-2">★</span>
@@ -484,23 +860,23 @@ const Test: React.FC = () => {
           </div>
           <a href="#" className="text-pink-600 font-semibold hover:underline">See All</a>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-4 px-2 sm:px-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
           {[
-            { id: 1, name: "4Pcs Necklace Set Teardrop", price: 226, oldPrice: 428, discount: 47, img: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=400&q=80" },
+            { id: 1, name: "4Pcs Necklace Set Teardrop", price: 226, oldPrice: 428, discount: 47, img: "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=400&q=80" },
             { id: 2, name: "5 In 1 Female Electric Shaver", price: 530, oldPrice: 991, discount: 47, img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80" },
             { id: 3, name: "Apple MacBook Pro 13\"", price: 24000, oldPrice: 30000, discount: 20, img: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=400&q=80" },
             { id: 4, name: "ARHANORY 5 In 1 Multi-set", price: 310, oldPrice: 473, discount: 35, img: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80" },
             { id: 5, name: "HD-05+ 1080P 16X Digital Camera", price: 4499, oldPrice: 6427, discount: 30, img: "https://images.unsplash.com/photo-1465101178521-c1a9136a3b99?auto=format&fit=crop&w=400&q=80" },
             { id: 6, name: "Fitted Sheet Waterproof", price: 654, oldPrice: 2222, discount: 71, img: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=400&q=80" },
           ].map((item) => (
-            <div key={item.id} className="bg-white rounded-lg shadow p-2 border border-gray-100 flex flex-col">
+            <div key={item.id} className="bg-white rounded-lg shadow p-1 sm:p-2 border-2 border-blue-500 bg-blue-50 flex flex-col">
               <div className="relative">
-                <img src={item.img} alt={item.name} className="h-28 w-full object-contain bg-white rounded-lg mb-2" />
+                <img src={item.img} alt={item.name} className="h-24 sm:h-28 object-contain bg-white rounded-lg mb-1 sm:mb-2 w-full" />
                 {item.discount && <span className="absolute top-2 left-2 bg-yellow-400 text-xs font-bold px-2 py-0.5 rounded">-{item.discount}%</span>}
               </div>
-              <div className="text-xs text-gray-700 truncate mb-1 font-medium">{item.name}</div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-red-600 font-bold text-base">KSh {item.price}</span>
+              <div className="text-xs text-gray-700 truncate mb-0.5 sm:mb-1 font-medium">{item.name}</div>
+              <div className="flex items-center gap-2 mb-0.5 sm:mb-1">
+                <span className="text-red-600 font-bold text-base sm:text-lg">KSh {item.price}</span>
                 {item.oldPrice && <span className="text-gray-400 line-through text-xs">KSh {item.oldPrice}</span>}
               </div>
             </div>
@@ -509,7 +885,7 @@ const Test: React.FC = () => {
       </section>
 
       {/* You May Also Like Section (Product Grid, Static Data) */}
-      <section className="max-w-7xl mx-auto px-4 mt-8">
+      <section className="max-w-7xl mx-auto px-2 sm:px-4 mt-8">
         <div className="flex items-center mb-4">
           <span className="text-orange-500 text-2xl mr-2">★</span>
           <h2 className="text-xl font-bold">You May Also Like</h2>
@@ -531,28 +907,28 @@ const Test: React.FC = () => {
             { id: 12, name: "Refurbished oppo Reno 256GB/128GB+6GB", price: 10599, rating: 4, img_url: "https://images.unsplash.com/photo-1510557880182-3d4d3c1b3a49?auto=format&fit=crop&w=400&q=80" },
           ];
           return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-4 px-2 sm:px-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
               {staticProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="bg-white rounded-lg shadow hover:shadow-lg transition p-2 flex flex-col max-h-60 cursor-pointer hover:ring-2 hover:ring-blue-400"
+                  className="bg-white rounded-lg shadow hover:shadow-lg transition p-1 sm:p-2 flex flex-col max-h-60 cursor-pointer hover:ring-2 hover:ring-blue-400 border-2 border-green-500 bg-green-50"
                   onClick={() => navigate(`/product/${product.id}`)}
                 >
                   <img
                     src={product.img_url}
                     alt={product.name}
-                    className="h-36 w-full object-contain bg-white rounded-lg border border-gray-100 shadow-sm mb-2 p-2 flex items-center justify-center"
+                    className="h-24 sm:h-36 w-full object-contain bg-white rounded-lg border border-gray-100 shadow-sm mb-1 sm:mb-2 p-1 sm:p-2 flex items-center justify-center"
                   />
                   <div className="flex-1">
-                    <div className="text-xs text-gray-700 truncate mb-1 font-medium">{product.name.length > 32 ? product.name.slice(0, 32) + '…' : product.name}</div>
-                    <div className="text-red-600 font-bold text-lg mb-1">
+                    <div className="text-xs text-gray-700 truncate mb-0.5 sm:mb-1 font-medium">{product.name.length > 32 ? product.name.slice(0, 32) + '…' : product.name}</div>
+                    <div className="text-red-600 font-bold text-base sm:text-lg mb-0.5 sm:mb-1">
                       KSh {product.price.toLocaleString()}
                     </div>
-                    <div className="flex items-center text-yellow-500 text-xs mb-1">
+                    <div className="flex items-center text-yellow-500 text-xs mb-0.5 sm:mb-1">
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className={`w-4 h-4 ${i < product.rating ? 'fill-current' : 'text-gray-300'}`}
+                          className={`w-3 h-3 sm:w-4 sm:h-4 ${i < product.rating ? 'fill-current' : 'text-gray-300'}`}
                         />
                       ))}
                       <span className="ml-1 text-gray-500">({product.rating || 0})</span>
@@ -564,9 +940,8 @@ const Test: React.FC = () => {
           );
         })()}
       </section>
-      </div>
     </div>
   );
 };
 
-export default Test;
+export default ModernEcommerceHomepage;
