@@ -374,6 +374,28 @@ const ModernEcommerceHomepage = () => {
     return iconMap[categoryName] || "📦";
   };
 
+  // Helper to get top-rated product image for a category
+  const getCategoryImage = (categoryId: number) => {
+    // Try to find the top-rated product in this category
+    const productsInCategory = featuredProducts.filter(
+      (p) => p.category_id === categoryId
+    );
+    if (productsInCategory.length > 0) {
+      // Sort by rating descending
+      const top = [...productsInCategory].sort(
+        (a, b) => (b.rating || 0) - (a.rating || 0)
+      )[0];
+      if (top && top.images && top.images.length > 0) {
+        const url = top.images[0].img_url;
+        return url.startsWith("http")
+          ? url
+          : `${import.meta.env.VITE_API_BASE_URL}${url}`;
+      }
+    }
+    // Fallback image
+    return "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop";
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -493,12 +515,15 @@ const ModernEcommerceHomepage = () => {
                     <div
                       className={`${getCategoryColor(
                         category.name
-                      )} rounded-2xl p-4 sm:p-6 lg:p-8 text-center hover:shadow-2xl transform hover:scale-105 transition-all duration-300 h-32 sm:h-40 lg:h-48 flex flex-col justify-center items-center w-full`}
+                      )} rounded-2xl p-0 sm:p-0 lg:p-0 text-center hover:shadow-2xl transform hover:scale-105 transition-all duration-300 h-32 sm:h-40 lg:h-48 flex flex-col justify-center items-center w-full overflow-hidden`}
                     >
-                      <div className="text-2xl sm:text-3xl lg:text-4xl mb-2 sm:mb-3 lg:mb-4">
-                        {getCategoryIcon(category.name)}
-                      </div>
-                      <h3 className="text-white font-semibold text-sm sm:text-base">
+                      <img
+                        src={getCategoryImage(category.id)}
+                        alt={category.name}
+                        className="w-full h-24 sm:h-32 lg:h-40 object-cover rounded-t-2xl"
+                        style={{ background: "#eee" }}
+                      />
+                      <h3 className="text-white font-semibold text-sm sm:text-base mt-2">
                         {category.name}
                       </h3>
                     </div>

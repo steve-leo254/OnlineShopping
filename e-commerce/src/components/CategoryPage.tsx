@@ -92,6 +92,8 @@ const CategoryProductsPage = () => {
   const [categoryBanners, setCategoryBanners] = useState<string[]>([]);
   const [bannerIndex, setBannerIndex] = useState(0);
   const [loadingBanners, setLoadingBanners] = useState(false);
+  const [allCategoryBanners, setAllCategoryBanners] = useState<string[]>([]);
+  const [allBannerIndex, setAllBannerIndex] = useState(0);
 
   const { addToCart, getItemQuantity } = useShoppingCart();
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
@@ -99,7 +101,9 @@ const CategoryProductsPage = () => {
 
   // Get selected category object and cat (define only once, above all useEffects)
   const selectedCategoryObj =
-    selectedCategory && categories.length > 0
+    selectedCategory &&
+    selectedCategory.toLowerCase() !== "all" &&
+    categories.length > 0
       ? categories.find(
           (cat) => cat.name.toLowerCase() === selectedCategory.toLowerCase()
         )
@@ -161,35 +165,28 @@ const CategoryProductsPage = () => {
     categoryName: string,
     subcategoryName?: string
   ) => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-
       // Handle "All" category - fetch all products
       if (categoryName.toLowerCase() === "all") {
         const response = await axios.get(
           `${import.meta.env.VITE_API_BASE_URL}/public/products?limit=100`
         );
         setProducts(response.data.items || []);
-        setIsLoading(false);
         return;
       }
-
       // First, find the category ID
       const category = categories.find(
         (cat) => cat.name.toLowerCase() === categoryName.toLowerCase()
       );
-
       if (!category) {
         setProducts([]);
-        setIsLoading(false);
         return;
       }
-
       // Build query parameters
       let url = `${
         import.meta.env.VITE_API_BASE_URL
       }/public/products?category_id=${category.id}&limit=50`;
-
       // Add subcategory filter if specified
       if (subcategoryName) {
         const subcategory = subcategories.find(
@@ -201,11 +198,9 @@ const CategoryProductsPage = () => {
           url += `&subcategory_id=${subcategory.id}`;
         }
       }
-
       const response = await axios.get(url);
       setProducts(response.data.items || []);
     } catch (error) {
-      console.error("Error fetching products:", error);
       setProducts([]);
     } finally {
       setIsLoading(false);
@@ -310,6 +305,38 @@ const CategoryProductsPage = () => {
     }
   }, [categoryBanners]);
 
+  // Fetch all category banners
+  useEffect(() => {
+    const fetchAllBanners = async () => {
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/public/banners?type=category`
+        );
+        setAllCategoryBanners(
+          response.data.map((b: any) =>
+            b.image_url.startsWith("http")
+              ? b.image_url
+              : `${import.meta.env.VITE_API_BASE_URL}${b.image_url}`
+          )
+        );
+      } catch (error) {
+        console.error("Error fetching all category banners:", error);
+        setAllCategoryBanners([]);
+      }
+    };
+    fetchAllBanners();
+  }, []);
+
+  // Banner rotation for all category banners
+  useEffect(() => {
+    if (allCategoryBanners.length > 1) {
+      const interval = setInterval(() => {
+        setAllBannerIndex((prev) => (prev + 1) % allCategoryBanners.length);
+      }, 6000);
+      return () => clearInterval(interval);
+    }
+  }, [allCategoryBanners]);
+
   // Get top-rated product image for icon
   const getCategoryIconImage = () => {
     if (!products.length)
@@ -406,11 +433,12 @@ const CategoryProductsPage = () => {
   };
 
   const resetFilters = () => {
+    setSelectedCategory("All");
     setSelectedSubcategory("");
     setSearchTerm("");
     setPriceRange("all");
     setSortBy("featured");
-    fetchProductsByCategory(selectedCategory);
+    fetchProductsByCategory("All");
   };
 
   // Subcategory carousel navigation
@@ -905,59 +933,94 @@ const CategoryProductsPage = () => {
     );
   };
 
-  if (!selectedCategoryObj) {
-    return <div className="text-center py-16">Loading category...</div>;
+  // Replace the loading check and hero/banner rendering logic
+  if (isLoading || categories.length === 0) {
+    return <div className="text-center py-16">Loading categories...</div>;
   }
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-gray-50 to-blue-50`}>
       {/* Category Hero Banner */}
-      <div className="relative overflow-hidden hidden md:block">
-        <div
-          className="h-80 bg-cover bg-center relative"
-          style={{
-            backgroundImage: categoryBanners.length
-              ? `url(${categoryBanners[bannerIndex]})`
-              : undefined,
-            backgroundColor: categoryBanners.length ? undefined : "#f3f4f6",
-          }}
-        >
-          <div className="absolute inset-0 bg-black/40"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-800 opacity-75"></div>
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
-            <div className="text-white max-w-2xl">
-              <div className="flex items-center gap-3 mb-4">
-                <img
-                  src={getCategoryIconImage()}
-                  alt="Category Icon"
-                  className="w-12 h-12 rounded-full object-cover border-2 border-white shadow"
-                />
-                <h1 className="text-5xl font-bold">
-                  {selectedCategoryObj.title || selectedCategoryObj.name || ""}
-                </h1>
-              </div>
-              <p className="text-xl mb-6 text-white/90">
-                {selectedCategoryObj.subtitle || ""}
-              </p>
-              <p className="text-lg mb-8 text-white/80">
-                {selectedCategoryObj.description || ""}
-              </p>
-              <div className="flex flex-wrap gap-4">
-                {(selectedCategoryObj.features || []).map(
-                  (feature: string, index: number) => (
-                    <span
-                      key={index}
-                      className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium"
-                    >
-                      ✓ {feature}
-                    </span>
-                  )
-                )}
+      {selectedCategory.toLowerCase() !== "all" && selectedCategoryObj && (
+        <div className="relative overflow-hidden hidden md:block">
+          <div
+            className="h-80 bg-cover bg-center relative"
+            style={{
+              backgroundImage: categoryBanners.length
+                ? `url(${categoryBanners[bannerIndex]})`
+                : undefined,
+              backgroundColor: categoryBanners.length ? undefined : "#f3f4f6",
+            }}
+          >
+            <div className="absolute inset-0 bg-black/40"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-800 opacity-75"></div>
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
+              <div className="text-white max-w-2xl">
+                <div className="flex items-center gap-3 mb-4">
+                  <img
+                    src={getCategoryIconImage()}
+                    alt="Category Icon"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow"
+                  />
+                  <h1 className="text-5xl font-bold">
+                    {selectedCategoryObj.title ||
+                      selectedCategoryObj.name ||
+                      ""}
+                  </h1>
+                </div>
+                <p className="text-xl mb-6 text-white/90">
+                  {selectedCategoryObj.subtitle || ""}
+                </p>
+                <p className="text-lg mb-8 text-white/80">
+                  {selectedCategoryObj.description || ""}
+                </p>
+                <div className="flex flex-wrap gap-4">
+                  {(selectedCategoryObj.features || []).map(
+                    (feature: string, index: number) => (
+                      <span
+                        key={index}
+                        className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium"
+                      >
+                        ✓ {feature}
+                      </span>
+                    )
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
+      {selectedCategory.toLowerCase() === "all" && (
+        <div className="relative overflow-hidden hidden md:block">
+          <div
+            className="h-80 bg-cover bg-center relative"
+            style={{
+              backgroundImage: allCategoryBanners.length
+                ? `url(${allCategoryBanners[allBannerIndex]})`
+                : undefined,
+              backgroundColor: allCategoryBanners.length
+                ? undefined
+                : "#f3f4f6",
+            }}
+          >
+            {console.log(
+              "[DEBUG] Rendered All Products banner URL:",
+              allCategoryBanners[allBannerIndex]
+            )}
+            <div className="absolute inset-0 bg-black/40"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-800 opacity-75"></div>
+            <div className="flex items-center justify-center h-full relative z-10">
+              <div className="text-white text-center">
+                <h1 className="text-5xl font-bold mb-4">All Products</h1>
+                <p className="text-xl mb-6 text-white/90">
+                  Browse our entire collection of products.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Subcategories Section */}
