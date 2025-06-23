@@ -829,7 +829,7 @@ const ModernEcommerceHomepage = () => {
       </section>
 
       {/* Newsletter Section */}
-      <section className="py-16 bg-gradient-to-r from-purple-600 to-pink-600">
+      <section className="py-16 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">Stay Updated</h2>
           <p className="text-purple-100 mb-8">
@@ -847,64 +847,6 @@ const ModernEcommerceHomepage = () => {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                LUXE
-              </h3>
-              <p className="text-gray-400 mb-4">
-                Your premier destination for premium products and exceptional
-                shopping experience.
-              </p>
-            </div>
-
-            {[
-              {
-                title: "Quick Links",
-                links: ["Home", "Shop", "About", "Contact", "FAQ"],
-              },
-              {
-                title: "Categories",
-                links: ["Electronics", "Fashion", "Home", "Sports", "Beauty"],
-              },
-              {
-                title: "Customer Service",
-                links: [
-                  "Shipping Info",
-                  "Returns",
-                  "Size Guide",
-                  "Support",
-                  "Track Order",
-                ],
-              },
-            ].map((section, index) => (
-              <div key={index}>
-                <h4 className="font-semibold mb-4">{section.title}</h4>
-                <ul className="space-y-2">
-                  {section.links.map((link) => (
-                    <li key={link}>
-                      <a
-                        href="#"
-                        className="text-gray-400 hover:text-white transition-colors"
-                      >
-                        {link}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 LUXE. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };
