@@ -1,10 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Search,
-  Star,
-  Heart,
-  Eye,
-  ShoppingCart,
   ChevronLeft,
   ChevronRight,
   SlidersHorizontal,

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Heart, ShoppingCart, X, Star, Eye, Share2 } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-import { useFetchProducts } from "../components/UseFetchProducts";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -19,12 +18,6 @@ interface ApiProduct {
   category?: string | { id: string; name: string };
   images?: { img_url: string }[];
   // ...other fields
-}
-
-interface Favorite {
-  id: number;
-  product_id: number;
-  user_id: number;
 }
 
 const WishList: React.FC = () => {

@@ -5,19 +5,12 @@ import { useAuth } from "../context/AuthContext";
 import {
   X,
   Tag,
-  BookOpen,
   Plus,
   Trash2,
   Settings,
-  Sparkles,
-  FolderOpen,
-  Edit3,
-  Eye,
   Search,
-  Filter,
   RefreshCw,
   AlertCircle,
-  CheckCircle,
 } from "lucide-react";
 
 // Define the types
@@ -90,7 +83,6 @@ const CategoryManagement: React.FC = () => {
 
   // Loading states
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Check admin access
   const isAdmin = role === "admin" || role === "SUPERADMIN";
@@ -335,7 +327,6 @@ const CategoryManagement: React.FC = () => {
     if (!categoryForm.name.trim()) newErrors.name = "Category name is required";
     if (!categoryForm.description.trim())
       newErrors.description = "Description is required";
-    setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
@@ -347,7 +338,6 @@ const CategoryManagement: React.FC = () => {
       newErrors.name = "Subcategory name is required";
     if (!subcategoryForm.description.trim())
       newErrors.description = "Description is required";
-    setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
@@ -357,7 +347,6 @@ const CategoryManagement: React.FC = () => {
     if (!specForm.name.trim())
       newErrors.name = "Specification name is required";
     if (!specForm.value_type) newErrors.value_type = "Value type is required";
-    setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
@@ -366,7 +355,6 @@ const CategoryManagement: React.FC = () => {
     setCategoryForm({ name: "", description: "" });
     setEditingCategory(null);
     setShowCategoryForm(false);
-    setErrors({});
   };
 
   const resetSubcategoryForm = () => {
@@ -377,14 +365,12 @@ const CategoryManagement: React.FC = () => {
     });
     setEditingSubcategory(null);
     setShowSubcategoryForm(false);
-    setErrors({});
   };
 
   const resetSpecForm = () => {
     setSpecForm({ name: "", value_type: "string" });
     setEditingSpec(null);
     setShowSpecForm(false);
-    setErrors({});
   };
 
   // Edit functions
@@ -442,27 +428,6 @@ const CategoryManagement: React.FC = () => {
       }
     } else {
       setSubcategories([]);
-      setSpecifications([]);
-    }
-  };
-
-  // Update subcategory form when category is selected
-  const handleSubcategoryCategoryChange = (categoryId: number) => {
-    setSubcategoryForm({ ...subcategoryForm, category_id: categoryId });
-    setSelectedCategory(categoryId);
-    if (categoryId) {
-      fetchSubcategories(categoryId);
-    } else {
-      setSubcategories([]);
-    }
-  };
-
-  // Update spec form when category is selected
-  const handleSpecCategoryChange = (categoryId: number) => {
-    setSelectedCategory(categoryId);
-    if (categoryId) {
-      fetchSpecifications(categoryId);
-    } else {
       setSpecifications([]);
     }
   };

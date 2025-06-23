@@ -266,22 +266,6 @@ const CategoryManagement: React.FC<CategoryManagementProps> = ({
     }
   };
 
-  const handleBatchDeleteProducts = async (categoryId: number) => {
-    if (!window.confirm("Are you sure you want to delete ALL products in this category? This cannot be undone.")) return;
-    try {
-      await axios.delete(
-        `${import.meta.env.VITE_API_BASE_URL}/categories/${categoryId}/products`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      toast.success("All products in this category deleted!");
-      fetchCategories();
-    } catch (err: any) {
-      toast.error(err.response?.data?.detail || "Failed to batch delete products");
-    }
-  };
-
   return (
     <>
       <section className="bg-gradient-to-br from-red-50 via-pink-50 to-purple-50 p-4 sm:p-6 lg:p-8 rounded-2xl shadow-2xl antialiased relative overflow-hidden max-h-[95vh] flex flex-col">

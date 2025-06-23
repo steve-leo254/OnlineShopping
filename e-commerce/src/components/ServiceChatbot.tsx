@@ -6,13 +6,10 @@ import {
   MessageCircle,
   X,
   Send,
-  ShoppingCart,
   Package,
-  CreditCard,
   Truck,
   CheckCircle,
   Search,
-  Zap,
   Gift,
   Clock,
   MessageSquare,
@@ -25,9 +22,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
-import { useFavorites } from "../context/FavoritesContext";
-import countiesData from "../context/kenyan_counties.json";
 import { useUserStats } from "../context/UserStatsContext";
+import countiesData from "../context/kenyan_counties.json";
 
 // Define Message interface for type safety
 interface Message {
@@ -111,52 +107,18 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
   const [inputMessage, setInputMessage] = useState<string>("");
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const [userData, setUserData] = useState<any>(null);
-
-  const [isComposingEmail, setIsComposingEmail] = useState<boolean>(false);
-  const [emailData, setEmailData] = useState<{
-    subject: string;
-    message: string;
-    category: string;
-    priority: "low" | "medium" | "high";
-    userEmail?: string;
-    userName?: string;
-  }>({
-    subject: "",
-    message: "",
-    category: "general",
-    priority: "medium",
-  });
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Use the same products data from the Home component
-  const {
-    products,
-    isLoading: productsLoading,
-    fetchProducts,
-  } = useFetchProducts();
-  const { token, isAuthenticated } = useAuth();
-  const { favorites } = useFavorites();
-  const { addToCart } = useShoppingCart();
-  const navigate = useNavigate();
-
-  // Use user stats from context (no duplicate state)
-  const {
-    pendingReviewsCount,
-    activeOrdersCount,
-    wishlistCount,
-    refreshStats,
-  } = useUserStats();
-
-  // Add state for pending search and loading
-  const [pendingSearch, setPendingSearch] = useState<string | null>(null);
-  const [isProductSearchLoading, setIsProductSearchLoading] = useState(false);
-
   const [userOrders, setUserOrders] = useState<any[]>([]);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState<any>(null);
   const [showScrollToTop, setShowScrollToTop] = useState<boolean>(false);
   const [counties, setCounties] = useState<any[]>([]);
+  const { products, isLoading: productsLoading, fetchProducts } = useFetchProducts();
+  const { token, isAuthenticated } = useAuth();
+  const { addToCart } = useShoppingCart();
+  const { refreshStats } = useUserStats(); // Only if you use refreshStats
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setCounties(countiesData.counties);
@@ -442,7 +404,7 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
   };
 
   // Enhanced fallback response with helpful suggestions
-  const getFallbackResponse = (message: string): Message => {
+  const getFallbackResponse = (_message: string): Message => {
     const currentHour = new Date().getHours();
     let timeContext = "";
 
@@ -689,7 +651,6 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
             status: string
           ) => {
             const orderDateTime = new Date(orderDate);
-            const now = new Date();
 
             if (status === "delivered") {
               return "✅ **Imepelekwa**";
@@ -699,9 +660,6 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
               return "❌ **Oda Imeghairiwa**";
             }
 
-            const daysSinceOrder = Math.floor(
-              (now.getTime() - orderDateTime.getTime()) / (1000 * 60 * 60 * 24)
-            );
 
             if (status === "pending") {
               const estimatedDelivery = new Date(
@@ -1438,94 +1396,6 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
   };
 
   // Enhanced problem help response
-  const getProblemHelpResponse = (message: string): Message => {
-    const ProblemHelpCard = () => (
-      <div className="space-y-4 mt-3">
-        <div className="bg-gradient-to-r from-red-50 to-orange-50 p-4 rounded-lg border border-gray-200">
-          <h4 className="font-semibold text-gray-800 mb-2">
-            🆘 I'm Here to Help!
-          </h4>
-          <p className="text-sm text-gray-600">
-            Don't worry, I can help you solve any issues you're experiencing!
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-3">
-          <div className="bg-white p-3 rounded-lg border border-gray-200">
-            <div className="flex items-center space-x-2">
-              <Package className="w-4 h-4 text-blue-500" />
-              <span className="text-sm font-medium text-gray-800">
-                Order Issues
-              </span>
-            </div>
-            <p className="text-xs text-gray-600 mt-1">
-              Problems with orders, tracking, or delivery
-            </p>
-          </div>
-
-          <div className="bg-white p-3 rounded-lg border border-gray-200">
-            <div className="flex items-center space-x-2">
-              <CreditCard className="w-4 h-4 text-green-500" />
-              <span className="text-sm font-medium text-gray-800">
-                Payment Problems
-              </span>
-            </div>
-            <p className="text-xs text-gray-600 mt-1">
-              Issues with payments, refunds, or billing
-            </p>
-          </div>
-
-          <div className="bg-white p-3 rounded-lg border border-gray-200">
-            <div className="flex items-center space-x-2">
-              <ShoppingCart className="w-4 h-4 text-purple-500" />
-              <span className="text-sm font-medium text-gray-800">
-                Shopping Issues
-              </span>
-            </div>
-            <p className="text-xs text-gray-600 mt-1">
-              Problems finding products or using the site
-            </p>
-          </div>
-
-          <div className="bg-white p-3 rounded-lg border border-gray-200">
-            <div className="flex items-center space-x-2">
-              <MessageSquare className="w-4 h-4 text-orange-500" />
-              <span className="text-sm font-medium text-gray-800">
-                Account Issues
-              </span>
-            </div>
-            <p className="text-xs text-gray-600 mt-1">
-              Login, registration, or account problems
-            </p>
-          </div>
-        </div>
-
-        <div className="flex space-x-2">
-          <button
-            onClick={() => navigate("/contact")}
-            className="flex-1 py-2 px-4 bg-gradient-to-r from-red-500 to-orange-600 text-white rounded-lg text-sm font-medium hover:from-red-600 hover:to-orange-700 transition-colors"
-          >
-            Contact Support
-          </button>
-          <button
-            onClick={() => navigate("/help")}
-            className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-colors"
-          >
-            Help Center
-          </button>
-        </div>
-      </div>
-    );
-
-    return {
-      id: Date.now(),
-      text: "I'm sorry you're experiencing an issue! 😔 🛠️✨\n\n**What type of problem are you having?\n\nWhat specific issue are you facing? 🤔",
-      sender: "bot",
-      timestamp: new Date(),
-      type: "interactive",
-      components: [<ProblemHelpCard key="problem-help" />],
-    };
-  };
 
   // Product help response
   const getProductHelpResponse = (message: string): Message => {
@@ -1679,14 +1549,6 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
   // Payment help response
 
   // Support help response
-  const getSupportHelpResponse = (message: string): Message => {
-    return {
-      id: Date.now(),
-      text: "I'm here to connect you with our amazing support team! 🎧✨\n\n 📞 **Phone Support**: Call us at +254 117 802 561\n• 📧 **Email Support**: flowtechs254@gmail.com\n\n**Support Hours:**\nMonday - Friday: 8:00 AM - 6:00 PM\nSaturday: 9:00 AM - 4:00 PM 🤝",
-      sender: "bot",
-      timestamp: new Date(),
-    };
-  };
 
   const getRandomResponse = (
     category: keyof typeof personalityResponses
@@ -2115,7 +1977,7 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
   };
 
   // Enhanced order management with actual API calls
-  const handleOrderCancellation = (message: string): Message => {
+  const handleOrderCancellation = (_p0?: string): Message => {
     if (!isAuthenticated) {
       return {
         id: Date.now(),
@@ -2162,71 +2024,8 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
   };
 
   // Enhanced quick actions based on context and user behavior
-  const getQuickActions = (): string[] => {
-    const baseActions = ["Show me Our products 🔥"];
-
-    const authenticatedActions = ["Check my orders 📦", "Cancel an order ❌"];
-
-    const contextualActions = [];
-
-    // Add deal-related actions if there are discounted products
-    const discountedProducts = products.filter(
-      (p) => p.discount && p.discount > 0
-    );
-    if (discountedProducts.length > 0) {
-      contextualActions.push("Show me today's deals 🏷️");
-    }
-
-    // Add category-specific actions based on popular categories
-    const popularCategories = counties.slice(0, 3);
-    popularCategories.forEach((cat) => {
-      contextualActions.push(`Browse ${cat.name} 📱`);
-    });
-
-    // Add user-specific actions based on their behavior
-    if (isAuthenticated && userOrders.length > 0) {
-      const recentOrder = userOrders[0];
-      if (recentOrder.status === "pending") {
-        contextualActions.push("Track my recent order 🚚");
-      }
-    }
-
-    // Add seasonal or time-based actions
-    const currentHour = new Date().getHours();
-    if (currentHour >= 9 && currentHour <= 17) {
-      contextualActions.push("Contact customer support 🎧");
-    }
-
-    const allActions = [
-      ...baseActions.slice(0, 2),
-      ...contextualActions.slice(0, 2),
-      ...(isAuthenticated ? authenticatedActions.slice(0, 2) : []),
-      ...baseActions.slice(2),
-      ...(isAuthenticated ? authenticatedActions.slice(2) : []),
-      "Tell me about returns 🔄",
-      "What's your best deal? 🏷️",
-      "Help with payment 💳",
-    ];
-
-    return allActions.slice(0, 8); // Limit to 8 actions for better UX
-  };
 
   // Enhanced quick action handler with more intelligent responses
-  const handleQuickAction = (action: string): void => {
-    const cleanAction = action
-      .replace(/[🔥✨🎮💰📦❤️⭐❌🔄🏷️📱🚚🎧💳]/g, "")
-      .trim();
-
-    // Map quick actions to specific responses
-    const actionMap: Record<string, string> = {
-      "Show me today's deals": "show me discounted products",
-      Browse: "show me",
-    };
-
-    const mappedAction = actionMap[cleanAction] || cleanAction;
-    setInputMessage(mappedAction);
-    setTimeout(() => handleSendMessage(), 100);
-  };
 
   const handleSendMessage = () => {
     if (!inputMessage.trim()) return;
@@ -2297,7 +2096,6 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
   const getSpecificOrderDeliveryInfo = (order: any): Message => {
     const getEstimatedDelivery = (orderDate: string, status: string) => {
       const orderDateTime = new Date(orderDate);
-      const now = new Date();
 
       if (status === "delivered") {
         return "✅ **Delivered**";
@@ -2308,9 +2106,6 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
       }
 
       // Calculate estimated delivery based on order date
-      const daysSinceOrder = Math.floor(
-        (now.getTime() - orderDateTime.getTime()) / (1000 * 60 * 60 * 24)
-      );
 
       if (status === "pending") {
         const estimatedDelivery = new Date(
@@ -2571,108 +2366,6 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
   };
 
   // Comprehensive return policy and process information
-  const getReturnPolicyResponse = (message: string): Message => {
-    const ReturnPolicyCard: React.FC = () => (
-      <div className="space-y-4 mt-3">
-        <div className="bg-gradient-to-r from-red-50 to-orange-50 p-4 rounded-lg border border-gray-200">
-          <h4 className="font-semibold text-gray-800 mb-2">
-            📦 Return Policy & Process
-          </h4>
-          <p className="text-sm text-gray-600">
-            We want you to be completely satisfied with your purchase!
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-3">
-          <div className="bg-white p-3 rounded-lg border border-gray-200">
-            <div className="flex items-center space-x-2">
-              <Clock className="w-4 h-4 text-blue-500" />
-              <span className="text-sm font-medium text-gray-800">
-                Return Window
-              </span>
-            </div>
-            <p className="text-xs text-gray-600 mt-1">
-              30 days from delivery date
-            </p>
-          </div>
-
-          <div className="bg-white p-3 rounded-lg border border-gray-200">
-            <div className="flex items-center space-x-2">
-              <Truck className="w-4 h-4 text-green-500" />
-              <span className="text-sm font-medium text-gray-800">
-                Free Returns
-              </span>
-            </div>
-            <p className="text-xs text-gray-600 mt-1">
-              We cover all return shipping costs
-            </p>
-          </div>
-
-          <div className="bg-white p-3 rounded-lg border border-gray-200">
-            <div className="flex items-center space-x-2">
-              <Zap className="w-4 h-4 text-orange-500" />
-              <span className="text-sm font-medium text-gray-800">
-                Fast Processing
-              </span>
-            </div>
-            <p className="text-xs text-gray-600 mt-1">
-              3-5 business days for refunds
-            </p>
-          </div>
-
-          <div className="bg-white p-3 rounded-lg border border-gray-200">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="w-4 h-4 text-purple-500" />
-              <span className="text-sm font-medium text-gray-800">
-                Quality Guarantee
-              </span>
-            </div>
-            <p className="text-xs text-gray-600 mt-1">
-              100% satisfaction guarantee
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-          <h6 className="font-medium text-yellow-800 mb-1">
-            ⚠️ Important Return Requirements
-          </h6>
-          <p className="text-sm text-yellow-700">
-            • Original packaging and accessories
-            <br />
-            • Product in original condition
-            <br />
-            • Proof of purchase (order number)
-            <br />• Clear photos for defective items
-          </p>
-        </div>
-
-        <div className="flex space-x-2">
-          <button
-            onClick={() => navigate("/returns")}
-            className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white rounded-lg text-sm font-medium hover:from-blue-700 hover:via-purple-700 hover:to-blue-900 transition-colors"
-          >
-            Start Return
-          </button>
-          <button
-            onClick={() => navigate("/contact")}
-            className="flex-1 py-2 px-4 bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-blue-700 transition-colors"
-          >
-            Contact Support
-          </button>
-        </div>
-      </div>
-    );
-
-    return {
-      id: Date.now(),
-      text: `📦 **Complete Return Policy** 🔄✨\n\n**Our Customer-First Return Policy:**\n\n⏰ **7-Day Return Window**: From delivery date\n• 📱  7-day return for opened items! 📋✨`,
-      sender: "bot",
-      timestamp: new Date(),
-      type: "interactive",
-      components: [<ReturnPolicyCard key="return-policy" />],
-    };
-  };
 
   // Enhanced contact response for returns and refunds
   const getReturnContactResponse = (message: string): Message => {
@@ -3120,7 +2813,7 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
 
   // Show loading message while fetching products
   useEffect(() => {
-    if (isProductSearchLoading) {
+    if (productsLoading) {
       setMessages((prev) => [
         ...prev,
         {
@@ -3131,7 +2824,7 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
         },
       ]);
     }
-  }, [isProductSearchLoading]);
+  }, [productsLoading]);
 
   useEffect(() => {
     fetchProducts(1, 8); // fetch first page, 8 products

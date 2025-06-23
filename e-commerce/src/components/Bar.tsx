@@ -32,7 +32,6 @@ const Bar: React.FC = () => {
     if (!isAuthenticated || !token) {
       return;
     }
-    let isMounted = true;
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
     let currentUser: { id: number; name: string } | null = null;
     try {
@@ -99,9 +98,6 @@ const Bar: React.FC = () => {
     fetchPendingReviewsCount();
     fetchActiveOrdersCount();
     fetchWishlistCount();
-    return () => {
-      isMounted = false;
-    };
   }, [isAuthenticated, token]);
 
   // Handle logout functionality

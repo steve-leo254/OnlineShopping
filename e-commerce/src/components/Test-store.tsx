@@ -72,13 +72,10 @@ const carouselImages = [
 
 const Test: React.FC = () => {
   const navigate = useNavigate();
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [flashSaleEnd, setFlashSaleEnd] = useState<Date | null>(null);
-  const [flashSaleProducts, setFlashSaleProducts] = useState<Product[]>([]);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("What's New");
@@ -89,7 +86,6 @@ const Test: React.FC = () => {
   // Fetch categories, subcategories and products
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
       try {
         const [catRes, subcatRes, prodRes] = await Promise.all([
           axios.get(`${import.meta.env.VITE_API_BASE_URL}/public/categories`),
@@ -99,15 +95,12 @@ const Test: React.FC = () => {
         setCategories(catRes.data);
         setSubcategories(subcatRes.data);
         setProducts(prodRes.data.items);
-        setFlashSaleProducts(prodRes.data.items.slice(0, 4));
         setFlashSaleEnd(new Date(Date.now() + 60 * 60 * 1000));
       } catch (e) {
         setCategories([]);
         setSubcategories([]);
         setProducts([]);
-        setFlashSaleProducts([]);
       }
-      setIsLoading(false);
     };
     fetchData();
   }, []);
@@ -119,28 +112,6 @@ const Test: React.FC = () => {
     }, 4000);
     return () => clearInterval(interval);
   }, []);
-
-  // Flash sale countdown
-  const [flashSaleCountdown, setFlashSaleCountdown] = useState<string>("");
-  useEffect(() => {
-    if (!flashSaleEnd) return;
-    const timer = setInterval(() => {
-      const now = new Date();
-      const diff = flashSaleEnd.getTime() - now.getTime();
-      if (diff <= 0) {
-        setFlashSaleCountdown("Ended");
-        clearInterval(timer);
-      } else {
-        const h = Math.floor(diff / (1000 * 60 * 60));
-        const m = Math.floor((diff / (1000 * 60)) % 60);
-        const s = Math.floor((diff / 1000) % 60);
-        setFlashSaleCountdown(`${h.toString().padStart(2, "0")}:${m
-          .toString()
-          .padStart(2, "0")}:${s.toString().padStart(2, "0")}`);
-      }
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [flashSaleEnd]);
 
   useEffect(() => {
     if (flashSalesTimeLeft <= 0) return;
@@ -157,24 +128,6 @@ const Test: React.FC = () => {
     const s = seconds % 60;
     return `${h.toString().padStart(2, "0")}h : ${m.toString().padStart(2, "0")}m : ${s.toString().padStart(2, "0")}s`;
   };
-
-  // Helpers
-  const getProductImage = (product: Product) =>
-    product.images && product.images.length > 0
-      ? product.images[0].img_url.startsWith("http")
-        ? product.images[0].img_url
-        : `${import.meta.env.VITE_API_BASE_URL}${product.images[0].img_url}`
-      : "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop";
-  const getDiscount = (p: Product) =>
-    p.original_price && p.original_price > p.price
-      ? Math.round(((p.original_price - p.price) / p.original_price) * 100)
-      : 0;
-
-  // Product sections
-  const newArrivals = products.filter((p) => p.is_new).slice(0, 6);
-  const topRated = products
-    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-    .slice(0, 6);
 
   // Sidebar category click
   const handleSidebarCategoryClick = (cat: string) => {

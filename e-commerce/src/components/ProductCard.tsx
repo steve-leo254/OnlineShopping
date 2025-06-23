@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "../cart/formatCurrency";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { useAuth } from "../context/AuthContext";
-import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { useUserStats } from "../context/UserStatsContext";
 import { useFavorites } from "../context/FavoritesContext";

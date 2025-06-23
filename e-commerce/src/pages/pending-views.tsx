@@ -4,7 +4,6 @@ import {
   Package,
   CheckCircle,
   ShoppingBag,
-  ArrowLeft,
   Sparkles,
   Gift,
 } from "lucide-react";

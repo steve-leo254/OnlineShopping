@@ -1,29 +1,11 @@
 import React, { useState, useEffect } from "react";
 import {
   Search,
-  Filter,
   Heart,
   ShoppingCart,
   Star,
   Grid,
   List,
-  ChevronDown,
-  Eye,
-  Zap,
-  Smartphone,
-  Laptop,
-  Headphones,
-  Monitor,
-  HardDrive,
-  Cpu,
-  Wifi,
-  Mouse,
-  Keyboard,
-  Gamepad2,
-  Camera,
-  Tablet,
-  Speaker,
-  Battery,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -447,17 +429,6 @@ const CategoryProductsPage = () => {
         : `${import.meta.env.VITE_API_BASE_URL}${imageUrl}`;
     }
     return "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop"; // Default image
-  };
-
-  // Calculate discount percentage
-  const calculateDiscount = (product: Product) => {
-    if (product.original_price && product.original_price > product.price) {
-      return Math.round(
-        ((product.original_price - product.price) / product.original_price) *
-          100
-      );
-    }
-    return 0;
   };
 
   const LoadingSkeleton = () => (

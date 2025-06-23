@@ -13,9 +13,7 @@ import {
   PlusCircle,
   Settings,
   List,
-  ChevronDown,
   AlertCircle,
-  CheckCircle,
   Info,
 } from "lucide-react";
 import CategoryForm from "./AddCategory";
@@ -86,7 +84,6 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [specifications, setSpecifications] = useState<Specification[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<

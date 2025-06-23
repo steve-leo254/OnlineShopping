@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  ArrowLeft,
   Star,
   Heart,
   ShoppingCart,
@@ -14,7 +13,6 @@ import {
   RotateCcw,
   CheckCircle,
   X,
-  Eye,
 } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -59,7 +57,6 @@ interface Review {
 }
 
 type TabType = "description" | "specifications" | "reviews";
-type NotificationType = "success" | "error" | "info";
 
 // Static Data
 
@@ -318,10 +315,6 @@ const ProductDetail: React.FC = () => {
 
   const handleRelatedProductClick = (relatedProduct: Product): void => {
     navigate(`/product-details/${relatedProduct.id}`);
-  };
-
-  const handleBackToProducts = (): void => {
-    toast.info("Navigating back to products");
   };
 
   const renderStars = (rating: number) => {

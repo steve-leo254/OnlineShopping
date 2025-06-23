@@ -64,9 +64,6 @@ const ProductsTable: React.FC = () => {
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const { token } = useAuth();
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [editForm, setEditForm] = useState({ name: "", description: "" });
-  const [isEditing, setIsEditing] = useState(false);
 
   const limit = 10;
 
