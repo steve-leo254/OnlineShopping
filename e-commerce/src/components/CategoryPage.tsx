@@ -94,6 +94,8 @@ const CategoryProductsPage = () => {
   const [loadingBanners, setLoadingBanners] = useState(false);
   const [allCategoryBanners, setAllCategoryBanners] = useState<string[]>([]);
   const [allBannerIndex, setAllBannerIndex] = useState(0);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [globalAllProducts, setGlobalAllProducts] = useState<Product[]>([]);
 
   const { addToCart, getItemQuantity } = useShoppingCart();
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
@@ -173,6 +175,7 @@ const CategoryProductsPage = () => {
           `${import.meta.env.VITE_API_BASE_URL}/public/products?limit=100`
         );
         setProducts(response.data.items || []);
+        setAllProducts(response.data.items || []);
         return;
       }
       // First, find the category ID
@@ -181,6 +184,7 @@ const CategoryProductsPage = () => {
       );
       if (!category) {
         setProducts([]);
+        setAllProducts([]);
         return;
       }
       // Build query parameters
@@ -200,8 +204,10 @@ const CategoryProductsPage = () => {
       }
       const response = await axios.get(url);
       setProducts(response.data.items || []);
+      setAllProducts(response.data.items || []);
     } catch (error) {
       setProducts([]);
+      setAllProducts([]);
     } finally {
       setIsLoading(false);
     }
@@ -336,6 +342,21 @@ const CategoryProductsPage = () => {
       return () => clearInterval(interval);
     }
   }, [allCategoryBanners]);
+
+  // On initial mount, fetch all products globally
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_BASE_URL}/public/products?limit=1000`
+        );
+        setGlobalAllProducts(response.data.items || []);
+      } catch {
+        setGlobalAllProducts([]);
+      }
+    };
+    fetchAll();
+  }, []);
 
   // Get top-rated product image for icon
   const getCategoryIconImage = () => {
@@ -924,6 +945,27 @@ const CategoryProductsPage = () => {
     );
   };
 
+  // Helper to get top-rated product image for a subcategory
+  const getSubcategoryImage = (categoryId: number, subcategoryId: number) => {
+    // Use globalAllProducts for image lookup
+    const productsInSubcategory = globalAllProducts.filter(
+      (p) => p.category_id === categoryId && p.subcategory_id === subcategoryId
+    );
+    if (productsInSubcategory.length > 0) {
+      const top = [...productsInSubcategory].sort(
+        (a, b) => (b.rating || 0) - (a.rating || 0)
+      )[0];
+      if (top && top.images && top.images.length > 0) {
+        const url = top.images[0].img_url;
+        return url.startsWith("http")
+          ? url
+          : `${import.meta.env.VITE_API_BASE_URL}${url}`;
+      }
+    }
+    // No fallback SVG, just return empty string
+    return "";
+  };
+
   // Replace the loading check and hero/banner rendering logic
   if (isLoading || categories.length === 0) {
     return <div className="text-center py-16">Loading categories...</div>;
@@ -995,10 +1037,6 @@ const CategoryProductsPage = () => {
                 : "#f3f4f6",
             }}
           >
-            {console.log(
-              "[DEBUG] Rendered All Products banner URL:",
-              allCategoryBanners[allBannerIndex]
-            )}
             <div className="absolute inset-0 bg-black/40"></div>
             <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-800 opacity-75"></div>
             <div className="flex items-center justify-center h-full relative z-10">
@@ -1062,23 +1100,21 @@ const CategoryProductsPage = () => {
                     <button
                       key={subcategory.id}
                       onClick={() => handleSubcategoryChange(subcategory.name)}
-                      className={`p-3 sm:p-4 rounded-xl text-center transition-all duration-300 hover:scale-105 ${
-                        selectedSubcategory === subcategory.name
-                          ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg"
-                          : "bg-white/60 backdrop-blur-sm border border-white/20 hover:bg-white/80"
-                      }`}
+                      className="flex flex-col items-center justify-center mb-2 bg-transparent border-0 focus:outline-none cursor-pointer w-full"
+                      type="button"
                     >
-                      <div className="text-xl sm:text-2xl mb-2">
-                        {getCategoryIcon(subcategory.name)}
-                      </div>
-                      <h3 className="font-semibold text-xs sm:text-sm">
+                      <img
+                        src={getSubcategoryImage(
+                          subcategory.category_id,
+                          subcategory.id
+                        )}
+                        alt={subcategory.name}
+                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover object-center border-2 border-blue-200 shadow bg-white"
+                        style={{ background: "#eee" }}
+                      />
+                      <h3 className="font-semibold text-xs sm:text-sm mt-2 text-center">
                         {subcategory.name}
                       </h3>
-                      {subcategory.description && (
-                        <p className="text-xs mt-1 opacity-75 hidden sm:block">
-                          {subcategory.description}
-                        </p>
-                      )}
                     </button>
                   ))}
               </div>

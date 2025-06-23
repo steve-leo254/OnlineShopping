@@ -212,7 +212,12 @@ const ModernEcommerceHomepage = () => {
         id: product.id,
         name: product.name,
         price: product.price,
-        img_url: product.images?.[0] || null,
+        img_url:
+          product.images && product.images.length > 0
+            ? typeof product.images[0] === "string"
+              ? product.images[0]
+              : product.images[0].img_url
+            : null,
         stockQuantity: product.stock_quantity,
       });
       toast.success(`${product.name} added to cart!`);
@@ -374,15 +379,14 @@ const ModernEcommerceHomepage = () => {
     return iconMap[categoryName] || "📦";
   };
 
-  // Helper to get top-rated product image for a category
-  const getCategoryImage = (categoryId: number) => {
-    // Try to find the top-rated product in this category
-    const productsInCategory = featuredProducts.filter(
+  // Helper to get top-rated product image for a category or subcategory
+  const getCategoryOrSubcategoryImage = (categoryId: number) => {
+    let productsInGroup = featuredProducts.filter(
       (p) => p.category_id === categoryId
     );
-    if (productsInCategory.length > 0) {
+    if (productsInGroup.length > 0) {
       // Sort by rating descending
-      const top = [...productsInCategory].sort(
+      const top = [...productsInGroup].sort(
         (a, b) => (b.rating || 0) - (a.rating || 0)
       )[0];
       if (top && top.images && top.images.length > 0) {
@@ -514,7 +518,7 @@ const ModernEcommerceHomepage = () => {
                   >
                     <div className="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full overflow-hidden border-4 border-purple-200 shadow-md bg-white flex items-center justify-center mb-3 transition-transform duration-300 group-hover:scale-105">
                       <img
-                        src={getCategoryImage(category.id)}
+                        src={getCategoryOrSubcategoryImage(category.id)}
                         alt={category.name}
                         className="w-full h-full object-cover object-center"
                         style={{ background: "#eee" }}
