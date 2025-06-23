@@ -227,10 +227,12 @@ const ModernEcommerceHomepage = () => {
         price: product.price,
         img_url:
           product.images && product.images.length > 0
-            ? typeof product.images[0] === "string"
-              ? product.images[0]
-              : product.images[0].img_url
-            : null,
+            ? product.images.map((img) =>
+                img.img_url.startsWith("http")
+                  ? img.img_url
+                  : `${import.meta.env.VITE_API_BASE_URL}${img.img_url}`
+              )
+            : [],
         stockQuantity: product.stock_quantity,
       });
       toast.success(`${product.name} added to cart!`);
@@ -806,7 +808,7 @@ const ModernEcommerceHomepage = () => {
                   onClick={() => navigate("/store")}
                   className="w-full mt-6 bg-gradient-to-r from-yellow-400 to-orange-500 text-white py-3 rounded-xl font-semibold hover:from-yellow-500 hover:to-orange-600 transition-all duration-300 transform hover:scale-105"
                 >
-                  View All 
+                  View All
                 </button>
               </div>
             </div>

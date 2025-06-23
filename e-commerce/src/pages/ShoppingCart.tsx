@@ -13,13 +13,13 @@ import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { toast } from "react-toastify"; 
+import { toast } from "react-toastify";
 
 interface CartItem {
   id: number;
   name: string;
   price: number;
-  img_url: string | null;
+  img_url: string | string[] | null;
   quantity: number;
   stockQuantity: number;
 }
@@ -29,7 +29,7 @@ interface CartItemProps {
   id: number;
   name: string;
   price: number;
-  img_url: string | null;
+  img_url: string | string[] | null;
   quantity: number;
   stockQuantity: number;
 }
@@ -43,6 +43,14 @@ const CartItem = ({
   stockQuantity,
 }: CartItemProps) => {
   const { increaseCartQuantity, decreaseCartQuantity } = useShoppingCart();
+
+  // Determine the image to display
+  let displayImg = "";
+  if (Array.isArray(img_url)) {
+    displayImg = img_url.length > 0 ? img_url[0] : "";
+  } else if (typeof img_url === "string") {
+    displayImg = img_url;
+  }
 
   // Function to handle quantity increase with stock check
   const handleIncreaseQuantity = () => {
@@ -81,7 +89,7 @@ const CartItem = ({
               {" "}
               {/* Larger, rounded image */}
               <img
-                src={img_url ?? ""}
+                src={displayImg}
                 alt={name}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
               />

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { formatCurrency } from "../cart/formatCurrency";
 import { useAuth } from "../context/AuthContext";
 import LoadingComponent from "../components/Loading";
-import { useShoppingCart } from "../context/ShoppingCartContext"; 
+import { useShoppingCart } from "../context/ShoppingCartContext";
 
 // Define interfaces based on your pydantic models
 interface Product {
@@ -13,6 +13,7 @@ interface Product {
   img_url: string;
   description?: string;
   brand?: string;
+  images?: { img_url: string }[];
 }
 
 interface OrderDetail {
@@ -61,7 +62,7 @@ const OrderDetails: React.FC = () => {
   console.log("Extracted Order ID:", orderId);
 
   // Configuration variables for delivery
-  const  { deliveryFee } = useShoppingCart();
+  const { deliveryFee } = useShoppingCart();
 
   // image endpoint
   const imgEndPoint = import.meta.env.VITE_API_BASE_URL;
@@ -173,7 +174,9 @@ const OrderDetails: React.FC = () => {
               />
             </svg>
           </div>
-          <p className="text-gray-600 text-base sm:text-lg">No order data available</p>
+          <p className="text-gray-600 text-base sm:text-lg">
+            No order data available
+          </p>
         </div>
       </div>
     );
@@ -293,8 +296,13 @@ const OrderDetails: React.FC = () => {
                             <img
                               className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-200"
                               src={
-                                item.product.img_url
-                                  ? `${imgEndPoint}${item.product.img_url}`
+                                item.product.images &&
+                                item.product.images.length > 0
+                                  ? item.product.images[0].img_url.startsWith(
+                                      "http"
+                                    )
+                                    ? item.product.images[0].img_url
+                                    : `${imgEndPoint}${item.product.images[0].img_url}`
                                   : "/api/placeholder/80/80"
                               }
                               alt={item.product.name}
@@ -349,7 +357,9 @@ const OrderDetails: React.FC = () => {
                   </h3>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600 text-sm sm:text-base">Subtotal</span>
+                      <span className="text-gray-600 text-sm sm:text-base">
+                        Subtotal
+                      </span>
                       <span className="font-semibold text-gray-900 text-sm sm:text-base">
                         {formatCurrency(subtotal)}
                       </span>

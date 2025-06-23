@@ -11,7 +11,7 @@ type CartItem = {
   id: number;
   name: string;
   price: number;
-  img_url: string | null;
+  img_url: string | string[] | null;
   quantity: number;
   stockQuantity: number;
 };
@@ -32,7 +32,7 @@ type PaymentMethod = "pay-online" | "pay-later" | null;
 
 // Delivery fee configuration based on individual counties
 const DELIVERY_FEES: Record<string, number> = {
-  Nairobi: 300, 
+  Nairobi: 300,
   Kiambu: 350,
   Machakos: 450,
   Kajiado: 400,
@@ -93,7 +93,7 @@ type ShoppingCartContext = {
     id: number;
     name: string;
     price: number;
-    img_url: string | null;
+    img_url: string | string[] | null;
     stockQuantity: number;
   }) => void;
   increaseCartQuantity: (id: number) => void;
@@ -181,7 +181,7 @@ export function ShoppingCartProvider({ children }: ShoppingCartProviderProps) {
     id: number;
     name: string;
     price: number;
-    img_url: string | null;
+    img_url: string | string[] | null;
     stockQuantity: number;
   }) {
     setCartItems((currItems) => {

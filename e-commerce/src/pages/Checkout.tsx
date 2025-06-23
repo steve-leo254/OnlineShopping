@@ -14,7 +14,7 @@ type CartItem = {
   id: number;
   name: string;
   price: number;
-  img_url: string | null;
+  img_url: string | string[] | null;
   quantity: number;
 };
 
@@ -719,7 +719,11 @@ const Checkout = () => {
                     className="flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 bg-gray-50 rounded-lg"
                   >
                     <img
-                      src={item.img_url || undefined}
+                      src={
+                        Array.isArray(item.img_url)
+                          ? item.img_url[0] || undefined
+                          : item.img_url || undefined
+                      }
                       alt={item.name}
                       className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg flex-shrink-0"
                     />

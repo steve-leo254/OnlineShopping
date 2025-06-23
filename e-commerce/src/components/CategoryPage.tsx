@@ -713,7 +713,14 @@ const CategoryProductsPage = () => {
           id: product.id,
           name: product.name,
           price: product.price,
-          img_url: product.images?.[0]?.img_url || null,
+          img_url:
+            product.images && product.images.length > 0
+              ? product.images.map((img) =>
+                  img.img_url.startsWith("http")
+                    ? img.img_url
+                    : `${import.meta.env.VITE_API_BASE_URL}${img.img_url}`
+                )
+              : [],
           stockQuantity: product.stock_quantity,
         });
         toast.success(`${product.name} added to cart!`);
