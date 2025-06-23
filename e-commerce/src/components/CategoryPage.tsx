@@ -669,16 +669,51 @@ const CategoryProductsPage = () => {
           key={i}
           className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 animate-pulse border border-white/20"
         >
-          <div className="w-full h-48 bg-gray-200 rounded-xl mb-4"></div>
+          <div className="w-full h-48 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded-xl mb-4 relative overflow-hidden">
+            <div
+              className="absolute inset-0 animate-shimmer bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200"
+              style={{ backgroundSize: "200% 100%" }}
+            ></div>
+          </div>
           <div className="space-y-3">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            <div className="flex gap-2">
-              <div className="h-6 bg-gray-200 rounded w-16"></div>
-              <div className="h-6 bg-gray-200 rounded w-16"></div>
+            <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded w-3/4 relative overflow-hidden">
+              <div
+                className="absolute inset-0 animate-shimmer bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200"
+                style={{ backgroundSize: "200% 100%" }}
+              ></div>
             </div>
-            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded w-1/2 relative overflow-hidden">
+              <div
+                className="absolute inset-0 animate-shimmer bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200"
+                style={{ backgroundSize: "200% 100%" }}
+              ></div>
+            </div>
+            <div className="flex gap-2">
+              <div className="h-6 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded w-16 relative overflow-hidden">
+                <div
+                  className="absolute inset-0 animate-shimmer bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200"
+                  style={{ backgroundSize: "200% 100%" }}
+                ></div>
+              </div>
+              <div className="h-6 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded w-16 relative overflow-hidden">
+                <div
+                  className="absolute inset-0 animate-shimmer bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200"
+                  style={{ backgroundSize: "200% 100%" }}
+                ></div>
+              </div>
+            </div>
+            <div className="h-8 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded w-1/3 relative overflow-hidden">
+              <div
+                className="absolute inset-0 animate-shimmer bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200"
+                style={{ backgroundSize: "200% 100%" }}
+              ></div>
+            </div>
+            <div className="h-10 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 rounded relative overflow-hidden">
+              <div
+                className="absolute inset-0 animate-shimmer bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200"
+                style={{ backgroundSize: "200% 100%" }}
+              ></div>
+            </div>
           </div>
         </div>
       ))}
@@ -992,7 +1027,7 @@ const CategoryProductsPage = () => {
 
   // Replace the loading check and hero/banner rendering logic
   if (isLoading || categories.length === 0) {
-    return <div className="text-center py-16">Loading categories...</div>;
+    return <LoadingSkeleton />;
   }
 
   return (

@@ -1443,19 +1443,21 @@ def update_product_rating(db: Session, product_id: int):
 @app.post("/reviews", response_model=ReviewResponse)
 async def add_review(review: ReviewCreate, db: db_dependency, user: user_dependency):
     try:
-        # Check if user has already reviewed this product
+        # Check if user has already reviewed this product in this order
         existing_review = (
             db.query(models.Review)
             .filter(
                 models.Review.user_id == user.get("id"),
                 models.Review.product_id == review.product_id,
+                models.Review.order_id == review.order_id,
             )
             .first()
         )
 
         if existing_review:
             raise HTTPException(
-                status_code=400, detail="You have already reviewed this product"
+                status_code=400,
+                detail="You have already reviewed this product for this order",
             )
 
         # Create new review
