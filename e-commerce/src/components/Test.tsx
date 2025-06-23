@@ -509,24 +509,20 @@ const ModernEcommerceHomepage = () => {
                 .map((category, index) => (
                   <div
                     key={`${category.id}-${categoryCarouselIndex}`}
-                    className="group cursor-pointer flex touch-manipulation animate-fadeIn"
+                    className="group cursor-pointer flex flex-col items-center justify-center animate-fadeIn"
                     onClick={() => handleCategoryClick(category.name)}
                   >
-                    <div
-                      className={`${getCategoryColor(
-                        category.name
-                      )} rounded-2xl p-0 sm:p-0 lg:p-0 text-center hover:shadow-2xl transform hover:scale-105 transition-all duration-300 h-32 sm:h-40 lg:h-48 flex flex-col justify-center items-center w-full overflow-hidden`}
-                    >
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full overflow-hidden border-4 border-purple-200 shadow-md bg-white flex items-center justify-center mb-3 transition-transform duration-300 group-hover:scale-105">
                       <img
                         src={getCategoryImage(category.id)}
                         alt={category.name}
-                        className="w-full h-24 sm:h-32 lg:h-40 object-cover rounded-t-2xl"
+                        className="w-full h-full object-cover object-center"
                         style={{ background: "#eee" }}
                       />
-                      <h3 className="text-white font-semibold text-sm sm:text-base mt-2">
-                        {category.name}
-                      </h3>
                     </div>
+                    <h3 className="text-gray-800 font-semibold text-sm sm:text-base mt-1 text-center">
+                      {category.name}
+                    </h3>
                   </div>
                 ))}
             </div>
