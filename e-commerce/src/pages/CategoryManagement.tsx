@@ -24,7 +24,10 @@ import {
 type Category = {
   id: number;
   name: string;
+  title?: string;
+  subtitle?: string;
   description: string;
+  features?: string[];
 };
 
 type Subcategory = {
@@ -44,7 +47,10 @@ type Specification = {
 
 type CategoryForm = {
   name: string;
+  title?: string;
+  subtitle?: string;
   description: string;
+  features: string[];
 };
 
 type SpecForm = {
@@ -76,7 +82,10 @@ const CategoryManagement: React.FC = () => {
   // Form data
   const [categoryForm, setCategoryForm] = useState<CategoryForm>({
     name: "",
+    title: "",
+    subtitle: "",
     description: "",
+    features: [],
   });
   const [subcategoryForm, setSubcategoryForm] = useState({
     name: "",
@@ -363,7 +372,13 @@ const CategoryManagement: React.FC = () => {
 
   // Form reset functions
   const resetCategoryForm = () => {
-    setCategoryForm({ name: "", description: "" });
+    setCategoryForm({
+      name: "",
+      title: "",
+      subtitle: "",
+      description: "",
+      features: [],
+    });
     setEditingCategory(null);
     setShowCategoryForm(false);
     setErrors({});
@@ -389,7 +404,13 @@ const CategoryManagement: React.FC = () => {
 
   // Edit functions
   const handleEditCategory = (category: Category) => {
-    setCategoryForm({ name: category.name, description: category.description });
+    setCategoryForm({
+      name: category.name,
+      title: category.title || "",
+      subtitle: category.subtitle || "",
+      description: category.description,
+      features: Array.isArray(category.features) ? category.features : [],
+    });
     setEditingCategory(category);
     setShowCategoryForm(true);
   };
@@ -465,6 +486,25 @@ const CategoryManagement: React.FC = () => {
     } else {
       setSpecifications([]);
     }
+  };
+
+  const handleFeatureChange = (index: number, value: string) => {
+    const newFeatures = [...categoryForm.features];
+    newFeatures[index] = value;
+    setCategoryForm({ ...categoryForm, features: newFeatures });
+  };
+
+  const handleAddFeature = () => {
+    setCategoryForm({
+      ...categoryForm,
+      features: [...categoryForm.features, ""],
+    });
+  };
+
+  const handleRemoveFeature = (index: number) => {
+    const newFeatures = [...categoryForm.features];
+    newFeatures.splice(index, 1);
+    setCategoryForm({ ...categoryForm, features: newFeatures });
   };
 
   if (!isAdmin) {
@@ -843,7 +883,7 @@ const CategoryManagement: React.FC = () => {
         {/* Category Form Modal */}
         {showCategoryForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between p-6 border-b">
                 <h3 className="text-lg font-semibold">
                   {editingCategory ? "Edit Category" : "Add Category"}
@@ -871,7 +911,40 @@ const CategoryManagement: React.FC = () => {
                     required
                   />
                 </div>
-
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    value={categoryForm.title}
+                    onChange={(e) =>
+                      setCategoryForm({
+                        ...categoryForm,
+                        title: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g. Laptops & Notebooks"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Subtitle
+                  </label>
+                  <input
+                    type="text"
+                    value={categoryForm.subtitle}
+                    onChange={(e) =>
+                      setCategoryForm({
+                        ...categoryForm,
+                        subtitle: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g. Powerful computing for work and play"
+                  />
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Description
@@ -889,7 +962,40 @@ const CategoryManagement: React.FC = () => {
                     required
                   />
                 </div>
-
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Features
+                  </label>
+                  <div className="space-y-2">
+                    {categoryForm.features.map((feature, idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          value={feature}
+                          onChange={(e) =>
+                            handleFeatureChange(idx, e.target.value)
+                          }
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder={`Feature #${idx + 1}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveFeature(idx)}
+                          className="text-red-500 hover:text-red-700 px-2 py-1 rounded"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={handleAddFeature}
+                      className="mt-2 px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                    >
+                      + Add Feature
+                    </button>
+                  </div>
+                </div>
                 <div className="flex gap-3 pt-4">
                   <button
                     type="button"

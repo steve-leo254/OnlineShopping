@@ -69,7 +69,10 @@ class Categories(Base):
     __tablename__ = "categories"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(50), unique=True, nullable=False)
+    title = Column(String(100), nullable=True)
+    subtitle = Column(String(200), nullable=True)
     description = Column(String(200))
+    features = Column(JSON, nullable=True)
     products = relationship("Products", back_populates="category")
     specifications = relationship(
         "Specification", back_populates="category", cascade="all, delete-orphan"
@@ -77,7 +80,6 @@ class Categories(Base):
     subcategories = relationship(
         "Subcategory", back_populates="category", cascade="all, delete-orphan"
     )
-
 
 
 class Subcategory(Base):
@@ -265,3 +267,19 @@ class Review(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     user = relationship("Users", back_populates="reviews")
     product = relationship("Products", back_populates="reviews")
+
+
+# New table for global banners
+class Banner(Base):
+    __tablename__ = "banners"
+    id = Column(Integer, primary_key=True, index=True)
+    image_url = Column(String(255), nullable=False)
+    title = Column(String(100), nullable=True)
+    subtitle = Column(String(255), nullable=True)
+    active = Column(Boolean, default=True)
+    type = Column(String(50), nullable=True)  # e.g., "homepage", "category"
+    created_at = Column(DateTime, default=func.now())
+    category_id = Column(
+        Integer, ForeignKey("categories.id"), nullable=True
+    )  # New field
+    category = relationship("Categories", backref="banners")

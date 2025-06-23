@@ -33,6 +33,9 @@ from pydantic_models import (
     SubcategoryCreate,
     SubcategoryUpdate,
     ReviewBase,
+    BannerBase,
+    BannerCreate,
+    BannerResponse,
 )
 from typing import Annotated, List, Optional
 import models
@@ -1788,6 +1791,100 @@ async def recalculate_all_product_ratings(db: db_dependency, user: user_dependen
         raise HTTPException(
             status_code=500, detail="Error recalculating product ratings"
         )
+
+
+# --- Banner Endpoints ---
+@app.post(
+    "/banners", response_model=BannerResponse, status_code=status.HTTP_201_CREATED
+)
+async def create_banner(banner: BannerCreate, user: user_dependency, db: db_dependency):
+    require_admin(user)
+    try:
+        db_banner = models.Banner(**banner.dict())
+        db.add(db_banner)
+        db.commit()
+        db.refresh(db_banner)
+        return db_banner
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error creating banner: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error creating banner")
+
+
+@app.get(
+    "/public/banners",
+    response_model=List[BannerResponse],
+    status_code=status.HTTP_200_OK,
+)
+async def get_banners(
+    db: db_dependency, type: Optional[str] = None, category_id: Optional[int] = None
+):
+    try:
+        query = db.query(models.Banner).filter(models.Banner.active == True)
+        if type:
+            query = query.filter(models.Banner.type == type)
+        if category_id:
+            query = query.filter(models.Banner.category_id == category_id)
+        banners = query.order_by(models.Banner.created_at.desc()).all()
+        return banners
+    except SQLAlchemyError as e:
+        logger.error(f"Error fetching banners: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error fetching banners")
+
+
+@app.put("/banners/{banner_id}", response_model=BannerResponse)
+async def update_banner(
+    banner_id: int, banner: BannerCreate, user: user_dependency, db: db_dependency
+):
+    require_admin(user)
+    try:
+        db_banner = (
+            db.query(models.Banner).filter(models.Banner.id == banner_id).first()
+        )
+        if not db_banner:
+            raise HTTPException(status_code=404, detail="Banner not found")
+        for field, value in banner.dict().items():
+            setattr(db_banner, field, value)
+        db.commit()
+        db.refresh(db_banner)
+        return db_banner
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error updating banner: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error updating banner")
+
+
+@app.delete("/banners/{banner_id}", status_code=status.HTTP_200_OK)
+async def delete_banner(banner_id: int, user: user_dependency, db: db_dependency):
+    require_admin(user)
+    try:
+        db_banner = (
+            db.query(models.Banner).filter(models.Banner.id == banner_id).first()
+        )
+        if not db_banner:
+            raise HTTPException(status_code=404, detail="Banner not found")
+        db.delete(db_banner)
+        db.commit()
+        return {"message": "Banner deleted successfully"}
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error deleting banner: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error deleting banner")
+
+
+@app.get(
+    "/banners", response_model=List[BannerResponse], status_code=status.HTTP_200_OK
+)
+async def get_all_banners(user: user_dependency, db: db_dependency):
+    require_admin(user)
+    try:
+        banners = (
+            db.query(models.Banner).order_by(models.Banner.created_at.desc()).all()
+        )
+        return banners
+    except SQLAlchemyError as e:
+        logger.error(f"Error fetching banners: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error fetching banners")
 
 
 if __name__ == "__main__":

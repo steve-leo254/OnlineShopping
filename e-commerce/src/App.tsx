@@ -33,6 +33,7 @@ import { FavoritesProvider } from "./context/FavoritesContext";
 import ModernEcommerceHomepage from "./components/Test";
 import CategoryProductsPage from "./components/CategoryPage";
 import CategoryManagement from "./pages/CategoryManagement";
+import BannerManagement from "./pages/BannerManagement";
 
 function App() {
   return (
@@ -82,6 +83,10 @@ function App() {
                   <Route
                     path="/category-management"
                     element={<CategoryManagement />}
+                  />
+                  <Route
+                    path="/banner-management"
+                    element={<BannerManagement />}
                   />
                   <Route path="/pending-reviews" element={<ReviewPage />} />
                   <Route path="/wishlist" element={<WishList />} />

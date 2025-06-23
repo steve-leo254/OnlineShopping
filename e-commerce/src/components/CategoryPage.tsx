@@ -33,6 +33,9 @@ type Category = {
   id: number;
   name: string;
   description: string | null;
+  title?: string;
+  subtitle?: string;
+  features?: string[];
 };
 
 type Subcategory = {
@@ -86,7 +89,9 @@ const CategoryProductsPage = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [categoryConfig, setCategoryConfig] = useState<any>(null);
+  const [categoryBanners, setCategoryBanners] = useState<string[]>([]);
+  const [bannerIndex, setBannerIndex] = useState(0);
+  const [loadingBanners, setLoadingBanners] = useState(false);
 
   const { addToCart, getItemQuantity } = useShoppingCart();
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
@@ -244,132 +249,74 @@ const CategoryProductsPage = () => {
     }
   }, [selectedCategory, categories, selectedSubcategory]);
 
-  // Set category configuration based on selected category
+  // Fetch banners for the selected category
   useEffect(() => {
-    if (selectedCategory) {
-      const config = getCategoryConfig(selectedCategory);
-      setCategoryConfig(config);
-    }
-  }, [selectedCategory]);
-
-  // Window resize listener for responsive carousel
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Get category configuration
-  const getCategoryConfig = (categoryName: string) => {
-    const configs: Record<string, any> = {
-      All: {
-        title: "Flowtech Solutions",
-        subtitle: "Your Complete Tech Destination",
-        description:
-          "Discover our comprehensive collection of cutting-edge technology products. From laptops and smartphones to PC components and accessories, we have everything you need to stay ahead in the digital world.",
-        gradient: "from-purple-600 via-pink-600 to-red-600",
-        bgGradient: "from-purple-50 via-pink-50 to-red-50",
-        icon: Smartphone,
-        banner:
-          "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=1200&h=400&fit=crop",
-        features: [
-          "All Categories",
-          "Premium Quality",
-          "Fast Shipping",
-          "Expert Support",
-        ],
-      },
-      Laptops: {
-        title: "Laptops & Notebooks",
-        subtitle: "Powerful computing for work and play",
-        description:
-          "From ultrabooks to gaming powerhouses, find the perfect laptop for your needs. Premium processors, stunning displays, and all-day battery life.",
-        gradient: "from-blue-600 via-indigo-600 to-purple-800",
-        bgGradient: "from-blue-50 via-indigo-50 to-purple-50",
-        icon: Laptop,
-        banner:
-          "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=1200&h=400&fit=crop",
-        features: [
-          "Intel/AMD Processors",
-          "SSD Storage",
-          "Full HD+ Displays",
-          "2-Year Warranty",
-        ],
-      },
-      Smartphones: {
-        title: "Smartphones & Mobile",
-        subtitle: "Stay connected with cutting-edge mobile technology",
-        description:
-          "Latest smartphones with advanced cameras, lightning-fast processors, and innovative features. Android and iOS options available.",
-        gradient: "from-green-500 via-emerald-500 to-teal-600",
-        bgGradient: "from-green-50 via-emerald-50 to-teal-50",
-        icon: Smartphone,
-        banner:
-          "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1200&h=400&fit=crop",
-        features: [
-          "5G Connectivity",
-          "Pro Cameras",
-          "Fast Charging",
-          "Premium Materials",
-        ],
-      },
-      "PC Components": {
-        title: "PC Components & Hardware",
-        subtitle: "Build your dream computer",
-        description:
-          "High-performance components for custom PC builds. CPUs, GPUs, motherboards, and more from top manufacturers.",
-        gradient: "from-red-500 via-orange-500 to-yellow-600",
-        bgGradient: "from-red-50 via-orange-50 to-yellow-50",
-        icon: Cpu,
-        banner:
-          "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=1200&h=400&fit=crop",
-        features: [
-          "Latest Chipsets",
-          "RGB Lighting",
-          "Overclocking Support",
-          "Expert Assembly",
-        ],
-      },
-      Accessories: {
-        title: "Electronics Accessories",
-        subtitle: "Complete your tech setup",
-        description:
-          "Essential accessories to enhance your electronics experience. From audio gear to input devices and connectivity solutions.",
-        gradient: "from-purple-500 via-pink-500 to-rose-600",
-        bgGradient: "from-purple-50 via-pink-50 to-rose-50",
-        icon: Headphones,
-        banner:
-          "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=1200&h=400&fit=crop",
-        features: [
-          "Premium Audio",
-          "Wireless Technology",
-          "Ergonomic Design",
-          "Multi-Device Support",
-        ],
-      },
-    };
-
-    return (
-      configs[categoryName] || {
-        title: categoryName,
-        subtitle: `Explore our ${categoryName} collection`,
-        description: `Discover the best ${categoryName.toLowerCase()} products with premium quality and competitive prices.`,
-        gradient: "from-blue-600 via-indigo-600 to-purple-800",
-        bgGradient: "from-blue-50 via-indigo-50 to-purple-50",
-        icon: Laptop,
-        banner:
-          "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=1200&h=400&fit=crop",
-        features: [
-          "Premium Quality",
-          "Fast Shipping",
-          "Best Prices",
-          "Customer Support",
-        ],
+    const fetchBanners = async () => {
+      if (!cat?.id) {
+        setCategoryBanners([]);
+        return;
       }
-    );
+      setLoadingBanners(true);
+      try {
+        // Try category-specific banners first
+        const res = await axios.get(
+          `${
+            import.meta.env.VITE_API_BASE_URL
+          }/public/banners?type=category&category_id=${cat.id}`
+        );
+        let banners = res.data.map((b: any) => b.image_url);
+        // If none, fallback to global category banners
+        if (!banners.length) {
+          const fallback = await axios.get(
+            `${import.meta.env.VITE_API_BASE_URL}/public/banners?type=category`
+          );
+          banners = fallback.data.map((b: any) => b.image_url);
+        }
+        setCategoryBanners(banners);
+      } catch {
+        setCategoryBanners([]);
+      } finally {
+        setLoadingBanners(false);
+        setBannerIndex(0);
+      }
+    };
+    fetchBanners();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cat?.id]);
+
+  // Banner rotation (if multiple banners)
+  useEffect(() => {
+    if (categoryBanners.length > 1) {
+      const interval = setInterval(() => {
+        setBannerIndex((prev) => (prev + 1) % categoryBanners.length);
+      }, 6000);
+      return () => clearInterval(interval);
+    }
+  }, [categoryBanners]);
+
+  // Get selected category object
+  const selectedCategoryObj =
+    selectedCategory && categories.length > 0
+      ? categories.find(
+          (cat) => cat.name.toLowerCase() === selectedCategory.toLowerCase()
+        )
+      : null;
+
+  // Get top-rated product image for icon
+  const getCategoryIconImage = () => {
+    if (!products.length)
+      return "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=400&fit=crop";
+    const sorted = [...products].sort((a, b) => b.rating - a.rating);
+    const top = sorted[0];
+    if (top && top.images && top.images.length > 0) {
+      const url = top.images[0].img_url;
+      return url && typeof url === "string"
+        ? url.startsWith("http")
+          ? url
+          : `${import.meta.env.VITE_API_BASE_URL}${url}`
+        : "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=400&fit=crop";
+    }
+    return "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=400&fit=crop";
   };
 
   const filteredProducts = products.filter((product: Product) => {
@@ -667,12 +614,10 @@ const CategoryProductsPage = () => {
   // Enhanced Product Card Component
   const ProductCard = ({
     product,
-    categoryConfig,
     onViewProduct,
     index,
   }: {
     product: Product;
-    categoryConfig: any;
     onViewProduct: (productId: number) => void;
     index: number;
   }) => {
@@ -851,7 +796,7 @@ const CategoryProductsPage = () => {
               className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
                 product.stock_quantity === 0
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : `bg-gradient-to-r ${categoryConfig.gradient} text-white hover:shadow-lg transform hover:scale-105`
+                  : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-lg transform hover:scale-105"
               }`}
               onClick={() => handleAddToCart(product)}
             >
@@ -891,13 +836,11 @@ const CategoryProductsPage = () => {
   // Enhanced Products Grid Component
   const ProductsGrid = ({
     products,
-    categoryConfig,
     onViewProduct,
     viewMode,
     isLoading,
   }: {
     products: Product[];
-    categoryConfig: any;
     onViewProduct: (productId: number) => void;
     viewMode: string;
     isLoading: boolean;
@@ -946,7 +889,6 @@ const CategoryProductsPage = () => {
           <ProductCard
             key={product.id}
             product={product}
-            categoryConfig={categoryConfig}
             onViewProduct={onViewProduct}
             index={index}
           />
@@ -955,52 +897,106 @@ const CategoryProductsPage = () => {
     );
   };
 
-  if (!categoryConfig) {
-    return <LoadingSkeleton />;
+  if (!selectedCategoryObj) {
+    return <div className="text-center py-16">Loading category...</div>;
   }
 
-  const IconComponent = categoryConfig.icon;
+  const cat: Category = selectedCategoryObj as Category;
 
   return (
-    <div
-      className={`min-h-screen bg-gradient-to-br ${categoryConfig.bgGradient}`}
-    >
+    <div className={`min-h-screen bg-gradient-to-br from-gray-50 to-blue-50`}>
       {/* Category Hero Banner */}
       <div className="relative overflow-hidden hidden md:block">
         <div
           className="h-80 bg-cover bg-center relative"
-          style={{ backgroundImage: `url(${categoryConfig.banner})` }}
+          style={{
+            backgroundImage: categoryBanners.length
+              ? `url(${categoryBanners[bannerIndex]})`
+              : undefined,
+            backgroundColor: categoryBanners.length ? undefined : "#f3f4f6",
+          }}
         >
           <div className="absolute inset-0 bg-black/40"></div>
-          <div
-            className={`absolute inset-0 bg-gradient-to-r ${categoryConfig.gradient} opacity-75`}
-          ></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-800 opacity-75"></div>
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
             <div className="text-white max-w-2xl">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 bg-white/20 rounded-full backdrop-blur-sm">
-                  <IconComponent size={32} />
-                </div>
-                <h1 className="text-5xl font-bold">{categoryConfig.title}</h1>
+                <img
+                  src={getCategoryIconImage()}
+                  alt="Category Icon"
+                  className="w-12 h-12 rounded-full object-cover border-2 border-white shadow"
+                />
+                <h1 className="text-5xl font-bold">
+                  {cat.title || cat.name || ""}
+                </h1>
               </div>
-              <p className="text-xl mb-6 text-white/90">
-                {categoryConfig.subtitle}
-              </p>
+              <p className="text-xl mb-6 text-white/90">{cat.subtitle || ""}</p>
               <p className="text-lg mb-8 text-white/80">
-                {categoryConfig.description}
+                {cat.description || ""}
               </p>
               <div className="flex flex-wrap gap-4">
-                {categoryConfig.features.map(
-                  (feature: string, index: number) => (
-                    <span
-                      key={index}
-                      className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium"
-                    >
-                      ✓ {feature}
-                    </span>
-                  )
-                )}
+                {(cat.features || []).map((feature: string, index: number) => (
+                  <span
+                    key={index}
+                    className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium"
+                  >
+                    ✓ {feature}
+                  </span>
+                ))}
               </div>
+              {categoryBanners.length > 0 && (
+                <div className="mt-6 flex flex-col items-center">
+                  <div className="relative w-full max-w-2xl">
+                    <img
+                      src={categoryBanners[bannerIndex]}
+                      alt={`Banner ${bannerIndex + 1}`}
+                      className="w-full h-48 object-cover rounded-xl border-2 border-white shadow"
+                      style={{ background: "#eee" }}
+                    />
+                    {categoryBanners.length > 1 && (
+                      <>
+                        <button
+                          className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
+                          onClick={() =>
+                            setBannerIndex(
+                              (prev) =>
+                                (prev - 1 + categoryBanners.length) %
+                                categoryBanners.length
+                            )
+                          }
+                        >
+                          <ChevronLeft className="w-6 h-6 text-gray-700" />
+                        </button>
+                        <button
+                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
+                          onClick={() =>
+                            setBannerIndex(
+                              (prev) => (prev + 1) % categoryBanners.length
+                            )
+                          }
+                        >
+                          <ChevronRight className="w-6 h-6 text-gray-700" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  {categoryBanners.length > 1 && (
+                    <div className="flex justify-center mt-2 space-x-2">
+                      {categoryBanners.map((_, idx) => (
+                        <button
+                          key={idx}
+                          className={`w-2.5 h-2.5 rounded-full ${
+                            idx === bannerIndex
+                              ? "bg-blue-600"
+                              : "bg-gray-300 hover:bg-gray-400"
+                          }`}
+                          onClick={() => setBannerIndex(idx)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1057,7 +1053,7 @@ const CategoryProductsPage = () => {
                       onClick={() => handleSubcategoryChange(subcategory.name)}
                       className={`p-3 sm:p-4 rounded-xl text-center transition-all duration-300 hover:scale-105 ${
                         selectedSubcategory === subcategory.name
-                          ? `bg-gradient-to-r ${categoryConfig.gradient} text-white shadow-lg`
+                          ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg"
                           : "bg-white/60 backdrop-blur-sm border border-white/20 hover:bg-white/80"
                       }`}
                     >
@@ -1205,7 +1201,7 @@ const CategoryProductsPage = () => {
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
               {selectedCategory === "All"
                 ? "All Products"
-                : `${categoryConfig.title} Collection`}
+                : `${cat.title || cat.name || ""} Collection`}
               {selectedSubcategory && ` - ${selectedSubcategory}`}
             </h2>
             <p className="text-sm sm:text-base text-gray-600 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
@@ -1236,7 +1232,6 @@ const CategoryProductsPage = () => {
         {/* Products Grid */}
         <ProductsGrid
           products={sortedProducts}
-          categoryConfig={categoryConfig}
           onViewProduct={handleViewProduct}
           viewMode={viewMode}
           isLoading={isLoading}

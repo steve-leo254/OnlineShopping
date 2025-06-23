@@ -49,7 +49,10 @@ class Token(BaseModel):
 
 class CategoryBase(BaseModel):
     name: str
+    title: Optional[str] = None  # New field
+    subtitle: Optional[str] = None  # New field
     description: Optional[str]
+    features: Optional[List[str]] = None  # New field
 
 
 class CategoryResponse(CategoryBase):
@@ -487,3 +490,25 @@ class ProductCreateRequest(BaseModel):
     is_new: bool = False
     images: Optional[List[ProductImageCreate]] = None
     specifications: Optional[List[ProductSpecificationCreate]] = None
+
+
+# Banner Pydantic models
+class BannerBase(BaseModel):
+    image_url: str
+    title: Optional[str] = None
+    subtitle: Optional[str] = None
+    active: bool = True
+    type: Optional[str] = None
+    category_id: Optional[int] = None  # New field
+
+
+class BannerCreate(BannerBase):
+    pass
+
+
+class BannerResponse(BannerBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
