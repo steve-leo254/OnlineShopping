@@ -87,7 +87,7 @@ const ModernEcommerceHomepage = () => {
   const [touchEnd, setTouchEnd] = useState(0);
   const [homepageBanners, setHomepageBanners] = useState<Banner[]>([]);
 
-  const { addToCart, getItemQuantity } = useShoppingCart();
+  const { addToCart, getItemQuantity, removeFromCart } = useShoppingCart();
   const { favorites, isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { isAuthenticated } = useAuth();
 
@@ -677,10 +677,22 @@ const ModernEcommerceHomepage = () => {
                           </div>
 
                           <button
-                            onClick={() => handleAddToCart(product)}
-                            className="w-full bg-purple-600 text-white py-3 rounded-xl hover:bg-purple-700 transition-colors font-semibold"
+                            onClick={() => {
+                              if (getItemQuantity(product.id) > 0) {
+                                removeFromCart(product.id);
+                              } else {
+                                handleAddToCart(product);
+                              }
+                            }}
+                            className={`w-full py-3 rounded-xl font-semibold transition-colors ${
+                              getItemQuantity(product.id) > 0
+                                ? "bg-red-600 text-white hover:bg-red-700"
+                                : "bg-purple-600 text-white hover:bg-purple-700"
+                            }`}
                           >
-                            Add to Cart
+                            {getItemQuantity(product.id) > 0
+                              ? "Remove from Cart"
+                              : "Add to Cart"}
                           </button>
                         </div>
                       </div>
