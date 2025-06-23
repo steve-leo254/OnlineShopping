@@ -864,7 +864,7 @@ const CategoryProductsPage = () => {
             <div className="flex items-center justify-between text-xs text-gray-500">
               <span className="flex items-center gap-1">
                 <Truck size={12} />
-                Free shipping
+                Delivery Services
               </span>
               <span className="flex items-center gap-1">
                 <Shield size={12} />
@@ -990,11 +990,6 @@ const CategoryProductsPage = () => {
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
               <div className="text-white max-w-2xl">
                 <div className="flex items-center gap-3 mb-4">
-                  <img
-                    src={getCategoryIconImage()}
-                    alt="Category Icon"
-                    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow"
-                  />
                   <h1 className="text-5xl font-bold">
                     {selectedCategoryObj.title ||
                       selectedCategoryObj.name ||
@@ -1215,30 +1210,6 @@ const CategoryProductsPage = () => {
                 <option value="name">Name A-Z</option>
               </select>
             </div>
-
-            {/* View Toggle */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-lg transition-all ${
-                  viewMode === "grid"
-                    ? "bg-blue-100 text-blue-600"
-                    : "text-gray-400 hover:text-gray-600"
-                }`}
-              >
-                <Grid size={20} />
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-2 rounded-lg transition-all ${
-                  viewMode === "list"
-                    ? "bg-blue-100 text-blue-600"
-                    : "text-gray-400 hover:text-gray-600"
-                }`}
-              >
-                <List size={20} />
-              </button>
-            </div>
           </div>
         </div>
 
@@ -1255,7 +1226,7 @@ const CategoryProductsPage = () => {
         <ProductsGrid
           products={sortedProducts}
           onViewProduct={handleViewProduct}
-          viewMode={viewMode}
+          viewMode="grid"
           isLoading={isLoading}
         />
       </div>

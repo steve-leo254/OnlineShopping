@@ -759,7 +759,9 @@ const ModernEcommerceHomepage = () => {
                       ))}
                 </div>
 
-                <button className="w-full mt-6 bg-gradient-to-r from-yellow-400 to-orange-500 text-white py-3 rounded-xl font-semibold hover:from-yellow-500 hover:to-orange-600 transition-all duration-300 transform hover:scale-105">
+                <button
+                onClick={() => navigate("/shop")}
+                 className="w-full mt-6 bg-gradient-to-r from-yellow-400 to-orange-500 text-white py-3 rounded-xl font-semibold hover:from-yellow-500 hover:to-orange-600 transition-all duration-300 transform hover:scale-105">
                   View All Top Rated
                 </button>
               </div>
