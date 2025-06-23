@@ -14,6 +14,7 @@ import {
   RotateCcw,
   ChevronLeft,
   ChevronRight,
+  Eye,
 } from "lucide-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -589,27 +590,41 @@ const ModernEcommerceHomepage = () => {
                             alt={product.name}
                             className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
                           />
-                          <div className="absolute top-4 left-4">
-                            <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                              {product.is_new
-                                ? "New"
-                                : calculateDiscount(product) > 0
-                                ? `${calculateDiscount(product)}% OFF`
-                                : "Featured"}
-                            </span>
+                          <div className="absolute top-4 left-4 flex flex-col gap-2">
+                            {product.is_new && (
+                              <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold mb-1">
+                                New
+                              </span>
+                            )}
+                            {calculateDiscount(product) > 0 && (
+                              <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                                {calculateDiscount(product)}% OFF
+                              </span>
+                            )}
                           </div>
-                          <button
-                            onClick={() => handleToggleFavorite(product)}
-                            className="absolute top-4 right-4 p-2 bg-white/80 rounded-full hover:bg-white transition-colors"
-                          >
-                            <Heart
-                              className={`w-5 h-5 ${
-                                isFavorite(product.id.toString())
-                                  ? "fill-red-500 text-red-500"
-                                  : "text-gray-600"
-                              }`}
-                            />
-                          </button>
+                          <div className="absolute top-4 right-4 flex flex-col gap-2 z-20">
+                            <button
+                              onClick={() => handleToggleFavorite(product)}
+                              className="p-2 bg-white/80 rounded-full hover:bg-white transition-colors mb-1"
+                            >
+                              <Heart
+                                className={`w-5 h-5 ${
+                                  isFavorite(product.id.toString())
+                                    ? "fill-red-500 text-red-500"
+                                    : "text-gray-600"
+                                }`}
+                              />
+                            </button>
+                            <button
+                              onClick={() =>
+                                navigate(`/product-details/${product.id}`)
+                              }
+                              className="p-2 bg-white/80 rounded-full hover:bg-white transition-colors"
+                              title="View Details"
+                            >
+                              <Eye className="w-5 h-5 text-gray-600 hover:text-blue-600 transition-colors" />
+                            </button>
+                          </div>
                         </div>
 
                         <div className="p-6">
@@ -643,7 +658,7 @@ const ModernEcommerceHomepage = () => {
                             </div>
                             <span className="text-sm text-gray-600 ml-2">
                               ({(product.rating || 0).toFixed(1)}) •{" "}
-                              {product.reviews?.length || 0} reviews
+                              {product.reviews?.length || 0}
                             </span>
                           </div>
 
@@ -702,6 +717,9 @@ const ModernEcommerceHomepage = () => {
                         <div
                           key={product.id}
                           className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group"
+                          onClick={() =>
+                            navigate(`/product-details/${product.id}`)
+                          }
                         >
                           <div className="relative">
                             <img
@@ -713,7 +731,6 @@ const ModernEcommerceHomepage = () => {
                               {index + 1}
                             </div>
                           </div>
-
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-sm truncate">
                               {product.name}
@@ -748,9 +765,11 @@ const ModernEcommerceHomepage = () => {
                                 )}
                             </div>
                           </div>
-
                           <button
-                            onClick={() => handleAddToCart(product)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddToCart(product);
+                            }}
                             className="bg-purple-600 text-white p-2 rounded-lg hover:bg-purple-700 transition-colors opacity-0 group-hover:opacity-100"
                           >
                             <ShoppingCart className="w-4 h-4" />
@@ -760,9 +779,10 @@ const ModernEcommerceHomepage = () => {
                 </div>
 
                 <button
-                onClick={() => navigate("/shop")}
-                 className="w-full mt-6 bg-gradient-to-r from-yellow-400 to-orange-500 text-white py-3 rounded-xl font-semibold hover:from-yellow-500 hover:to-orange-600 transition-all duration-300 transform hover:scale-105">
-                  View All Top Rated
+                  onClick={() => navigate("/shop")}
+                  className="w-full mt-6 bg-gradient-to-r from-yellow-400 to-orange-500 text-white py-3 rounded-xl font-semibold hover:from-yellow-500 hover:to-orange-600 transition-all duration-300 transform hover:scale-105"
+                >
+                  View All
                 </button>
               </div>
             </div>
