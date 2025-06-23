@@ -500,6 +500,7 @@ class BannerBase(BaseModel):
     active: bool = True
     type: Optional[str] = None
     category_id: Optional[int] = None  # New field
+    button_text: Optional[str] = None  # New field for homepage banners
 
 
 class BannerCreate(BannerBase):

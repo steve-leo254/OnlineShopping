@@ -60,6 +60,14 @@ type Product = {
   }>;
 };
 
+type Banner = {
+  id: number;
+  image_url: string;
+  title?: string;
+  subtitle?: string;
+  button_text?: string;
+};
+
 const ModernEcommerceHomepage = () => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -76,37 +84,11 @@ const ModernEcommerceHomepage = () => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
+  const [homepageBanners, setHomepageBanners] = useState<Banner[]>([]);
 
   const { addToCart, getItemQuantity } = useShoppingCart();
   const { favorites, isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { isAuthenticated } = useAuth();
-
-  const heroSlides = [
-    {
-      title: "Summer Collection 2025",
-      subtitle: "Discover the latest trends",
-      cta: "Shop Now",
-      bg: "from-purple-600 via-pink-600 to-blue-600",
-      image:
-        "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800&h=600&fit=crop",
-    },
-    {
-      title: "Premium Quality",
-      subtitle: "Crafted for perfection",
-      cta: "Explore",
-      bg: "from-emerald-600 via-teal-600 to-cyan-600",
-      image:
-        "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&h=600&fit=crop",
-    },
-    {
-      title: "Exclusive Deals",
-      subtitle: "Up to 70% off",
-      cta: "Save Now",
-      bg: "from-orange-600 via-red-600 to-pink-600",
-      image:
-        "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=800&h=600&fit=crop",
-    },
-  ];
 
   // Fetch categories from database
   const fetchCategories = async () => {
@@ -177,6 +159,22 @@ const ModernEcommerceHomepage = () => {
     }
   };
 
+  // Fetch homepage banners
+  useEffect(() => {
+    axios
+      .get(`${import.meta.env.VITE_API_BASE_URL}/public/banners?type=homepage`)
+      .then((res) => {
+        setHomepageBanners(
+          res.data.map((b: any) => ({
+            ...b,
+            image_url: b.image_url.startsWith("http")
+              ? b.image_url
+              : `${import.meta.env.VITE_API_BASE_URL}${b.image_url}`,
+          }))
+        );
+      });
+  }, []);
+
   // Fetch all data on component mount
   useEffect(() => {
     const fetchData = async () => {
@@ -192,12 +190,14 @@ const ModernEcommerceHomepage = () => {
     fetchData();
   }, []);
 
+  // Auto-advance homepage banner carousel
   useEffect(() => {
+    if (homepageBanners.length < 2) return;
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+      setCurrentSlide((prev) => (prev + 1) % homepageBanners.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [homepageBanners]);
 
   const handleAddToCart = (product: Product) => {
     const currentQuantityInCart = getItemQuantity(product.id);
@@ -380,36 +380,44 @@ const ModernEcommerceHomepage = () => {
 
       {/* Hero Section */}
       <section className="relative h-[50vh] flex items-center justify-center overflow-hidden">
-        <div
-          className={`absolute inset-0 bg-gradient-to-br ${heroSlides[currentSlide].bg} opacity-90`}
-        />
-        <div className="absolute inset-0 bg-black/20" />
-
-        <div className="relative z-10 text-center text-white max-w-4xl mx-auto px-4">
-          <h1 className="text-3xl md:text-5xl font-bold mb-4">
-            {heroSlides[currentSlide].title}
-          </h1>
-          <p className="text-lg md:text-xl mb-6 opacity-90">
-            {heroSlides[currentSlide].subtitle}
-          </p>
-          <button className="bg-white text-purple-600 px-6 py-3 rounded-full font-semibold text-base hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-xl">
-            {heroSlides[currentSlide].cta}
-            <ArrowRight className="inline-block ml-2 w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Slide Indicators */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2">
-          {heroSlides.map((_, index) => (
-            <button
-              key={index}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                index === currentSlide ? "bg-white" : "bg-white/50"
-              }`}
-              onClick={() => setCurrentSlide(index)}
+        {homepageBanners.length > 0 && (
+          <>
+            <img
+              src={homepageBanners[currentSlide].image_url}
+              alt={homepageBanners[currentSlide].title || "Banner"}
+              className="absolute inset-0 w-full h-full object-cover object-center z-0 opacity-80"
+              style={{ pointerEvents: "none" }}
             />
-          ))}
-        </div>
+            <div className="absolute inset-0 bg-black/40 z-0" />
+            <div className="relative z-10 text-center text-white max-w-4xl mx-auto px-4">
+              <h1 className="text-3xl md:text-5xl font-bold mb-4">
+                {homepageBanners[currentSlide].title}
+              </h1>
+              <p className="text-lg md:text-xl mb-6 opacity-90">
+                {homepageBanners[currentSlide].subtitle}
+              </p>
+              <button
+                className="bg-white text-purple-600 px-6 py-3 rounded-full font-semibold text-base hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-xl"
+                onClick={() => navigate("/shop")}
+              >
+                {homepageBanners[currentSlide].button_text || "Shop Now"}
+                <ArrowRight className="inline-block ml-2 w-4 h-4" />
+              </button>
+            </div>
+            {/* Slide Indicators */}
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
+              {homepageBanners.map((_, index) => (
+                <button
+                  key={index}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                    index === currentSlide ? "bg-white" : "bg-white/50"
+                  }`}
+                  onClick={() => setCurrentSlide(index)}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </section>
 
       {/* Categories Section */}

@@ -97,6 +97,14 @@ const CategoryProductsPage = () => {
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { isAuthenticated } = useAuth();
 
+  // Get selected category object and cat (define only once, above all useEffects)
+  const selectedCategoryObj =
+    selectedCategory && categories.length > 0
+      ? categories.find(
+          (cat) => cat.name.toLowerCase() === selectedCategory.toLowerCase()
+        )
+      : null;
+
   // Get category name from URL or location state
   useEffect(() => {
     // Try to get category from navigation state first
@@ -251,26 +259,34 @@ const CategoryProductsPage = () => {
 
   // Fetch banners for the selected category
   useEffect(() => {
+    if (!selectedCategoryObj?.id) {
+      setCategoryBanners([]);
+      return;
+    }
     const fetchBanners = async () => {
-      if (!cat?.id) {
-        setCategoryBanners([]);
-        return;
-      }
       setLoadingBanners(true);
       try {
         // Try category-specific banners first
         const res = await axios.get(
           `${
             import.meta.env.VITE_API_BASE_URL
-          }/public/banners?type=category&category_id=${cat.id}`
+          }/public/banners?type=category&category_id=${selectedCategoryObj.id}`
         );
-        let banners = res.data.map((b: any) => b.image_url);
+        let banners = res.data.map((b: any) =>
+          b.image_url.startsWith("http")
+            ? b.image_url
+            : `${import.meta.env.VITE_API_BASE_URL}${b.image_url}`
+        );
         // If none, fallback to global category banners
         if (!banners.length) {
           const fallback = await axios.get(
             `${import.meta.env.VITE_API_BASE_URL}/public/banners?type=category`
           );
-          banners = fallback.data.map((b: any) => b.image_url);
+          banners = fallback.data.map((b: any) =>
+            b.image_url.startsWith("http")
+              ? b.image_url
+              : `${import.meta.env.VITE_API_BASE_URL}${b.image_url}`
+          );
         }
         setCategoryBanners(banners);
       } catch {
@@ -282,7 +298,7 @@ const CategoryProductsPage = () => {
     };
     fetchBanners();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cat?.id]);
+  }, [selectedCategoryObj?.id]);
 
   // Banner rotation (if multiple banners)
   useEffect(() => {
@@ -293,14 +309,6 @@ const CategoryProductsPage = () => {
       return () => clearInterval(interval);
     }
   }, [categoryBanners]);
-
-  // Get selected category object
-  const selectedCategoryObj =
-    selectedCategory && categories.length > 0
-      ? categories.find(
-          (cat) => cat.name.toLowerCase() === selectedCategory.toLowerCase()
-        )
-      : null;
 
   // Get top-rated product image for icon
   const getCategoryIconImage = () => {
@@ -901,8 +909,6 @@ const CategoryProductsPage = () => {
     return <div className="text-center py-16">Loading category...</div>;
   }
 
-  const cat: Category = selectedCategoryObj as Category;
-
   return (
     <div className={`min-h-screen bg-gradient-to-br from-gray-50 to-blue-50`}>
       {/* Category Hero Banner */}
@@ -927,76 +933,27 @@ const CategoryProductsPage = () => {
                   className="w-12 h-12 rounded-full object-cover border-2 border-white shadow"
                 />
                 <h1 className="text-5xl font-bold">
-                  {cat.title || cat.name || ""}
+                  {selectedCategoryObj.title || selectedCategoryObj.name || ""}
                 </h1>
               </div>
-              <p className="text-xl mb-6 text-white/90">{cat.subtitle || ""}</p>
+              <p className="text-xl mb-6 text-white/90">
+                {selectedCategoryObj.subtitle || ""}
+              </p>
               <p className="text-lg mb-8 text-white/80">
-                {cat.description || ""}
+                {selectedCategoryObj.description || ""}
               </p>
               <div className="flex flex-wrap gap-4">
-                {(cat.features || []).map((feature: string, index: number) => (
-                  <span
-                    key={index}
-                    className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium"
-                  >
-                    ✓ {feature}
-                  </span>
-                ))}
+                {(selectedCategoryObj.features || []).map(
+                  (feature: string, index: number) => (
+                    <span
+                      key={index}
+                      className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium"
+                    >
+                      ✓ {feature}
+                    </span>
+                  )
+                )}
               </div>
-              {categoryBanners.length > 0 && (
-                <div className="mt-6 flex flex-col items-center">
-                  <div className="relative w-full max-w-2xl">
-                    <img
-                      src={categoryBanners[bannerIndex]}
-                      alt={`Banner ${bannerIndex + 1}`}
-                      className="w-full h-48 object-cover rounded-xl border-2 border-white shadow"
-                      style={{ background: "#eee" }}
-                    />
-                    {categoryBanners.length > 1 && (
-                      <>
-                        <button
-                          className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
-                          onClick={() =>
-                            setBannerIndex(
-                              (prev) =>
-                                (prev - 1 + categoryBanners.length) %
-                                categoryBanners.length
-                            )
-                          }
-                        >
-                          <ChevronLeft className="w-6 h-6 text-gray-700" />
-                        </button>
-                        <button
-                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110"
-                          onClick={() =>
-                            setBannerIndex(
-                              (prev) => (prev + 1) % categoryBanners.length
-                            )
-                          }
-                        >
-                          <ChevronRight className="w-6 h-6 text-gray-700" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                  {categoryBanners.length > 1 && (
-                    <div className="flex justify-center mt-2 space-x-2">
-                      {categoryBanners.map((_, idx) => (
-                        <button
-                          key={idx}
-                          className={`w-2.5 h-2.5 rounded-full ${
-                            idx === bannerIndex
-                              ? "bg-blue-600"
-                              : "bg-gray-300 hover:bg-gray-400"
-                          }`}
-                          onClick={() => setBannerIndex(idx)}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -1201,7 +1158,9 @@ const CategoryProductsPage = () => {
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
               {selectedCategory === "All"
                 ? "All Products"
-                : `${cat.title || cat.name || ""} Collection`}
+                : `${
+                    selectedCategoryObj.title || selectedCategoryObj.name || ""
+                  } Collection`}
               {selectedSubcategory && ` - ${selectedSubcategory}`}
             </h2>
             <p className="text-sm sm:text-base text-gray-600 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">

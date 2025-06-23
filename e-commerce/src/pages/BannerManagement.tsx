@@ -22,6 +22,7 @@ interface Banner {
   active: boolean;
   created_at: string;
   category_id?: number | null;
+  button_text?: string;
 }
 
 interface BannerForm {
@@ -31,6 +32,7 @@ interface BannerForm {
   type?: string;
   active: boolean;
   category_id?: number | null;
+  button_text?: string;
 }
 
 const BannerManagement: React.FC = () => {
@@ -94,6 +96,7 @@ const BannerManagement: React.FC = () => {
         type: banner.type || "category",
         active: banner.active,
         category_id: banner.category_id,
+        button_text: banner.button_text || "",
       });
     } else {
       setEditingBanner(null);
@@ -263,6 +266,7 @@ const BannerManagement: React.FC = () => {
                   <th className="p-3 text-left">Subtitle</th>
                   <th className="p-3 text-left">Type</th>
                   <th className="p-3 text-left">Category</th>
+                  <th className="p-3 text-left">Button Text</th>
                   <th className="p-3 text-center">Active</th>
                   <th className="p-3 text-center">Actions</th>
                 </tr>
@@ -298,6 +302,7 @@ const BannerManagement: React.FC = () => {
                             ?.name || banner.category_id
                         : "-"}
                     </td>
+                    <td className="p-3">{banner.button_text || "-"}</td>
                     <td className="p-3 text-center">
                       <button
                         onClick={() => handleToggleActive(banner)}
@@ -430,21 +435,33 @@ const BannerManagement: React.FC = () => {
                   placeholder="Banner subtitle (optional)"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Type
-                </label>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Type</label>
                 <select
-                  name="type"
-                  value={form.type}
-                  onChange={handleFormChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={form.type || "category"}
+                  onChange={(e) => setForm({ ...form, type: e.target.value })}
+                  className="w-full border rounded px-3 py-2"
                 >
                   <option value="category">Category</option>
                   <option value="homepage">Homepage</option>
-                  <option value="other">Other</option>
                 </select>
               </div>
+              {form.type === "homepage" && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">
+                    Button Text (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={form.button_text || ""}
+                    onChange={(e) =>
+                      setForm({ ...form, button_text: e.target.value })
+                    }
+                    className="w-full border rounded px-3 py-2"
+                    placeholder="e.g. Shop Now, Save Now"
+                  />
+                </div>
+              )}
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-1">
                   Category (optional)

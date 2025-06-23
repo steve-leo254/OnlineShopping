@@ -283,3 +283,4 @@ class Banner(Base):
         Integer, ForeignKey("categories.id"), nullable=True
     )  # New field
     category = relationship("Categories", backref="banners")
+    button_text = Column(String(100), nullable=True)  # New field for homepage banners
