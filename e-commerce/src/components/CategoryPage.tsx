@@ -867,7 +867,7 @@ const CategoryProductsPage = () => {
               className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
                 product.stock_quantity === 0
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-lg transform hover:scale-105"
+                  : "bg-purple-600 text-white hover:bg-purple-700 shadow-lg transform hover:scale-105"
               }`}
               onClick={() => handleAddToCart(product)}
             >

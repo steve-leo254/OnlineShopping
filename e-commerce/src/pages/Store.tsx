@@ -208,6 +208,15 @@ const Store = () => {
     [apiProducts]
   );
 
+  // Helper to get average rating from reviews array or fallback to product.rating
+  const getAverageRating = (product: Product) => {
+    if (product.reviews && product.reviews.length > 0) {
+      const sum = product.reviews.reduce((acc, r) => acc + (r.rating || 0), 0);
+      return sum / product.reviews.length;
+    }
+    return product.rating || 0;
+  };
+
   const getFilteredAndSortedProducts = useCallback(
     (productsToFilter: Product[]) => {
       let filtered = productsToFilter;
@@ -251,10 +260,16 @@ const Store = () => {
     [searchTerm, priceRange, sortBy]
   );
 
-  const displayedProducts = useMemo(
-    () => getFilteredAndSortedProducts(transformedProducts),
-    [transformedProducts, getFilteredAndSortedProducts]
-  );
+  const displayedProducts = useMemo(() => {
+    // Only include products with at least one review
+    const reviewed = transformedProducts.filter((p) =>
+      Array.isArray((p as any).reviews)
+        ? (p as any).reviews.length > 0
+        : p.reviews > 0
+    );
+    // Sort by average rating descending
+    return reviewed.sort((a, b) => getAverageRating(b) - getAverageRating(a));
+  }, [transformedProducts]);
 
   const handleCategoryChange = async (categoryId: string | null) => {
     setSelectedCategoryId(categoryId);
@@ -384,28 +399,15 @@ const Store = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white py-2">
+      <div className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-700 text-white py-10 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
-            Premium Electronics
+          <h1 className="text-4xl md:text-5xl font-extrabold mb-3 bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent drop-shadow-lg">
+            Top Reviewed Products
           </h1>
-          <p className="text-xl text-blue-100 mb-8">
-            Discover the latest technology at unbeatable prices
+          <p className="text-lg md:text-xl text-blue-100 mb-2 font-medium">
+            Discover what customers love most. Explore the best-rated products,
+            reviewed by real shoppers like you!
           </p>
-          <div className="flex justify-center space-x-8 text-sm">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-              <span>Shipping Fee</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-              <span>7-Day Returns</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-              <span>2-Year Warranty</span>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -610,18 +612,23 @@ const Store = () => {
         )}
 
         {displayedProducts.length === 0 && !isLoading && !isFiltering && (
-          <div className="text-center py-16">
-            <div className="w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-              <Search className="w-12 h-12 text-gray-400" />
+          <div className="text-center py-16 flex flex-col items-center justify-center">
+            <div className="w-24 h-24 mb-4 flex items-center justify-center rounded-full bg-gradient-to-br from-blue-200 via-purple-200 to-blue-100 shadow-lg">
+              <span className="text-6xl">📝</span>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No products found
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              No products have been reviewed yet
             </h3>
-            <p className="text-gray-600 mb-4">
-              {selectedCategoryId
-                ? `No products found in ${getCurrentCategoryName()} category`
-                : "Try adjusting your search or filters"}
+            <p className="text-gray-600 mb-6 max-w-md">
+              Be the first to review by completing an order! Your feedback helps
+              others discover the best products.
             </p>
+            <button
+              onClick={() => navigate("/shop")}
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full font-semibold shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all text-lg"
+            >
+              Start Shopping
+            </button>
           </div>
         )}
       </div>

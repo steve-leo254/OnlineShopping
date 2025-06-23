@@ -803,10 +803,10 @@ const ModernEcommerceHomepage = () => {
                 </div>
 
                 <button
-                  onClick={() => navigate("/shop")}
+                  onClick={() => navigate("/store")}
                   className="w-full mt-6 bg-gradient-to-r from-yellow-400 to-orange-500 text-white py-3 rounded-xl font-semibold hover:from-yellow-500 hover:to-orange-600 transition-all duration-300 transform hover:scale-105"
                 >
-                  View All
+                  View All 
                 </button>
               </div>
             </div>

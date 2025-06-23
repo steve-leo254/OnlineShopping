@@ -288,7 +288,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               e.stopPropagation();
               handleRemoveFromCart();
             }}
-            className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 text-sm relative overflow-hidden bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-200 hover:shadow-red-300`}
+            className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 text-sm relative overflow-hidden bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-200 hover:shadow-red-300`}
           >
             <ShoppingCart className="w-5 h-5 flex-shrink-0" />
             <span className="font-semibold">Remove from Cart</span>
@@ -303,7 +303,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             className={`w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-semibold transition-all duration-300 text-sm relative overflow-hidden ${
               isOutOfStock || isMaxQuantity
                 ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-200 hover:shadow-blue-300 transform hover:scale-[1.02] active:scale-[0.98]"
+                : "bg-purple-600 text-white hover:bg-purple-700 shadow-lg transform hover:scale-[1.02] active:scale-[0.98]"
             }`}
           >
             <ShoppingCart className="w-5 h-5 flex-shrink-0" />
@@ -314,10 +314,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
                 ? "Max Quantity Reached"
                 : "Add to Cart"}
             </span>
-            {/* Ripple effect */}
-            {!isOutOfStock && !isMaxQuantity && (
-              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-            )}
           </button>
         )}
       </div>
