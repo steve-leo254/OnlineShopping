@@ -398,7 +398,7 @@ const ReviewPage: React.FC = () => {
                 View My Orders
               </button>
               <button
-                onClick={() => navigate("/store")}
+                onClick={() => navigate("/shop")}
                 className="bg-white text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-50 transition-all duration-300 border border-gray-200 flex items-center justify-center gap-2 font-medium"
               >
                 <ShoppingBag size={18} />
