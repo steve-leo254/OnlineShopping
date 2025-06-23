@@ -409,7 +409,7 @@ const CategoryProductsPage = () => {
 
   const handleViewProduct = (productId: number) => {
     console.log(`Navigating to product details for product ID: ${productId}`);
-    navigate(`/product/${productId}`);
+    navigate(`/product-details/${productId}`);
   };
 
   const handleCategoryChange = (categoryName: string) => {
@@ -769,13 +769,10 @@ const CategoryProductsPage = () => {
               <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
                 {product.category?.name || "Electronics"}
               </span>
-              {product.subcategory && (
-                <span className="text-xs text-gray-500">
-                  {product.subcategory.name}
-                </span>
-              )}
             </div>
-            <div className="text-xs text-gray-400">ID: {product.id}</div>
+            <div className="text-xs text-gray-400">
+              {product.subcategory?.name}
+            </div>
           </div>
 
           {/* Product Name */}
@@ -838,12 +835,6 @@ const CategoryProductsPage = () => {
             >
               <ShoppingCart size={16} />
               {product.stock_quantity === 0 ? "Out of Stock" : "Add to Cart"}
-            </button>
-            <button
-              onClick={() => onViewProduct(product.id)}
-              className="px-4 py-3 border border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-all duration-300 flex items-center justify-center"
-            >
-              <Eye size={16} />
             </button>
           </div>
 
@@ -1217,34 +1208,7 @@ const CategoryProductsPage = () => {
 
         {/* Products Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
-          <div>
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
-              {selectedCategory === "All"
-                ? "All Products"
-                : `${
-                    selectedCategoryObj.title || selectedCategoryObj.name || ""
-                  } Collection`}
-              {selectedSubcategory && ` - ${selectedSubcategory}`}
-            </h2>
-            <p className="text-sm sm:text-base text-gray-600 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-              <span>{sortedProducts.length} products available</span>
-              {sortedProducts.length > 0 && (
-                <>
-                  <span className="hidden sm:inline text-gray-400">•</span>
-                  <span className="flex items-center gap-1">
-                    <TrendingUp size={14} className="sm:w-4 sm:h-4" />
-                    {formatCurrency(
-                      Math.min(...sortedProducts.map((p) => p.price || 0))
-                    )}{" "}
-                    -{" "}
-                    {formatCurrency(
-                      Math.max(...sortedProducts.map((p) => p.price || 0))
-                    )}
-                  </span>
-                </>
-              )}
-            </p>
-          </div>
+          <div></div>
           <div className="text-xs sm:text-sm text-gray-500 bg-white/50 px-2 sm:px-3 py-1 rounded-full self-start sm:self-auto">
             Showing results for "{selectedCategory}"
             {selectedSubcategory && ` > ${selectedSubcategory}`}
