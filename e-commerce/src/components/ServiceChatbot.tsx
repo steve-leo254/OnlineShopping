@@ -2812,19 +2812,7 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
   };
 
   // Show loading message while fetching products
-  useEffect(() => {
-    if (productsLoading) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now(),
-          text: "Loading products...",
-          sender: "bot",
-          timestamp: new Date(),
-        },
-      ]);
-    }
-  }, [productsLoading]);
+  // 
 
   useEffect(() => {
     fetchProducts(1, 8); // fetch first page, 8 products
