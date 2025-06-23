@@ -1898,6 +1898,38 @@ async def get_my_reviews(db: db_dependency, user: user_dependency):
     return reviews
 
 
+@app.post("/newsletter/subscribe", status_code=status.HTTP_201_CREATED)
+async def subscribe_to_newsletter(
+    db: db_dependency, email: str = Query(..., description="Email address to subscribe")
+):
+    """Subscribe an email to the newsletter"""
+    try:
+        # Check if email already exists
+        existing_subscriber = (
+            db.query(models.NewsletterSubscriber)
+            .filter(models.NewsletterSubscriber.email == email)
+            .first()
+        )
+
+        if existing_subscriber:
+            raise HTTPException(
+                status_code=400, detail="Email is already subscribed to the newsletter"
+            )
+
+        # Create new subscriber
+        new_subscriber = models.NewsletterSubscriber(email=email)
+        db.add(new_subscriber)
+        db.commit()
+        db.refresh(new_subscriber)
+
+        logger.info(f"New newsletter subscription: {email}")
+        return {"message": "Successfully subscribed to newsletter", "email": email}
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error subscribing to newsletter: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error subscribing to newsletter")
+
+
 if __name__ == "__main__":
     import uvicorn
 
