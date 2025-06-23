@@ -76,6 +76,11 @@ const ModernEcommerceHomepage = () => {
   const [cartCount, setCartCount] = useState(0);
   const [wishlistItems, setWishlistItems] = useState(new Set());
 
+  // Newsletter subscription state
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [subscriptionMessage, setSubscriptionMessage] = useState("");
+
   // Database state
   const [categories, setCategories] = useState<Category[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
@@ -90,6 +95,45 @@ const ModernEcommerceHomepage = () => {
   const { addToCart, getItemQuantity, removeFromCart } = useShoppingCart();
   const { favorites, isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { isAuthenticated } = useAuth();
+
+  // Newsletter subscription handler
+  const handleNewsletterSubscription = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newsletterEmail)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    setIsSubscribing(true);
+    setSubscriptionMessage("");
+
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/newsletter/subscribe`,
+        null,
+        {
+          params: { email: newsletterEmail }
+        }
+      );
+
+      if (response.status === 201) {
+        toast.success("Successfully subscribed to newsletter!");
+        setNewsletterEmail("");
+        setSubscriptionMessage("Thank you for subscribing!");
+      }
+    } catch (error: any) {
+      if (error.response?.status === 400) {
+        toast.error(error.response.data.detail || "Email is already subscribed");
+      } else {
+        toast.error("Failed to subscribe. Please try again.");
+      }
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
 
   // Fetch categories from database
   const fetchCategories = async () => {
@@ -861,16 +905,26 @@ const ModernEcommerceHomepage = () => {
           <p className="text-purple-100 mb-8">
             Get the latest deals and product updates delivered to your inbox
           </p>
-          <div className="flex flex-col sm:flex-row max-w-md mx-auto gap-4">
+          <form onSubmit={handleNewsletterSubscription} className="flex flex-col sm:flex-row max-w-md mx-auto gap-4">
             <input
               type="email"
               placeholder="Enter your email"
+              value={newsletterEmail}
+              onChange={(e) => setNewsletterEmail(e.target.value)}
               className="flex-1 px-6 py-3 rounded-full border-0 focus:outline-none focus:ring-2 focus:ring-white"
+              required
             />
-            <button className="bg-white text-purple-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors">
-              Subscribe
+            <button 
+              type="submit"
+              disabled={isSubscribing}
+              className="bg-white text-purple-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubscribing ? "Subscribing..." : "Subscribe"}
             </button>
-          </div>
+          </form>
+          {subscriptionMessage && (
+            <p className="text-green-200 mt-4 text-sm">{subscriptionMessage}</p>
+          )}
         </div>
       </section>
     </div>
