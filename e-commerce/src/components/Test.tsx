@@ -103,6 +103,15 @@ const ModernEcommerceHomepage = () => {
     }
   };
 
+  // Helper to get average rating from reviews array or fallback to product.rating
+  const getAverageRating = (product: Product) => {
+    if (product.reviews && product.reviews.length > 0) {
+      const sum = product.reviews.reduce((acc, r) => acc + (r.rating || 0), 0);
+      return sum / product.reviews.length;
+    }
+    return product.rating || 0;
+  };
+
   // Fetch featured products (one per category, max 6)
   const fetchFeaturedProducts = async () => {
     try {
@@ -124,12 +133,13 @@ const ModernEcommerceHomepage = () => {
         {}
       );
 
-      // Select one product from each category (preferably with highest rating)
+      // Select one product from each category (preferably with highest average rating)
       const featured = Object.values(productsByCategory)
         .map(
           (categoryProducts: any) =>
             categoryProducts.sort(
-              (a: Product, b: Product) => (b.rating || 0) - (a.rating || 0)
+              (a: Product, b: Product) =>
+                getAverageRating(b) - getAverageRating(a)
             )[0]
         )
         .slice(0, 6); // Max 6 products
@@ -149,9 +159,11 @@ const ModernEcommerceHomepage = () => {
 
       const products = response.data.items;
 
-      // Sort by rating and take top 5
+      // Sort by average rating and take top 5
       const topRated = products
-        .sort((a: Product, b: Product) => (b.rating || 0) - (a.rating || 0))
+        .sort(
+          (a: Product, b: Product) => getAverageRating(b) - getAverageRating(a)
+        )
         .slice(0, 5);
 
       setTopRatedProducts(topRated);
@@ -649,7 +661,7 @@ const ModernEcommerceHomepage = () => {
                                 <Star
                                   key={i}
                                   className={`w-4 h-4 ${
-                                    i < Math.floor(product.rating || 0)
+                                    i < Math.floor(getAverageRating(product))
                                       ? "text-yellow-400 fill-current"
                                       : "text-gray-300"
                                   }`}
@@ -657,7 +669,7 @@ const ModernEcommerceHomepage = () => {
                               ))}
                             </div>
                             <span className="text-sm text-gray-600 ml-2">
-                              ({(product.rating || 0).toFixed(1)}) •{" "}
+                              ({getAverageRating(product).toFixed(1)}) •{" "}
                               {product.reviews?.length || 0}
                             </span>
                           </div>
@@ -753,7 +765,7 @@ const ModernEcommerceHomepage = () => {
                                   <Star
                                     key={i}
                                     className={`w-3 h-3 ${
-                                      i < Math.floor(product.rating || 0)
+                                      i < Math.floor(getAverageRating(product))
                                         ? "text-yellow-400 fill-current"
                                         : "text-gray-300"
                                     }`}
@@ -761,7 +773,7 @@ const ModernEcommerceHomepage = () => {
                                 ))}
                               </div>
                               <span className="text-xs text-gray-600 ml-1">
-                                {(product.rating || 0).toFixed(1)} (
+                                {getAverageRating(product).toFixed(1)} (
                                 {product.reviews?.length || 0})
                               </span>
                             </div>

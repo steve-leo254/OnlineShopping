@@ -392,6 +392,15 @@ const CategoryProductsPage = () => {
     return matchesSearch && matchesPrice;
   });
 
+  // Helper to get average rating from reviews array or fallback to product.rating
+  const getAverageRating = (product: Product) => {
+    if (product.reviews && product.reviews.length > 0) {
+      const sum = product.reviews.reduce((acc, r) => acc + (r.rating || 0), 0);
+      return sum / product.reviews.length;
+    }
+    return product.rating || 0;
+  };
+
   const sortedProducts = [...filteredProducts].sort(
     (a: Product, b: Product) => {
       switch (sortBy) {
@@ -400,7 +409,7 @@ const CategoryProductsPage = () => {
         case "price-high":
           return b.price - a.price;
         case "rating":
-          return b.rating - a.rating;
+          return getAverageRating(b) - getAverageRating(a);
         case "name":
           return a.name.localeCompare(b.name);
         default:
@@ -556,9 +565,17 @@ const CategoryProductsPage = () => {
   };
 
   // Enhanced rating display
-  const renderRating = (rating: number, reviewCount: number = 0) => {
-    // Validate and sanitize the rating value
-    const validRating = isNaN(rating) || rating < 0 ? 0 : Math.min(rating, 5);
+  const renderRating = (
+    rating: number,
+    reviewCount: number = 0,
+    product?: Product
+  ) => {
+    // Use getAverageRating if product is provided
+    const validRating = product
+      ? Math.min(getAverageRating(product), 5)
+      : isNaN(rating) || rating < 0
+      ? 0
+      : Math.min(rating, 5);
     const fullStars = Math.floor(validRating);
     const hasHalfStar = validRating % 1 >= 0.5;
     const emptyStars = Math.max(0, 5 - fullStars - (hasHalfStar ? 1 : 0));
@@ -817,7 +834,7 @@ const CategoryProductsPage = () => {
 
           {/* Rating */}
           <div className="mb-3">
-            {renderRating(product.rating, product.reviews?.length)}
+            {renderRating(product.rating, product.reviews?.length, product)}
           </div>
 
           {/* Price Section */}
