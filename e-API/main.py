@@ -1151,6 +1151,26 @@ async def get_product_images(product_id: int, db: db_dependency):
     return images
 
 
+@app.delete("/products/{product_id}/images/{image_id}", status_code=200)
+async def delete_product_image(
+    product_id: int, image_id: int, db: db_dependency, user: user_dependency
+):
+    require_admin(user)
+    image = (
+        db.query(models.ProductImage)
+        .filter(
+            models.ProductImage.id == image_id,
+            models.ProductImage.product_id == product_id,
+        )
+        .first()
+    )
+    if not image:
+        raise HTTPException(status_code=404, detail="Image not found")
+    db.delete(image)
+    db.commit()
+    return {"message": "Image deleted"}
+
+
 # --- Category Specifications ---
 @app.post(
     "/categories/{category_id}/specifications", response_model=SpecificationResponse

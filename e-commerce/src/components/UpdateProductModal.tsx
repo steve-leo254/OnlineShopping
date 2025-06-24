@@ -327,8 +327,20 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
   };
 
   // Remove existing image visually (cannot delete from backend)
-  const handleRemoveExistingImage = (id: number) => {
-    setExistingImages((prev) => prev.filter((img) => img.id !== id));
+  const handleRemoveExistingImage = async (id: number) => {
+    if (!productToEdit) return;
+    try {
+      await axios.delete(
+        `${import.meta.env.VITE_API_BASE_URL}/products/${
+          productToEdit.id
+        }/images/${id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setExistingImages((prev) => prev.filter((img) => img.id !== id));
+      toast.success("Image removed from product");
+    } catch (err) {
+      toast.error("Failed to remove image");
+    }
   };
 
   // Handle specification value changes
