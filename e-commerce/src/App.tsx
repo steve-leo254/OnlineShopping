@@ -30,7 +30,7 @@ import ReviewPage from "./pages/pending-views";
 import WishList from "./pages/WishList";
 import TermsAndConditions from "./pages/Terms&Condition";
 import { FavoritesProvider } from "./context/FavoritesContext";
-import ModernEcommerceHomepage from "./components/Test-store";
+
 import CategoryProductsPage from "./components/CategoryPage";
 import CategoryManagement from "./pages/CategoryManagement";
 
@@ -61,7 +61,7 @@ function App() {
               <Route path="/termsconditions" element={<TermsAndConditions />} />
 
               <Route element={<Layout />}>
-                <Route path="/test" element={<ModernEcommerceHomepage />} />
+                
                 <Route
                   path="/category/:categoryName"
                   element={<CategoryProductsPage />}
