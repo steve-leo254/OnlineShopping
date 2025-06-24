@@ -829,8 +829,8 @@ const ModernEcommerceHomepage = () => {
             {[
               {
                 icon: Truck,
-                title: "Free Shipping",
-                desc: `On orders over ${formatCurrency(100)}`,
+                title: "Delivery Services",
+                desc: "Accross the country",
               },
               {
                 icon: Shield,
