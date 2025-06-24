@@ -220,6 +220,23 @@ const BannerManagement: React.FC = () => {
     }
   };
 
+  const handleRemoveImage = async () => {
+    if (!editingBanner) return;
+    try {
+      await axios.patch(
+        `${import.meta.env.VITE_API_BASE_URL}/banners/${
+          editingBanner.id
+        }/remove-image`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setForm((prev) => ({ ...prev, image_url: "" }));
+      toast.success("Banner image removed");
+    } catch (err) {
+      toast.error("Failed to remove image");
+    }
+  };
+
   if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -398,17 +415,30 @@ const BannerManagement: React.FC = () => {
                   </button>
                 </div>
                 {form.image_url && (
-                  <img
-                    src={
-                      form.image_url.startsWith("http")
-                        ? form.image_url
-                        : `${import.meta.env.VITE_API_BASE_URL}${
-                            form.image_url
-                          }`
-                    }
-                    alt="Banner Preview"
-                    className="w-full h-32 object-cover rounded mt-2"
-                  />
+                  <div className="relative w-full">
+                    <img
+                      src={
+                        form.image_url.startsWith("http")
+                          ? form.image_url
+                          : `${import.meta.env.VITE_API_BASE_URL}${
+                              form.image_url
+                            }`
+                      }
+                      alt="Banner Preview"
+                      className="w-full h-32 object-cover rounded mt-2"
+                    />
+                    {/* Remove Image Button */}
+                    {editingBanner && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 shadow hover:bg-red-700"
+                        title="Remove Image"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
               <div>

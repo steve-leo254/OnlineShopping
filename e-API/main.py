@@ -1,4 +1,12 @@
-from fastapi import FastAPI, HTTPException, Depends, status, UploadFile, File, Query
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    Depends,
+    status,
+    UploadFile,
+    File,
+    Query,
+)
 from pydantic_models import (
     ProductsBase,
     CartPayload,
@@ -1961,6 +1969,38 @@ async def subscribe_to_newsletter(
         db.rollback()
         logger.error(f"Error subscribing to newsletter: {str(e)}")
         raise HTTPException(status_code=500, detail="Error subscribing to newsletter")
+
+
+@app.patch("/banners/{banner_id}/remove-image", status_code=200)
+async def remove_banner_image(banner_id: int, user: user_dependency, db: db_dependency):
+    require_admin(user)
+    try:
+        db_banner = (
+            db.query(models.Banner).filter(models.Banner.id == banner_id).first()
+        )
+        if not db_banner:
+            raise HTTPException(status_code=404, detail="Banner not found")
+        img_url = db_banner.image_url
+        if img_url and img_url.startswith("/uploads/"):
+            file_path = UPLOAD_DIR / img_url.replace("/uploads/", "")
+            try:
+                if file_path.exists():
+                    file_path.unlink()
+                    logger.info(f"Deleted banner image file: {file_path}")
+                else:
+                    logger.warning(
+                        f"Banner image file not found for deletion: {file_path}"
+                    )
+            except Exception as e:
+                logger.error(f"Error deleting banner image file: {file_path}: {str(e)}")
+        db_banner.image_url = ""
+        db.commit()
+        db.refresh(db_banner)
+        return {"message": "Banner image removed", "banner": db_banner.id}
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Error removing banner image: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error removing banner image")
 
 
 if __name__ == "__main__":
