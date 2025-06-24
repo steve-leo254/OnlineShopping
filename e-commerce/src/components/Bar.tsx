@@ -1,12 +1,13 @@
-import React, { useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import CartDropdown from "./CartDropdown";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
-import { Heart } from "lucide-react";
+import { Heart, ChevronDown, X, Menu } from "lucide-react";
 import { useUserStats } from "../context/UserStatsContext";
+import { useFavorites } from "../context/FavoritesContext";
 
 declare global {
   interface Window {
@@ -14,12 +15,28 @@ declare global {
   }
 }
 
+// Define types for categories
+type Category = {
+  id: number;
+  name: string;
+  description: string | null;
+};
+
 // Define the component as a React Functional Component (React.FC) for TypeScript compliance
 const Bar: React.FC = () => {
   const { isAuthenticated, logout, role, token } = useAuth();
   const { cartQuantity } = useShoppingCart();
-  const { pendingReviewsCount, activeOrdersCount, wishlistCount } =
-    useUserStats();
+  const { pendingReviewsCount, activeOrdersCount } = useUserStats();
+  const { favorites } = useFavorites();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // State for mobile navigation
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [isMobileShopDropdownOpen, setIsMobileShopDropdownOpen] =
+    useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   // Initialize Flowbite (if available) on component mount
   useEffect(() => {
@@ -28,10 +45,33 @@ const Bar: React.FC = () => {
     }
   }, []);
 
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get<Category[]>(
+          `${import.meta.env.VITE_API_BASE_URL}/public/categories`
+        );
+        setCategories(response.data);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setIsCategoryDropdownOpen(false);
+    setIsMobileShopDropdownOpen(false);
+  }, [location.pathname]);
+
   useEffect(() => {
     if (!isAuthenticated || !token) {
       return;
     }
+    let isMounted = true;
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
     let currentUser: { id: number; name: string } | null = null;
     try {
@@ -86,18 +126,11 @@ const Bar: React.FC = () => {
         // If there's an error, set activeOrdersCount to 0
       }
     };
-    const fetchWishlistCount = async () => {
-      try {
-        const favRes = await axios.get(`${API_BASE_URL}/favorites`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      } catch {
-        // If there's an error, set wishlistCount to 0
-      }
-    };
     fetchPendingReviewsCount();
     fetchActiveOrdersCount();
-    fetchWishlistCount();
+    return () => {
+      isMounted = false;
+    };
   }, [isAuthenticated, token]);
 
   // Handle logout functionality
@@ -105,6 +138,20 @@ const Bar: React.FC = () => {
     logout();
     localStorage.clear();
     window.location.href = "/login";
+  };
+
+  // Handle category navigation
+  const handleCategoryClick = (categoryName: string) => {
+    const categoryPath = categoryName.toLowerCase().replace(/\s+/g, "-");
+    navigate(`/category/${categoryPath}`, {
+      state: { categoryName },
+      replace: true,
+    });
+  };
+
+  // Handle shop navigation (goes to all categories)
+  const handleShopClick = () => {
+    navigate("/shop", { replace: true });
   };
 
   return (
@@ -139,13 +186,50 @@ const Bar: React.FC = () => {
                     Home
                     <span className="absolute inset-x-0 bottom-0 h-0.5 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
                   </Link>
-                  <Link
-                    to="/store"
-                    className="relative text-white/90 hover:text-white px-3 py-2 text-sm font-medium transition-all duration-200 group"
-                  >
-                    Today's Deals
-                    <span className="absolute inset-x-0 bottom-0 h-0.5 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
-                  </Link>
+
+                  {/* Shop Dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() =>
+                        setIsCategoryDropdownOpen(!isCategoryDropdownOpen)
+                      }
+                      className="relative text-white/90 hover:text-white px-3 py-2 text-sm font-medium transition-all duration-200 group flex items-center gap-1"
+                    >
+                      Shop
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          isCategoryDropdownOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                      <span className="absolute inset-x-0 bottom-0 h-0.5 bg-white transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
+                    </button>
+
+                    {/* Category Dropdown */}
+                    {isCategoryDropdownOpen && (
+                      <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                        <div className="px-4 py-2">
+                          <button
+                            onClick={handleShopClick}
+                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200 font-medium"
+                          >
+                            All Categories
+                          </button>
+                        </div>
+                        <div className="border-t border-gray-100 my-2"></div>
+                        {categories.map((category) => (
+                          <div key={category.id} className="px-4 py-1">
+                            <button
+                              onClick={() => handleCategoryClick(category.name)}
+                              className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors duration-200"
+                            >
+                              {category.name}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <Link
                     to="/about"
                     className="relative text-white/90 hover:text-white px-3 py-2 text-sm font-medium transition-all duration-200 group"
@@ -333,13 +417,13 @@ const Bar: React.FC = () => {
                       </Link>
                       <Link
                         to="/wishlist"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-pink-600 transition-colors duration-200 relative"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors duration-200 relative"
                       >
                         <Heart className="w-4 h-4 mr-3 text-pink-500" />
                         Wishlist
-                        {wishlistCount > 0 && (
+                        {favorites.size > 0 && (
                           <span className="absolute left-5 -top-1 bg-pink-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center animate-pulse shadow-lg">
-                            {wishlistCount > 99 ? "99+" : wishlistCount}
+                            {favorites.size > 99 ? "99+" : favorites.size}
                           </span>
                         )}
                       </Link>
@@ -403,6 +487,25 @@ const Bar: React.FC = () => {
                             </svg>
                             Category Management
                           </Link>
+                          <Link
+                            to="/banner-management"
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors duration-200"
+                          >
+                            <svg
+                              className="w-4 h-4 mr-3"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                            Banner Management
+                          </Link>
                         </>
                       )}
                       {role === "SUPERADMIN" && (
@@ -464,7 +567,7 @@ const Bar: React.FC = () => {
                   className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur text-white text-sm font-medium rounded-lg hover:bg-white/20 transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-md border border-white/20"
                 >
                   <svg
-                    className="w-4 h-4 mr-2"
+                    className="w-4 h-4 md:mr-2"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -476,62 +579,90 @@ const Bar: React.FC = () => {
                       d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
                     />
                   </svg>
-                  Sign In
+                  <span className="hidden md:inline">Sign In</span>
                 </Link>
               )}
 
               {/* Mobile Menu Toggle */}
               <button
-                type="button"
-                data-collapse-toggle="ecommerce-navbar-menu-1"
-                aria-controls="ecommerce-navbar-menu-1"
-                aria-expanded="false"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="md:hidden p-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200"
               >
-                <span className="sr-only">Open main menu</span>
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
+                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
             </div>
           </div>
 
           {/* Mobile Navigation Menu */}
-          <div
-            id="ecommerce-navbar-menu-1"
-            className="md:hidden hidden bg-white/10 backdrop-blur border-t border-white/20 rounded-lg mt-2 mx-4 mb-2"
-          >
-            <div className="space-y-2 p-4">
-              <Link
-                to="/"
-                className="block px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
-              >
-                Home
-              </Link>
-              <Link
-                to="/store"
-                className="block px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
-              >
-                Today's Deals
-              </Link>
-              <Link
-                to="/about"
-                className="block px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
-              >
-                About Us
-              </Link>
+          {isMobileMenuOpen && (
+            <div className="md:hidden bg-white/10 backdrop-blur border-t border-white/20 rounded-lg mt-2 mx-4 mb-2">
+              <div className="space-y-2 p-4">
+                <Link
+                  to="/"
+                  className="block px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Home
+                </Link>
+
+                {/* Mobile Shop Dropdown */}
+                <div className="border-t border-white/20 pt-2">
+                  <button
+                    onClick={() =>
+                      setIsMobileShopDropdownOpen(!isMobileShopDropdownOpen)
+                    }
+                    className="flex items-center justify-between w-full px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
+                  >
+                    <span className="text-white/70 text-sm font-medium">
+                      Shop
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        isMobileShopDropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {/* Mobile Shop Dropdown Content */}
+                  {isMobileShopDropdownOpen && (
+                    <div className="ml-4 mt-2 space-y-1">
+                      <button
+                        onClick={() => {
+                          handleShopClick();
+                          setIsMobileMenuOpen(false);
+                          setIsMobileShopDropdownOpen(false);
+                        }}
+                        className="block w-full text-left px-3 py-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200 text-sm"
+                      >
+                        All Categories
+                      </button>
+                      {categories.map((category) => (
+                        <button
+                          key={category.id}
+                          onClick={() => {
+                            handleCategoryClick(category.name);
+                            setIsMobileMenuOpen(false);
+                            setIsMobileShopDropdownOpen(false);
+                          }}
+                          className="block w-full text-left px-3 py-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200 text-sm"
+                        >
+                          {category.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <Link
+                  to="/about"
+                  className="block px-3 py-2 text-white/90 hover:text-white hover:bg-white/10 rounded-lg transition-colors duration-200"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  About Us
+                </Link>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </nav>
 

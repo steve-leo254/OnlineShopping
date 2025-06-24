@@ -1,659 +1,294 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React from "react";
+import {
+  Laptop,
+  Store,
+  CreditCard,
+  Zap,
+  Users,
+  Target,
+  Rocket,
+  Globe,
+  Mail,
+  MessageCircle,
+  TrendingUp,
+  HandHeart,
+} from "lucide-react";
 
-interface StatCardProps {
-  number: string;
-  label: string;
-}
-
-interface ServiceCardProps {
-  icon: string;
-  title: string;
-  description: string;
-}
-
-interface ValueCardProps {
-  title: string;
-  description: string;
-}
-
-interface TeamMemberProps {
-  initials: string;
-  name: string;
-  role: string;
-}
-
-const AboutUs: React.FC = () => {
-  const [isVisible, setIsVisible] = useState<{ [key: string]: boolean }>({});
-  const observerRef = useRef<IntersectionObserver | null>(null);
-
-  useEffect(() => {
-    const observerOptions = {
-      threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px'
-    };
-
-    observerRef.current = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const id = entry.target.getAttribute('data-id');
-          if (id) {
-            setIsVisible(prev => ({ ...prev, [id]: true }));
-          }
-        }
-      });
-    }, observerOptions);
-
-    const elements = document.querySelectorAll('[data-id]');
-    elements.forEach(el => {
-      if (observerRef.current) {
-        observerRef.current.observe(el);
-      }
-    });
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, []);
-
-  const StatCard: React.FC<StatCardProps> = ({ number, label }) => {
-    const [animatedNumber, setAnimatedNumber] = useState('0');
-    const [hasAnimated, setHasAnimated] = useState(false);
-
-    useEffect(() => {
-      if (isVisible['stats'] && !hasAnimated) {
-        setHasAnimated(true);
-        const finalText = number;
-        const hasPlus = finalText.includes('+');
-        const hasPercent = finalText.includes('%');
-        const numericValue = parseInt(finalText.replace(/\D/g, ''));
-        
-        if (numericValue > 0) {
-          let current = 0;
-          const increment = numericValue / 50;
-          const timer = setInterval(() => {
-            current += increment;
-            if (current >= numericValue) {
-              setAnimatedNumber(finalText);
-              clearInterval(timer);
-            } else {
-              let display = Math.floor(current).toString();
-              if (hasPercent) display += '%';
-              if (hasPlus) display += '+';
-              if (finalText.includes('/')) display = Math.floor(current) + '/7';
-              setAnimatedNumber(display);
-            }
-          }, 30);
-        }
-      }
-    }, [isVisible, number, hasAnimated]);
-
-    return (
-      <div className="stat-card">
-        <span className="stat-number">{animatedNumber}</span>
-        <span className="stat-label">{label}</span>
-      </div>
-    );
-  };
-
-  const ServiceCard: React.FC<ServiceCardProps> = ({ icon, title, description }) => (
-    <div className="service-card">
-      <div className="service-icon">{icon}</div>
-      <h3 className="service-title">{title}</h3>
-      <p className="service-desc">{description}</p>
-    </div>
-  );
-
-  const ValueCard: React.FC<ValueCardProps> = ({ title, description }) => (
-    <div className="value-card">
-      <h3 className="value-title">{title}</h3>
-      <p className="value-desc">{description}</p>
-    </div>
-  );
-
-  const TeamMember: React.FC<TeamMemberProps> = ({ initials, name, role }) => (
-    <div className="team-card">
-      <div className="team-avatar">{initials}</div>
-      <h3 className="team-name">{name}</h3>
-      <p className="team-role">{role}</p>
-    </div>
-  );
-
-  const services = [
+const AboutUs = () => {
+  const features = [
     {
-      icon: "🛍️",
-      title: "Online Marketplace",
-      description: "Curated selection of quality products across multiple categories, from electronics to fashion, home goods to health products."
+      icon: <Laptop className="w-8 h-8" />,
+      title: "Premium Electronics",
+      description:
+        "Curated selection of laptops and accessories from top brands",
     },
     {
-      icon: "🚚",
-      title: "Fast Delivery",
-      description: "Reliable and fast shipping options to get your orders delivered safely to your doorstep within the shortest time possible."
+      icon: <Globe className="w-8 h-8" />,
+      title: "Custom E-commerce Solutions",
+      description: "Tailored web applications to bring your business online",
     },
     {
-      icon: "🔒",
-      title: "Secure Payments",
-      description: "Multiple secure payment options including mobile money, bank transfers, and card payments with advanced encryption technology."
+      icon: <Store className="w-8 h-8" />,
+      title: "Integrated POS System",
+      description:
+        "Seamless point-of-sale solution for hybrid business operations",
     },
     {
-      icon: "💬",
-      title: "Customer Support",
-      description: "24/7 customer support team ready to assist with orders, returns, and any questions you might have about our products."
-    }
-  ];
-
-  const stats = [
-    { number: "50K+", label: "Happy Customers" },
-    { number: "10K+", label: "Products Available" },
-    { number: "500+", label: "Orders Daily" },
-    { number: "98%", label: "Customer Satisfaction" },
-    { number: "24/7", label: "Customer Support" },
-    { number: "15+", label: "Counties Served" }
+      icon: <CreditCard className="w-8 h-8" />,
+      title: "Built-in Payments",
+      description: "Secure, unified payment system across all platforms",
+    },
   ];
 
   const values = [
     {
-      title: "Quality First",
-      description: "We carefully select every product in our catalog to ensure our customers receive only the highest quality items that meet our strict standards."
+      icon: <Target className="w-6 h-6" />,
+      title: "Innovation First",
+      description: "Pioneering solutions that transform how businesses operate",
     },
     {
-      title: "Customer-Centric",
-      description: "Every decision we make is centered around providing the best possible experience for our customers, from browsing to delivery and beyond."
+      icon: <Users className="w-6 h-6" />,
+      title: "Customer Success",
+      description: "Your growth is our mission - we succeed when you succeed",
     },
     {
-      title: "Trust & Transparency",
-      description: "We believe in honest communication, transparent pricing, and building long-term relationships based on trust and reliability."
+      icon: <Zap className="w-6 h-6" />,
+      title: "Seamless Integration",
+      description: "Unified systems that work together effortlessly",
     },
-    {
-      title: "Innovation",
-      description: "We continuously improve our platform and services using the latest technology to make online shopping easier and more enjoyable."
-    }
-  ];
-
-  const teamMembers = [
-    { initials: "SM", name: "Sarah Mwangi", role: "CEO & Founder" },
-    { initials: "JK", name: "John Kamau", role: "Head of Operations" },
-    { initials: "GN", name: "Grace Njeri", role: "Customer Success Manager" },
-    { initials: "DO", name: "David Ochieng", role: "Head of Technology" }
   ];
 
   return (
-    <div className="about-us">
-      <style>{`
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-
-        body {
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          line-height: 1.6;
-          color: #333;
-          background-color: #f8f9fa;
-        }
-
-        .about-us {
-          min-height: 100vh;
-        }
-
-        .navbar {
-          background: #fff;
-          padding: 1rem 0;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-          position: sticky;
-          top: 0;
-          z-index: 100;
-        }
-
-        .nav-container {
-          max-width: 1200px;
-          margin: 0 auto;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 0 20px;
-        }
-
-        .logo {
-          font-size: 2rem;
-          font-weight: bold;
-          color: #ff6600;
-          cursor: pointer;
-        }
-
-        .nav-links {
-          display: flex;
-          list-style: none;
-          gap: 2rem;
-        }
-
-        .nav-links a {
-          text-decoration: none;
-          color: #333;
-          font-weight: 500;
-          transition: color 0.3s;
-          cursor: pointer;
-        }
-
-        .nav-links a:hover {
-          color: #ff6600;
-        }
-
-        .container {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 0 20px;
-        }
-
-        .hero-section {
-          background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%);
-          color: white;
-          padding: 80px 0;
-          text-align: center;
-        }
-
-        .hero-title {
-          font-size: 3rem;
-          margin-bottom: 20px;
-          font-weight: 300;
-        }
-
-        .hero-subtitle {
-          font-size: 1.3rem;
-          opacity: 0.9;
-          max-width: 600px;
-          margin: 0 auto;
-        }
-
-        .section {
-          padding: 60px 0;
-        }
-
-        .section-white {
-          background: white;
-        }
-
-        .section-title {
-          font-size: 2.5rem;
-          text-align: center;
-          margin-bottom: 50px;
-          color: #333;
-          font-weight: 300;
-        }
-
-        .mission-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 50px;
-          align-items: center;
-          margin-bottom: 40px;
-        }
-
-        .mission-content h3 {
-          color: #ff6600;
-          font-size: 2rem;
-          margin-bottom: 20px;
-          font-weight: 600;
-        }
-
-        .mission-content p {
-          font-size: 1.1rem;
-          line-height: 1.8;
-          color: #666;
-        }
-
-        .mission-image {
-          border-radius: 10px;
-          overflow: hidden;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-
-        .mission-image img {
-          width: 100%;
-          height: 350px;
-          object-fit: cover;
-        }
-
-        .services-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 30px;
-          margin-top: 40px;
-        }
-
-        .service-card {
-          background: white;
-          padding: 30px;
-          border-radius: 10px;
-          text-align: center;
-          box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
-          border: 1px solid #eee;
-        }
-
-        .service-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-        }
-
-        .service-icon {
-          font-size: 3rem;
-          margin-bottom: 20px;
-          color: #ff6600;
-        }
-
-        .service-title {
-          font-size: 1.4rem;
-          margin-bottom: 15px;
-          color: #333;
-          font-weight: 600;
-        }
-
-        .service-desc {
-          color: #666;
-          line-height: 1.6;
-        }
-
-        .stats-section {
-          background: #333;
-          color: white;
-          padding: 60px 0;
-        }
-
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 30px;
-          text-align: center;
-        }
-
-        .stat-card {
-          padding: 20px;
-        }
-
-        .stat-number {
-          font-size: 3rem;
-          font-weight: bold;
-          color: #ff6600;
-          display: block;
-          margin-bottom: 10px;
-        }
-
-        .stat-label {
-          font-size: 1.1rem;
-          opacity: 0.9;
-        }
-
-        .values-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-          gap: 30px;
-          margin-top: 40px;
-        }
-
-        .value-card {
-          background: white;
-          padding: 30px;
-          border-radius: 10px;
-          box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-          border-left: 4px solid #ff6600;
-        }
-
-        .value-title {
-          font-size: 1.3rem;
-          margin-bottom: 15px;
-          color: #333;
-          font-weight: 600;
-        }
-
-        .value-desc {
-          color: #666;
-          line-height: 1.6;
-        }
-
-        .team-section {
-          background: white;
-          padding: 60px 0;
-        }
-
-        .team-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-          gap: 30px;
-          margin-top: 40px;
-        }
-
-        .team-card {
-          text-align: center;
-          padding: 20px;
-        }
-
-        .team-avatar {
-          width: 120px;
-          height: 120px;
-          border-radius: 50%;
-          margin: 0 auto 20px;
-          background: linear-gradient(135deg, #ff6600, #ff8533);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 2rem;
-          color: white;
-          font-weight: bold;
-        }
-
-        .team-name {
-          font-size: 1.3rem;
-          margin-bottom: 5px;
-          color: #333;
-          font-weight: 600;
-        }
-
-        .team-role {
-          color: #ff6600;
-          font-weight: 500;
-        }
-
-        .cta-section {
-          background: linear-gradient(135deg, #ff6600 0%, #ff8533 100%);
-          color: white;
-          padding: 60px 0;
-          text-align: center;
-        }
-
-        .cta-title {
-          font-size: 2.5rem;
-          margin-bottom: 20px;
-          font-weight: 300;
-        }
-
-        .cta-subtitle {
-          font-size: 1.2rem;
-          margin-bottom: 30px;
-          opacity: 0.9;
-        }
-
-        .cta-button {
-          display: inline-block;
-          background: white;
-          color: #ff6600;
-          padding: 15px 40px;
-          border-radius: 50px;
-          text-decoration: none;
-          font-weight: 600;
-          font-size: 1.1rem;
-          transition: transform 0.3s ease;
-          cursor: pointer;
-          border: none;
-        }
-
-        .cta-button:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        .fade-in {
-          opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.8s ease, transform 0.8s ease;
-        }
-
-        .fade-in.visible {
-          opacity: 1;
-          transform: translateY(0);
-        }
-
-        @media (max-width: 768px) {
-          .mission-grid {
-            grid-template-columns: 1fr;
-          }
-          
-          .hero-title {
-            font-size: 2rem;
-          }
-          
-          .nav-links {
-            display: none;
-          }
-          
-          .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-      `}</style>
-
-      {/* Navigation */}
-      <nav className="navbar">
-        <div className="nav-container">
-          <div className="logo">FLOWTECH</div>
-          <ul className="nav-links">
-            <li><a href="#home">Home</a></li>
-            <li><a href="#products">Products</a></li>
-            <li><a href="#about">About</a></li>
-            <li><a href="#contact">Contact</a></li>
-          </ul>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+      {/* Floating Contact Icons */}
+      <div className="fixed top-20 right-6 z-50 flex flex-col gap-4">
+        <a
+          href="mailto:flowtechs254@gmail.com"
+          className="w-14 h-14 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 group"
+        >
+          <Mail className="w-6 h-6 text-white group-hover:scale-110 transition-transform duration-300" />
+        </a>
+        <a
+          href="https://wa.me/254117802561"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 group"
+        >
+          <MessageCircle className="w-6 h-6 text-white group-hover:scale-110 transition-transform duration-300" />
+        </a>
+      </div>
 
       {/* Hero Section */}
-      <section className="hero-section">
-        <div className="container">
-          <h1 className="hero-title">Welcome to Flowtech</h1>
-          <p className="hero-subtitle">Your trusted partner for quality products, exceptional service, and seamless online shopping experience</p>
-        </div>
-      </section>
-
-      {/* Mission Section */}
-      <section className="section section-white">
-        <div className="container">
-          <div 
-            className={`mission-grid fade-in ${isVisible['mission'] ? 'visible' : ''}`}
-            data-id="mission"
-          >
-            <div className="mission-content">
-              <h3>Our Mission</h3>
-              <p>At Flowtech, we're committed to revolutionizing online shopping by providing customers with access to high-quality products at competitive prices. We believe shopping should be convenient, secure, and enjoyable. Our mission is to connect people with the products they love while delivering exceptional customer service every step of the way.</p>
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-200/30 to-blue-200/30 backdrop-blur-3xl"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+          <div className="text-center">
+            <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-purple-100 to-blue-100 border border-purple-300 mb-8">
+              <Rocket className="w-5 h-5 text-purple-600 mr-2" />
+              <span className="text-purple-700 text-sm font-medium">
+                Transforming Commerce
+              </span>
             </div>
-            <div className="mission-image">
-              <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Online shopping experience" />
-            </div>
+            <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 bg-gradient-to-r from-gray-900 via-purple-800 to-blue-800 bg-clip-text text-transparent">
+              Welcome to Flowtech
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
+              Your trusted partner for quality products, exceptional service,
+              and seamless online shopping experience
+            </p>
           </div>
         </div>
-      </section>
+      </div>
 
       {/* What We Do Section */}
-      <section className="section">
-        <div className="container">
-          <h2 
-            className={`section-title fade-in ${isVisible['services-title'] ? 'visible' : ''}`}
-            data-id="services-title"
-          >
-            What We Do
-          </h2>
-          <div className="services-grid">
-            {services.map((service, index) => (
-              <div 
-                key={index}
-                className={`fade-in ${isVisible[`service-${index}`] ? 'visible' : ''}`}
-                data-id={`service-${index}`}
-              >
-                <ServiceCard {...service} />
-              </div>
-            ))}
+      <div className="bg-gradient-to-r from-white/60 to-gray-50/60 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              What We Do
+            </h2>
+            <p className="text-xl text-gray-700 max-w-3xl mx-auto">
+              From premium products to cutting-edge technology solutions, we
+              deliver excellence across every touchpoint
+            </p>
           </div>
-        </div>
-      </section>
 
-      {/* Stats Section */}
-      <section className="stats-section" data-id="stats">
-        <div className="container">
-          <h2 className="section-title" style={{ color: 'white' }}>Key Figures</h2>
-          <div className="stats-grid">
-            {stats.map((stat, index) => (
-              <StatCard key={index} {...stat} />
-            ))}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="group">
+              <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 border border-purple-200 hover:border-purple-300 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-2 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:from-purple-200 group-hover:to-blue-200 transition-all duration-300 border border-purple-200">
+                  <TrendingUp className="w-8 h-8 text-purple-600 group-hover:text-purple-700 transition-colors duration-300" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">
+                  Business Empowerment
+                </h3>
+                <p className="text-gray-700 leading-relaxed">
+                  We help entrepreneurs launch and scale their businesses with
+                  access to quality products, without the hassle of inventory
+                  management.
+                </p>
+              </div>
+            </div>
+
+            <div className="group">
+              <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 border border-purple-200 hover:border-purple-300 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-2 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:from-purple-200 group-hover:to-blue-200 transition-all duration-300 border border-purple-200">
+                  <Zap className="w-8 h-8 text-purple-600 group-hover:text-purple-700 transition-colors duration-300" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">
+                  Fast Delivery
+                </h3>
+                <p className="text-gray-700 leading-relaxed">
+                  Reliable and fast shipping options to get your orders
+                  delivered safely to your doorstep within the shortest time
+                  possible.
+                </p>
+              </div>
+            </div>
+
+            <div className="group">
+              <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 border border-purple-200 hover:border-purple-300 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-2 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:from-purple-200 group-hover:to-blue-200 transition-all duration-300 border border-purple-200">
+                  <HandHeart className="w-8 h-8 text-purple-600 group-hover:text-purple-700 transition-colors duration-300" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">
+                  Partnership Support
+                </h3>
+                <p className="text-gray-700 leading-relaxed">
+                  Complete support system for our partners including training,
+                  marketing materials, and ongoing business guidance.
+                </p>
+              </div>
+            </div>
+
+            <div className="group">
+              <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 border border-purple-200 hover:border-purple-300 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-2 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:from-purple-200 group-hover:to-blue-200 transition-all duration-300 border border-purple-200">
+                  <Users className="w-8 h-8 text-purple-600 group-hover:text-purple-700 transition-colors duration-300" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">
+                  Customer Support
+                </h3>
+                <p className="text-gray-700 leading-relaxed">
+                  24/7 customer support team ready to assist with orders,
+                  returns, and any questions you might have about our products.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
+      </div>
+
+      {/* Mission Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-8 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              Our Journey
+            </h2>
+            <div className="space-y-6 text-gray-700 text-lg leading-relaxed">
+              <p>
+                What started as a passion for premium electronics has evolved
+                into something extraordinary. We began by curating the finest
+                laptops and accessories, but our vision extended far beyond
+                traditional retail.
+              </p>
+              <p>
+                Today, we're pioneering the future of commerce by creating
+                custom e-commerce solutions that empower businesses to thrive in
+                the digital age. Our integrated approach combines cutting-edge
+                technology with practical business needs.
+              </p>
+              <p>
+                Every solution we build is designed to seamlessly connect your
+                online and offline operations, creating a unified ecosystem that
+                grows with your business.
+              </p>
+            </div>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-300/30 to-blue-300/30 rounded-3xl blur-3xl"></div>
+            <div className="relative bg-white/70 backdrop-blur-xl rounded-3xl p-8 border border-purple-200 shadow-xl">
+              <div className="grid grid-cols-2 gap-6">
+                {features.map((feature, index) => (
+                  <div
+                    key={index}
+                    className="text-center group hover:scale-105 transition-transform duration-300"
+                  >
+                    <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl flex items-center justify-center mb-4 group-hover:from-purple-200 group-hover:to-blue-200 transition-all duration-300 border border-purple-200">
+                      <div className="text-purple-600 group-hover:text-purple-700 transition-colors duration-300">
+                        {feature.icon}
+                      </div>
+                    </div>
+                    <h3 className="text-gray-900 font-semibold mb-2">
+                      {feature.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm">
+                      {feature.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Future Vision */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="text-center">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-8 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            The Vision
+          </h2>
+          <div className="max-w-4xl mx-auto">
+            <p className="text-xl text-gray-700 mb-8 leading-relaxed">
+              In our next update, we're adding a cash register feature that will
+              change how you run your business. Whether customers buy from your
+              website or walk into your physical store, everything will
+              automatically sync up in real-time. Your inventory, sales, and
+              payments will all update instantly across every channel. No more
+              juggling different systems or worrying about whether your online
+              stock matches what's actually on your shelves. It's one unified
+              system that handles everything, making your business run smoother
+              and saving you time every day
+            </p>
+            <div className="bg-gradient-to-r from-purple-100 to-blue-100 backdrop-blur-xl rounded-3xl p-8 border border-purple-200 shadow-lg">
+              <p className="text-2xl font-semibold text-gray-900 mb-4">
+                "Unified Commerce, Unlimited Possibilities"
+              </p>
+              <p className="text-gray-700 text-lg">
+                Join us today and be part of the commerce revolution. Your
+                business deserves solutions that work as hard as you do.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Values Section */}
-      <section className="section section-white">
-        <div className="container">
-          <h2 
-            className={`section-title fade-in ${isVisible['values-title'] ? 'visible' : ''}`}
-            data-id="values-title"
-          >
-            Our Values
-          </h2>
-          <div className="values-grid">
+      <div className="bg-gradient-to-r from-white/60 to-gray-50/60 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+          <div className="grid md:grid-cols-3 gap-8">
             {values.map((value, index) => (
-              <div 
-                key={index}
-                className={`fade-in ${isVisible[`value-${index}`] ? 'visible' : ''}`}
-                data-id={`value-${index}`}
-              >
-                <ValueCard {...value} />
+              <div key={index} className="group">
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-8 border border-purple-200 hover:border-purple-300 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/20 hover:-translate-y-2">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-blue-100 rounded-xl flex items-center justify-center mb-6 group-hover:from-purple-200 group-hover:to-blue-200 transition-all duration-300 border border-purple-200">
+                    <div className="text-purple-600 group-hover:text-purple-700 transition-colors duration-300">
+                      {value.icon}
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">
+                    {value.title}
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed">
+                    {value.description}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
         </div>
-      </section>
-
-      {/* Team Section */}
-      <section className="team-section">
-        <div className="container">
-          <h2 
-            className={`section-title fade-in ${isVisible['team-title'] ? 'visible' : ''}`}
-            data-id="team-title"
-          >
-            Meet Our Team
-          </h2>
-          <div className="team-grid">
-            {teamMembers.map((member, index) => (
-              <div 
-                key={index}
-                className={`fade-in ${isVisible[`team-${index}`] ? 'visible' : ''}`}
-                data-id={`team-${index}`}
-              >
-                <TeamMember {...member} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="cta-section">
-        <div className="container">
-          <h2 className="cta-title">Ready to Start Shopping?</h2>
-          <p className="cta-subtitle">Join thousands of satisfied customers and discover amazing products at great prices</p>
-          <button className="cta-button" onClick={() => console.log('Navigate to shop')}>
-            Shop Now
-          </button>
-        </div>
-      </section>
+      </div>
     </div>
   );
 };

@@ -30,9 +30,10 @@ import ReviewPage from "./pages/pending-views";
 import WishList from "./pages/WishList";
 import TermsAndConditions from "./pages/Terms&Condition";
 import { FavoritesProvider } from "./context/FavoritesContext";
-
+import ModernEcommerceHomepage from "./components/Test";
 import CategoryProductsPage from "./components/CategoryPage";
 import CategoryManagement from "./pages/CategoryManagement";
+import BannerManagement from "./pages/BannerManagement";
 
 function App() {
   return (
@@ -61,12 +62,13 @@ function App() {
               <Route path="/termsconditions" element={<TermsAndConditions />} />
 
               <Route element={<Layout />}>
-                
+                <Route index element={<ModernEcommerceHomepage />} />
+                <Route path="/shop" element={<CategoryProductsPage />} />
                 <Route
                   path="/category/:categoryName"
                   element={<CategoryProductsPage />}
                 />
-                <Route index element={<Home />} />
+                <Route path="/home" element={<Home />} />
                 <Route
                   path="/product-details/:id"
                   element={<ProductDetail />}
@@ -81,6 +83,10 @@ function App() {
                   <Route
                     path="/category-management"
                     element={<CategoryManagement />}
+                  />
+                  <Route
+                    path="/banner-management"
+                    element={<BannerManagement />}
                   />
                   <Route path="/pending-reviews" element={<ReviewPage />} />
                   <Route path="/wishlist" element={<WishList />} />

@@ -13,7 +13,7 @@ import {
 import { useFetchProducts } from "./UseFetchProducts";
 import UpdateProductModal from "./UpdateProductModal";
 import AddProduct from "./AddProduct";
-import { useAuth } from "../context/AuthContext";
+import { formatCurrency } from "../cart/formatCurrency";
 
 interface Category {
   id: string;
@@ -61,9 +61,6 @@ const ProductsTable: React.FC = () => {
   const [selectedProductForEdit, setSelectedProductForEdit] =
     useState<Product | null>(null);
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
-  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const { token } = useAuth();
 
   const limit = 10;
 
@@ -203,7 +200,7 @@ const ProductsTable: React.FC = () => {
   };
 
   const handleDelete = (product: Product) => {
-    setDeletingProduct(product);
+    console.log("Delete product:", product);
     setOpenDropdown(null);
   };
 
@@ -524,7 +521,7 @@ const ProductsTable: React.FC = () => {
                         </td>
                         <td className="py-4 px-6">
                           <span className="font-semibold text-gray-900">
-                            Ksh {product.price?.toLocaleString() || 0}
+                            {formatCurrency(product.price)}
                           </span>
                           {product.discount !== undefined &&
                             product.discount > 0 && (
@@ -535,7 +532,7 @@ const ProductsTable: React.FC = () => {
                         </td>
                         <td className="py-4 px-6">
                           <span className="text-gray-500 line-through">
-                            Ksh {product.original_price?.toLocaleString() || 0}
+                            {formatCurrency(product.original_price)}
                           </span>
                         </td>
                         <td className="py-4 px-6">
@@ -714,55 +711,6 @@ const ProductsTable: React.FC = () => {
             ></div>
             <div className="relative inline-block w-full max-w-4xl overflow-hidden text-left align-bottom transition-all transform bg-white rounded-2xl shadow-xl sm:align-middle">
               <AddProduct onClose={handleAddModalClose} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {deletingProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-xl p-6 shadow-lg max-w-sm w-full">
-            <h3 className="text-lg font-semibold mb-4">Delete Product</h3>
-            <p className="mb-6">
-              Are you sure you want to delete <span className="font-bold">{deletingProduct.name}</span>?
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setDeletingProduct(null)}
-                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200"
-                disabled={isDeleting}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={async () => {
-                  setIsDeleting(true);
-                  try {
-                    await fetch(
-                      `${import.meta.env.VITE_API_BASE_URL}/delete-product/${deletingProduct.id}`,
-                      {
-                        method: "DELETE",
-                        headers: {
-                          "Content-Type": "application/json",
-                          Authorization: `Bearer ${token}`,
-                        },
-                      }
-                    );
-                    // Optionally show a toast
-                    // toast.success("Product deleted!");
-                    setDeletingProduct(null);
-                    fetchProducts(currentPage, limit, searchQuery, selectedCategory);
-                  } catch (err) {
-                    // toast.error("Failed to delete product.");
-                  } finally {
-                    setIsDeleting(false);
-                  }
-                }}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
-                disabled={isDeleting}
-              >
-                {isDeleting ? "Deleting..." : "Delete"}
-              </button>
             </div>
           </div>
         </div>
