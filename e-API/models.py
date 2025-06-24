@@ -71,7 +71,7 @@ class Categories(Base):
     name = Column(String(50), unique=True, nullable=False)
     title = Column(String(100), nullable=True)
     subtitle = Column(String(200), nullable=True)
-    description = Column(String(200))
+    description = Column(Text)
     features = Column(JSON, nullable=True)
     products = relationship("Products", back_populates="category")
     specifications = relationship(
