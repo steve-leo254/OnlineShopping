@@ -1166,6 +1166,19 @@ async def delete_product_image(
     )
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
+    # Delete the image file from disk if it exists
+    img_url = image.img_url
+    # Only handle local uploads (not external URLs)
+    if img_url and img_url.startswith("/uploads/"):
+        file_path = UPLOAD_DIR / img_url.replace("/uploads/", "")
+        try:
+            if file_path.exists():
+                file_path.unlink()
+                logger.info(f"Deleted image file: {file_path}")
+            else:
+                logger.warning(f"Image file not found for deletion: {file_path}")
+        except Exception as e:
+            logger.error(f"Error deleting image file: {file_path}: {str(e)}")
     db.delete(image)
     db.commit()
     return {"message": "Image deleted"}
