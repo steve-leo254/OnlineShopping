@@ -383,7 +383,7 @@ async def login(form_data: LoginUserRequest, db: db_dependency):
         )
 
     user_role = get_user_role(user.role)
-    token = create_access_token(user.username, user.id, user_role, timedelta(hours=1))
+    token = create_access_token(user.username, user.id, user_role, timedelta(hours=6))
     logger.info(f"User {user.username} logged in successfully with role: {user_role}")
     return {
         "access_token": token,
@@ -550,7 +550,7 @@ async def verify_email(request: EmailVerificationRequest, db: db_dependency):
         # Create access token for automatic login
         user_role = get_user_role(user.role)
         access_token = create_access_token(
-            user.username, user.id, user_role, timedelta(hours=1)
+            user.username, user.id, user_role, timedelta(hours=6)
         )
 
         logger.info(f"Email verified for user: {user.username}")
