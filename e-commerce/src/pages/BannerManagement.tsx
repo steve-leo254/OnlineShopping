@@ -158,12 +158,12 @@ const BannerManagement: React.FC = () => {
   const handleFormChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const { name, type } = e.target;
-    const checked =
-      type === "checkbox" ? (e.target as HTMLInputElement).checked : undefined;
+    const { name, type, value } = e.target;
+    const fieldValue =
+      type === "checkbox" ? (e.target as HTMLInputElement).checked : value;
     setForm((prev) => ({
       ...prev,
-      [name]: checked,
+      [name]: fieldValue,
     }));
   };
 
