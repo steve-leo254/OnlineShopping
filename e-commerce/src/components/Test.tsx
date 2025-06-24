@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from "react";
 import {
   ShoppingCart,
-  Search,
-  Menu,
-  X,
   Star,
   ArrowRight,
   Heart,
-  User,
   Truck,
   Shield,
   Headphones,
@@ -71,10 +67,7 @@ type Banner = {
 
 const ModernEcommerceHomepage = () => {
   const navigate = useNavigate();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [cartCount, setCartCount] = useState(0);
-  const [wishlistItems, setWishlistItems] = useState(new Set());
 
   // Newsletter subscription state
   const [newsletterEmail, setNewsletterEmail] = useState("");
@@ -93,13 +86,13 @@ const ModernEcommerceHomepage = () => {
   const [homepageBanners, setHomepageBanners] = useState<Banner[]>([]);
 
   const { addToCart, getItemQuantity, removeFromCart } = useShoppingCart();
-  const { favorites, isFavorite, addFavorite, removeFavorite } = useFavorites();
+  const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { isAuthenticated } = useAuth();
 
   // Newsletter subscription handler
   const handleNewsletterSubscription = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(newsletterEmail)) {
@@ -115,7 +108,7 @@ const ModernEcommerceHomepage = () => {
         `${import.meta.env.VITE_API_BASE_URL}/newsletter/subscribe`,
         null,
         {
-          params: { email: newsletterEmail }
+          params: { email: newsletterEmail },
         }
       );
 
@@ -126,7 +119,9 @@ const ModernEcommerceHomepage = () => {
       }
     } catch (error: any) {
       if (error.response?.status === 400) {
-        toast.error(error.response.data.detail || "Email is already subscribed");
+        toast.error(
+          error.response.data.detail || "Email is already subscribed"
+        );
       } else {
         toast.error("Failed to subscribe. Please try again.");
       }
@@ -405,39 +400,6 @@ const ModernEcommerceHomepage = () => {
     return 0;
   };
 
-  // Get category color based on name
-  const getCategoryColor = (categoryName: string) => {
-    const colors = [
-      "bg-blue-500",
-      "bg-pink-500",
-      "bg-green-500",
-      "bg-orange-500",
-      "bg-purple-500",
-      "bg-red-500",
-      "bg-indigo-500",
-      "bg-yellow-500",
-    ];
-    const index = categoryName.length % colors.length;
-    return colors[index];
-  };
-
-  // Get category icon based on name
-  const getCategoryIcon = (categoryName: string) => {
-    const iconMap: Record<string, string> = {
-      Electronics: "📱",
-      Fashion: "👗",
-      "Home & Garden": "🏠",
-      Sports: "⚽",
-      Books: "📚",
-      Beauty: "💄",
-      Laptops: "💻",
-      Smartphones: "📱",
-      "PC Components": "🔧",
-      Accessories: "🎧",
-    };
-    return iconMap[categoryName] || "📦";
-  };
-
   // Helper to get top-rated product image for a category or subcategory
   const getCategoryOrSubcategoryImage = (categoryId: number) => {
     let productsInGroup = featuredProducts.filter(
@@ -569,7 +531,7 @@ const ModernEcommerceHomepage = () => {
                   categoryCarouselIndex,
                   categoryCarouselIndex + itemsPerSlide
                 )
-                .map((category, index) => (
+                .map((category) => (
                   <div
                     key={`${category.id}-${categoryCarouselIndex}`}
                     className="group cursor-pointer flex flex-col items-center justify-center animate-fadeIn"
@@ -905,7 +867,10 @@ const ModernEcommerceHomepage = () => {
           <p className="text-purple-100 mb-8">
             Get the latest deals and product updates delivered to your inbox
           </p>
-          <form onSubmit={handleNewsletterSubscription} className="flex flex-col sm:flex-row max-w-md mx-auto gap-4">
+          <form
+            onSubmit={handleNewsletterSubscription}
+            className="flex flex-col sm:flex-row max-w-md mx-auto gap-4"
+          >
             <input
               type="email"
               placeholder="Enter your email"
@@ -914,7 +879,7 @@ const ModernEcommerceHomepage = () => {
               className="flex-1 px-6 py-3 rounded-full border-0 focus:outline-none focus:ring-2 focus:ring-white"
               required
             />
-            <button 
+            <button
               type="submit"
               disabled={isSubscribing}
               className="bg-white text-purple-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

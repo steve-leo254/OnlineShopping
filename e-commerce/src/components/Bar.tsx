@@ -109,17 +109,9 @@ const Bar: React.FC = () => {
     const fetchActiveOrdersCount = async () => {
       try {
         // Fetch pending orders
-        const pendingRes = await axios.get(`${API_BASE_URL}/orders`, {
-          params: { limit: 100, status: "pending" },
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        // const pendingRes = await axios.get(`${API_BASE_URL}/orders`, { ... });
         // Fetch processing orders
-        const processingRes = await axios.get(`${API_BASE_URL}/orders`, {
-          params: { limit: 100, status: "processing" },
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const pendingOrders = pendingRes.data.items || [];
-        const processingOrders = processingRes.data.items || [];
+        // const processingRes = await axios.get(`${API_BASE_URL}/orders`, { ... });
         // TODO: Use the count for active orders display
         // const count = pendingOrders.length + processingOrders.length;
       } catch {

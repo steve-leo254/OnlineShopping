@@ -532,7 +532,7 @@ const ProductsTable: React.FC = () => {
                         </td>
                         <td className="py-4 px-6">
                           <span className="text-gray-500 line-through">
-                            {formatCurrency(product.original_price)}
+                            {formatCurrency(product.original_price ?? 0)}
                           </span>
                         </td>
                         <td className="py-4 px-6">
