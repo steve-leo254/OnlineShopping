@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Laptop,
   Store,

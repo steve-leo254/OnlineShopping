@@ -71,7 +71,6 @@ const Bar: React.FC = () => {
     if (!isAuthenticated || !token) {
       return;
     }
-    let isMounted = true;
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
     let currentUser: { id: number; name: string } | null = null;
     try {
@@ -121,16 +120,14 @@ const Bar: React.FC = () => {
         });
         const pendingOrders = pendingRes.data.items || [];
         const processingOrders = processingRes.data.items || [];
-        const count = pendingOrders.length + processingOrders.length;
+        // TODO: Use the count for active orders display
+        // const count = pendingOrders.length + processingOrders.length;
       } catch {
         // If there's an error, set activeOrdersCount to 0
       }
     };
     fetchPendingReviewsCount();
     fetchActiveOrdersCount();
-    return () => {
-      isMounted = false;
-    };
   }, [isAuthenticated, token]);
 
   // Handle logout functionality

@@ -1,17 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Search,
-  Star,
-  Heart,
-  Eye,
-  ShoppingCart,
   ChevronLeft,
   ChevronRight,
   SlidersHorizontal,
 } from "lucide-react";
 import axios from "axios";
 import { useFetchProducts } from "../components/UseFetchProducts";
-import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
 import { toast } from "react-toastify"; // Import toast
 import { useNavigate } from "react-router-dom";
@@ -159,26 +154,8 @@ const transformProduct = (apiProduct: ApiProduct): Product => {
   };
 };
 
-// Custom hook for debounced search
-const useDebounce = <T,>(value: T, delay: number) => {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-};
-
 const Store = () => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-  const { addToCart, getItemQuantity } = useShoppingCart();
   const {
     isLoading,
     products: apiProducts,
@@ -208,57 +185,11 @@ const Store = () => {
     [apiProducts]
   );
 
-  // Helper to get average rating from reviews array or fallback to product.rating
   const getAverageRating = (product: Product) => {
-    if (product.reviews && product.reviews.length > 0) {
-      const sum = product.reviews.reduce((acc, r) => acc + (r.rating || 0), 0);
-      return sum / product.reviews.length;
-    }
+    // In the Product interface, reviews is a number (count), not an array
+    // The actual rating is already calculated in the transformProduct function
     return product.rating || 0;
   };
-
-  const getFilteredAndSortedProducts = useCallback(
-    (productsToFilter: Product[]) => {
-      let filtered = productsToFilter;
-
-      if (searchTerm.trim()) {
-        const searchLower = searchTerm.toLowerCase();
-        filtered = productsToFilter.filter(
-          (product) =>
-            product.name.toLowerCase().includes(searchLower) ||
-            product.category.toLowerCase().includes(searchLower) ||
-            product.brand.toLowerCase().includes(searchLower) ||
-            (product.description &&
-              product.description.toLowerCase().includes(searchLower))
-        );
-      }
-
-      const priceFiltered = filtered.filter(
-        (product) =>
-          product.price >= priceRange[0] && product.price <= priceRange[1]
-      );
-
-      const sorted = [...priceFiltered].sort((a, b) => {
-        switch (sortBy) {
-          case "price-low":
-            return a.price - b.price;
-          case "price-high":
-            return b.price - a.price;
-          case "rating":
-            return b.rating - a.rating;
-          case "newest":
-            return (
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-            );
-          default:
-            return 0;
-        }
-      });
-
-      return sorted;
-    },
-    [searchTerm, priceRange, sortBy]
-  );
 
   const displayedProducts = useMemo(() => {
     // Only include products with at least one review
@@ -348,29 +279,6 @@ const Store = () => {
       (cat: Category) => cat.id === selectedCategoryId
     );
     return category ? category.name : "All";
-  };
-
-  const handleAddToCart = (product: Product) => {
-    const currentQuantityInCart = getItemQuantity(parseInt(product.id));
-    if (currentQuantityInCart >= product.stockQuantity) {
-      toast.error(
-        `Cannot add more than available stock (${product.stockQuantity}) for ${product.name}`
-      );
-      return;
-    }
-
-    try {
-      addToCart({
-        id: parseInt(product.id),
-        name: product.name,
-        price: product.price,
-        img_url: product.img_url,
-        stockQuantity: product.stockQuantity,
-      });
-      toast.success(`${product.name} added to cart!`);
-    } catch (error) {
-      toast.error("Failed to add item to cart. Please try again.");
-    }
   };
 
   useEffect(() => {

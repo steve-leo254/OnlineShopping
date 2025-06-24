@@ -5,20 +5,13 @@ import {
   Heart,
   ShoppingCart,
   Star,
-  Grid,
-  List,
   Eye,
-  Smartphone,
-  Laptop,
-  Headphones,
-  Cpu,
   ChevronLeft,
   ChevronRight,
   Shield,
   Truck,
   Award,
   Tag,
-  TrendingUp,
 } from "lucide-react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -78,12 +71,10 @@ const CategoryProductsPage = () => {
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("featured");
-  const [viewMode, setViewMode] = useState("grid");
   const [priceRange, setPriceRange] = useState("all");
-  const [favorites, setFavorites] = useState(new Set<number>());
   const [isLoading, setIsLoading] = useState(true);
   const [subcategoryCarouselIndex, setSubcategoryCarouselIndex] = useState(0);
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [windowWidth] = useState(window.innerWidth);
 
   // Database state
   const [categories, setCategories] = useState<Category[]>([]);
@@ -91,10 +82,8 @@ const CategoryProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categoryBanners, setCategoryBanners] = useState<string[]>([]);
   const [bannerIndex, setBannerIndex] = useState(0);
-  const [loadingBanners, setLoadingBanners] = useState(false);
   const [allCategoryBanners, setAllCategoryBanners] = useState<string[]>([]);
   const [allBannerIndex, setAllBannerIndex] = useState(0);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [globalAllProducts, setGlobalAllProducts] = useState<Product[]>([]);
 
   const { addToCart, getItemQuantity } = useShoppingCart();
@@ -175,7 +164,7 @@ const CategoryProductsPage = () => {
           `${import.meta.env.VITE_API_BASE_URL}/public/products?limit=100`
         );
         setProducts(response.data.items || []);
-        setAllProducts(response.data.items || []);
+        setGlobalAllProducts(response.data.items || []);
         return;
       }
       // First, find the category ID
@@ -184,7 +173,7 @@ const CategoryProductsPage = () => {
       );
       if (!category) {
         setProducts([]);
-        setAllProducts([]);
+        setGlobalAllProducts([]);
         return;
       }
       // Build query parameters
@@ -204,10 +193,10 @@ const CategoryProductsPage = () => {
       }
       const response = await axios.get(url);
       setProducts(response.data.items || []);
-      setAllProducts(response.data.items || []);
+      setGlobalAllProducts(response.data.items || []);
     } catch (error) {
       setProducts([]);
-      setAllProducts([]);
+      setGlobalAllProducts([]);
     } finally {
       setIsLoading(false);
     }
@@ -265,7 +254,7 @@ const CategoryProductsPage = () => {
       return;
     }
     const fetchBanners = async () => {
-      setLoadingBanners(true);
+      setIsLoading(true);
       try {
         // Try category-specific banners first
         const res = await axios.get(
@@ -293,7 +282,7 @@ const CategoryProductsPage = () => {
       } catch {
         setCategoryBanners([]);
       } finally {
-        setLoadingBanners(false);
+        setIsLoading(false);
         setBannerIndex(0);
       }
     };
@@ -342,38 +331,6 @@ const CategoryProductsPage = () => {
       return () => clearInterval(interval);
     }
   }, [allCategoryBanners]);
-
-  // On initial mount, fetch all products globally
-  useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_API_BASE_URL}/public/products?limit=1000`
-        );
-        setGlobalAllProducts(response.data.items || []);
-      } catch {
-        setGlobalAllProducts([]);
-      }
-    };
-    fetchAll();
-  }, []);
-
-  // Get top-rated product image for icon
-  const getCategoryIconImage = () => {
-    if (!products.length)
-      return "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=400&fit=crop";
-    const sorted = [...products].sort((a, b) => b.rating - a.rating);
-    const top = sorted[0];
-    if (top && top.images && top.images.length > 0) {
-      const url = top.images[0].img_url;
-      return url && typeof url === "string"
-        ? url.startsWith("http")
-          ? url
-          : `${import.meta.env.VITE_API_BASE_URL}${url}`
-        : "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=400&fit=crop";
-    }
-    return "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=400&h=400&fit=crop";
-  };
 
   const filteredProducts = products.filter((product: Product) => {
     const matchesSearch =
@@ -440,21 +397,6 @@ const CategoryProductsPage = () => {
   const handleViewProduct = (productId: number) => {
     console.log(`Navigating to product details for product ID: ${productId}`);
     navigate(`/product-details/${productId}`);
-  };
-
-  const handleCategoryChange = (categoryName: string) => {
-    setSelectedCategory(categoryName);
-    setSelectedSubcategory(""); // Reset subcategory when category changes
-    // Don't navigate, just filter the products
-    fetchProductsByCategory(categoryName);
-
-    // Find category and fetch subcategories
-    const category = categories.find(
-      (cat) => cat.name.toLowerCase() === categoryName.toLowerCase()
-    );
-    if (category) {
-      fetchSubcategories(category.id);
-    }
   };
 
   const handleSubcategoryChange = (subcategoryName: string) => {
@@ -730,7 +672,6 @@ const CategoryProductsPage = () => {
     onViewProduct: (productId: number) => void;
     index: number;
   }) => {
-    const stockInfo = getStockStatus(product.stock_quantity);
     const discount = calculateDiscount(product);
     const badges = getProductBadges(product);
     const keySpecs = getKeySpecs(product);
@@ -1291,38 +1232,6 @@ const CategoryProductsPage = () => {
       </div>
     </div>
   );
-};
-
-// Helper function to get category icon
-const getCategoryIcon = (categoryName: string) => {
-  const iconMap: Record<string, string> = {
-    Electronics: "📱",
-    Fashion: "👗",
-    "Home & Garden": "🏠",
-    Sports: "⚽",
-    Books: "📚",
-    Beauty: "💄",
-    Laptops: "💻",
-    Smartphones: "📱",
-    "PC Components": "🔧",
-    Accessories: "🎧",
-    "Gaming Laptops": "🎮",
-    "Business Laptops": "💼",
-    Ultrabooks: "💻",
-    Workstations: "🖥️",
-    "Android Phones": "📱",
-    iPhones: "📱",
-    "Budget Phones": "📱",
-    Processors: "🔧",
-    "Graphics Cards": "🎮",
-    "Memory & Storage": "💾",
-    Motherboards: "🔌",
-    "Audio & Headphones": "🎧",
-    "Keyboards & Mice": "⌨️",
-    "Monitors & Displays": "🖥️",
-    Networking: "📡",
-  };
-  return iconMap[categoryName] || "📦";
 };
 
 export default CategoryProductsPage;

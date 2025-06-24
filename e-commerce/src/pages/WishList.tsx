@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Heart, ShoppingCart, X, Star, Eye, Share2 } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-import { useFetchProducts } from "../components/UseFetchProducts";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -21,15 +20,9 @@ interface ApiProduct {
   // ...other fields
 }
 
-interface Favorite {
-  id: number;
-  product_id: number;
-  user_id: number;
-}
-
 const WishList: React.FC = () => {
   const { token, isAuthenticated } = useAuth();
-  const { addToCart, getItemQuantity } = useShoppingCart();
+  const { addToCart } = useShoppingCart();
   const navigate = useNavigate();
   const { refreshStats } = useUserStats();
   const { favorites, removeFavorite } = useFavorites();
@@ -141,8 +134,9 @@ const WishList: React.FC = () => {
               {/* Call to action */}
               <div className="space-y-3 sm:space-y-4">
                 <button
-                onClick={() => navigate("/shop")}
-                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-full font-medium hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl text-sm sm:text-base">
+                  onClick={() => navigate("/shop")}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-full font-medium hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl text-sm sm:text-base"
+                >
                   <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
                   Start Exploring
                 </button>

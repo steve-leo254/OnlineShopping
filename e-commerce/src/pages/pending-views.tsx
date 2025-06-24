@@ -4,7 +4,6 @@ import {
   Package,
   CheckCircle,
   ShoppingBag,
-  ArrowLeft,
   Sparkles,
   Gift,
 } from "lucide-react";
@@ -16,11 +15,6 @@ import { formatCurrency } from "../cart/formatCurrency";
 import { useNavigate } from "react-router-dom";
 
 // Type definitions
-interface User {
-  id: number;
-  name: string;
-}
-
 interface Product {
   id: number;
   name: string;
@@ -34,12 +28,6 @@ interface ReviewData {
   rating: number;
   comment: string;
   productName: string;
-}
-
-interface Review extends ReviewData {
-  userId: number;
-  productId: number;
-  date: string;
 }
 
 interface ReviewCardProps {
@@ -62,7 +50,6 @@ const ReviewCard: React.FC<ReviewCardProps> = ({
   const [rating, setRating] = React.useState<number>(0);
   const [hoverRating, setHoverRating] = React.useState<number>(0);
   const [comment, setComment] = React.useState<string>("");
- 
 
   const handleSubmit = (): void => {
     if (rating === 0) {
@@ -222,7 +209,6 @@ const ReviewPage: React.FC = () => {
     id: number;
     orderId: number;
   } | null>(null);
-  const [reviews, setReviews] = useState<Record<number, Review>>({});
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const { refreshStats } = useUserStats();
 
@@ -310,15 +296,6 @@ const ReviewPage: React.FC = () => {
             product.orderId !== productToReview.orderId
         )
       );
-      setReviews((prev) => ({
-        ...prev,
-        [productId]: {
-          ...reviewData,
-          userId: currentUser.id,
-          productId,
-          date: new Date().toISOString(),
-        },
-      }));
       refreshStats(); // Update navbar counts
     } catch (err) {
       alert("Failed to submit review. Please try again.");

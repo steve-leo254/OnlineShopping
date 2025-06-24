@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 import { formatCurrency } from "../cart/formatCurrency";
 import { useFavorites } from "../context/FavoritesContext";
 
@@ -80,9 +79,12 @@ const AccountProfile: React.FC = () => {
         setOrders(ordersResponse.data.items || []);
 
         // Fetch review count
-        const reviewResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/my-reviews`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const reviewResponse = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/my-reviews`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         if (reviewResponse.ok) {
           const data = await reviewResponse.json();
           setReviewCount(Array.isArray(data) ? data.length : 0);

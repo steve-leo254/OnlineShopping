@@ -9,14 +9,13 @@ import { useUserStats } from "../context/UserStatsContext";
 
 const Home: React.FC = () => {
   const navigate = useNavigate();
-  const { isLoading, products, error, fetchProducts } = useFetchProducts();
+  const { isLoading, products, fetchProducts } = useFetchProducts();
   const { addToCart } = useShoppingCart();
   const imgEndPoint = import.meta.env.VITE_API_BASE_URL;
   const { refreshStats } = useUserStats();
 
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const carouselRef = useRef<HTMLDivElement>(null);
 
   const heroImages = [
     {
