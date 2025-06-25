@@ -62,7 +62,7 @@ const ProductsTable: React.FC = () => {
   const [selectedProductForEdit, setSelectedProductForEdit] =
     useState<Product | null>(null);
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
-  const { token, role } = useAuth();
+  const { token } = useAuth();
 
   const limit = 10;
 

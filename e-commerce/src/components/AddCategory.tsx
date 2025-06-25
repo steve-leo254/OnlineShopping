@@ -54,7 +54,6 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
     name: "",
     value_type: "string",
   });
-  const [isSpecLoading, setIsSpecLoading] = useState(false);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -512,70 +511,51 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
 
             {/* Specifications List */}
             <div className="p-6">
-              {isSpecLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
-                  <span className="ml-2 text-gray-600">
-                    Loading specifications...
-                  </span>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between mb-4">
+                  <h5 className="text-sm font-medium text-gray-700">
+                    Added Specifications ({specs.length})
+                  </h5>
                 </div>
-              ) : specs.length === 0 ? (
-                <div className="text-center py-8">
-                  <Settings className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 text-sm">
-                    No specifications added yet.
-                  </p>
-                  <p className="text-gray-400 text-xs mt-1">
-                    Add your first specification using the form above.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between mb-4">
-                    <h5 className="text-sm font-medium text-gray-700">
-                      Added Specifications ({specs.length})
-                    </h5>
-                  </div>
-                  <div className="grid gap-3">
-                    {specs.map((spec, index) => (
-                      <div
-                        key={spec.id}
-                        className="group flex items-center justify-between p-4 bg-gradient-to-r from-white to-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-all duration-200 hover:border-indigo-300"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full text-xs font-medium text-indigo-700">
-                            {index + 1}
-                          </div>
-                          <div>
-                            <h6 className="font-medium text-gray-900">
-                              {spec.name}
-                            </h6>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span
-                                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getValueTypeColor(
-                                  spec.value_type
-                                )}`}
-                              >
-                                <span className="text-xs font-mono">
-                                  {getValueTypeIcon(spec.value_type)}
-                                </span>
-                                {spec.value_type}
+                <div className="grid gap-3">
+                  {specs.map((spec, index) => (
+                    <div
+                      key={spec.id}
+                      className="group flex items-center justify-between p-4 bg-gradient-to-r from-white to-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition-all duration-200 hover:border-indigo-300"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full text-xs font-medium text-indigo-700">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <h6 className="font-medium text-gray-900">
+                            {spec.name}
+                          </h6>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getValueTypeColor(
+                                spec.value_type
+                              )}`}
+                            >
+                              <span className="text-xs font-mono">
+                                {getValueTypeIcon(spec.value_type)}
                               </span>
-                            </div>
+                              {spec.value_type}
+                            </span>
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleDeleteSpec(spec.id)}
-                          className="opacity-0 group-hover:opacity-100 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-all duration-200"
-                          title="Delete specification"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
                       </div>
-                    ))}
-                  </div>
+                      <button
+                        onClick={() => handleDeleteSpec(spec.id)}
+                        className="opacity-0 group-hover:opacity-100 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-all duration-200"
+                        title="Delete specification"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         )}
