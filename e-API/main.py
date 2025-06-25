@@ -406,6 +406,8 @@ async def delete_product(product_id: int, db: db_dependency, user: user_dependen
         )
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
+
+        # Check if product has existing orders
         order_details = (
             db.query(models.OrderDetails)
             .filter(models.OrderDetails.product_id == product_id)
@@ -415,8 +417,32 @@ async def delete_product(product_id: int, db: db_dependency, user: user_dependen
             raise HTTPException(
                 status_code=400, detail="Cannot delete product with existing orders"
             )
+
+        # Get all product images and delete them from disk
+        product_images = (
+            db.query(models.ProductImage)
+            .filter(models.ProductImage.product_id == product_id)
+            .all()
+        )
+
+        for image in product_images:
+            # Delete image file from disk if it's a local upload
+            if image.img_url and image.img_url.startswith("/uploads/"):
+                file_path = UPLOAD_DIR / image.img_url.replace("/uploads/", "")
+                try:
+                    if file_path.exists():
+                        file_path.unlink()
+                        logger.info(f"Deleted image file: {file_path}")
+                except Exception as e:
+                    logger.warning(f"Failed to delete image file {file_path}: {e}")
+
+        # Delete the product (this will cascade delete images, specs, etc.)
         db.delete(product)
         db.commit()
+
+        logger.info(
+            f"Product {product_id} and all associated files deleted successfully"
+        )
         return {"message": "Product deleted successfully"}
     except SQLAlchemyError as e:
         db.rollback()
@@ -1194,17 +1220,18 @@ async def delete_product_image(
 
 # --- Category Specifications ---
 @app.post(
-    "/categories/{category_id}/specifications", response_model=SpecificationResponse
+    "/subcategories/{subcategory_id}/specifications",
+    response_model=SpecificationResponse,
 )
-async def add_category_specification(
-    category_id: int,
+async def add_subcategory_specification(
+    subcategory_id: int,
     spec: SpecificationCreate,
     db: db_dependency,
     user: user_dependency,
 ):
     require_admin(user)
     db_spec = models.Specification(
-        category_id=category_id, name=spec.name, value_type=spec.value_type
+        subcategory_id=subcategory_id, name=spec.name, value_type=spec.value_type
     )
     db.add(db_spec)
     db.commit()
@@ -1213,36 +1240,36 @@ async def add_category_specification(
 
 
 @app.get(
-    "/categories/{category_id}/specifications",
+    "/subcategories/{subcategory_id}/specifications",
     response_model=List[SpecificationResponse],
 )
-async def get_category_specifications(category_id: int, db: db_dependency):
+async def get_subcategory_specifications(subcategory_id: int, db: db_dependency):
     specs = (
         db.query(models.Specification)
-        .filter(models.Specification.category_id == category_id)
+        .filter(models.Specification.subcategory_id == subcategory_id)
         .all()
     )
     return specs
 
 
 @app.delete(
-    "/categories/{category_id}/specifications/{spec_id}",
+    "/subcategories/{subcategory_id}/specifications/{spec_id}",
     status_code=status.HTTP_200_OK,
 )
-async def delete_category_specification(
-    category_id: int,
+async def delete_subcategory_specification(
+    subcategory_id: int,
     spec_id: int,
     db: db_dependency,
     user: user_dependency,
 ):
-    """Delete a specification from a category"""
+    """Delete a specification from a subcategory"""
     require_admin(user)
     try:
         spec = (
             db.query(models.Specification)
             .filter(
                 models.Specification.id == spec_id,
-                models.Specification.category_id == category_id,
+                models.Specification.subcategory_id == subcategory_id,
             )
             .first()
         )
@@ -1271,12 +1298,12 @@ async def delete_category_specification(
 
 
 @app.put(
-    "/categories/{category_id}/specifications/{spec_id}",
+    "/subcategories/{subcategory_id}/specifications/{spec_id}",
     response_model=SpecificationResponse,
     status_code=status.HTTP_200_OK,
 )
-async def update_category_specification(
-    category_id: int,
+async def update_subcategory_specification(
+    subcategory_id: int,
     spec_id: int,
     spec_update: SpecificationCreate,
     db: db_dependency,
@@ -1289,7 +1316,7 @@ async def update_category_specification(
             db.query(models.Specification)
             .filter(
                 models.Specification.id == spec_id,
-                models.Specification.category_id == category_id,
+                models.Specification.subcategory_id == subcategory_id,
             )
             .first()
         )

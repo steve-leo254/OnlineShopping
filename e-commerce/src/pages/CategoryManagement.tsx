@@ -59,6 +59,9 @@ const CategoryManagement: React.FC = () => {
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [specifications, setSpecifications] = useState<Specification[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState<
@@ -111,6 +114,12 @@ const CategoryManagement: React.FC = () => {
     }
   }, [selectedCategory]);
 
+  useEffect(() => {
+    if (selectedSubcategory) {
+      fetchSpecifications(selectedSubcategory);
+    }
+  }, [selectedSubcategory]);
+
   const fetchCategories = async () => {
     try {
       const response = await axios.get(
@@ -139,16 +148,15 @@ const CategoryManagement: React.FC = () => {
     }
   };
 
-  const fetchSpecifications = async (categoryId: number) => {
+  const fetchSpecifications = async (subcategoryId: number) => {
     try {
       const response = await axios.get(
         `${
           import.meta.env.VITE_API_BASE_URL
-        }/categories/${categoryId}/specifications`
+        }/subcategories/${subcategoryId}/specifications`
       );
       setSpecifications(response.data || []);
     } catch (error) {
-      console.error("Error fetching specifications:", error);
       setSpecifications([]);
     }
   };
@@ -278,7 +286,7 @@ const CategoryManagement: React.FC = () => {
           `${import.meta.env.VITE_API_BASE_URL}/specifications/${
             editingSpec.id
           }`,
-          { ...specForm, category_id: selectedCategory },
+          { ...specForm, subcategory_id: selectedSubcategory },
           { headers: { Authorization: `Bearer ${token}` } }
         );
         toast.success("Specification updated successfully!");
@@ -286,16 +294,16 @@ const CategoryManagement: React.FC = () => {
         await axios.post(
           `${
             import.meta.env.VITE_API_BASE_URL
-          }/categories/${selectedCategory}/specifications`,
-          { ...specForm, category_id: selectedCategory },
+          }/subcategories/${selectedSubcategory}/specifications`,
+          { ...specForm, subcategory_id: selectedSubcategory },
           { headers: { Authorization: `Bearer ${token}` } }
         );
         toast.success("Specification created successfully!");
       }
 
       resetSpecForm();
-      if (selectedCategory) {
-        fetchSpecifications(selectedCategory);
+      if (selectedSubcategory) {
+        fetchSpecifications(selectedSubcategory);
       }
     } catch (err: any) {
       toast.error(err.response?.data?.detail || "Failed to save specification");
@@ -309,8 +317,8 @@ const CategoryManagement: React.FC = () => {
       return;
     }
 
-    if (!selectedCategory) {
-      toast.error("Please select a category first");
+    if (!selectedSubcategory) {
+      toast.error("Please select a subcategory first");
       return;
     }
 
@@ -318,12 +326,12 @@ const CategoryManagement: React.FC = () => {
       await axios.delete(
         `${
           import.meta.env.VITE_API_BASE_URL
-        }/categories/${selectedCategory}/specifications/${specId}`,
+        }/subcategories/${selectedSubcategory}/specifications/${specId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success("Specification deleted successfully!");
-      if (selectedCategory) {
-        fetchSpecifications(selectedCategory);
+      if (selectedSubcategory) {
+        fetchSpecifications(selectedSubcategory);
       }
     } catch (err: any) {
       toast.error(
@@ -354,7 +362,8 @@ const CategoryManagement: React.FC = () => {
 
   const validateSpecForm = () => {
     const newErrors: Record<string, string> = {};
-    if (!selectedCategory) newErrors.category = "Please select a category";
+    if (!selectedSubcategory)
+      newErrors.category = "Please select a subcategory";
     if (!specForm.name.trim())
       newErrors.name = "Specification name is required";
     if (!specForm.value_type) newErrors.value_type = "Value type is required";
@@ -410,14 +419,14 @@ const CategoryManagement: React.FC = () => {
       category_id: subcategory.category_id,
     });
     setEditingSubcategory(subcategory);
-    setSelectedCategory(subcategory.category_id);
+    setSelectedSubcategory(subcategory.id);
     setShowSubcategoryForm(true);
   };
 
   const handleEditSpec = (spec: Specification) => {
     setSpecForm({ name: spec.name, value_type: spec.value_type });
     setEditingSpec(spec);
-    setSelectedCategory(spec.category_id);
+    setSelectedSubcategory(spec.category_id);
     setShowSpecForm(true);
   };
 
@@ -453,10 +462,10 @@ const CategoryManagement: React.FC = () => {
   };
 
   // Update spec form when category is selected
-  const handleSpecCategoryChange = (categoryId: number) => {
-    setSelectedCategory(categoryId);
-    if (categoryId) {
-      fetchSpecifications(categoryId);
+  const handleSpecCategoryChange = (subcategoryId: number) => {
+    setSelectedSubcategory(subcategoryId);
+    if (subcategoryId) {
+      fetchSpecifications(subcategoryId);
     } else {
       setSpecifications([]);
     }
@@ -776,42 +785,45 @@ const CategoryManagement: React.FC = () => {
                     Select Category:
                   </label>
                   <select
-                    value={selectedCategory || ""}
+                    value={selectedSubcategory || ""}
                     onChange={(e) =>
                       handleSpecCategoryChange(parseInt(e.target.value) || 0)
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     required
                   >
-                    <option value="">Select a category</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
+                    <option value="">Select a subcategory</option>
+                    {subcategories.map((subcategory) => (
+                      <option key={subcategory.id} value={subcategory.id}>
+                        {subcategory.name}
                       </option>
                     ))}
                   </select>
-                  {selectedCategory && (
+                  {selectedSubcategory && (
                     <span className="text-sm text-gray-600">
                       Showing specifications for:{" "}
-                      {categories.find((c) => c.id === selectedCategory)?.name}
+                      {
+                        subcategories.find((s) => s.id === selectedSubcategory)
+                          ?.name
+                      }
                     </span>
                   )}
                 </div>
               </div>
 
               <div className="p-6">
-                {!selectedCategory ? (
+                {!selectedSubcategory ? (
                   <div className="text-center py-8">
                     <Settings className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-500">
-                      Please select a category to view its specifications.
+                      Please select a subcategory to view its specifications.
                     </p>
                   </div>
                 ) : filteredSpecifications.length === 0 ? (
                   <div className="text-center py-8">
                     <Settings className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-500">
-                      No specifications found for this category.
+                      No specifications found for this subcategory.
                     </p>
                   </div>
                 ) : (
@@ -1122,17 +1134,17 @@ const CategoryManagement: React.FC = () => {
                     Category
                   </label>
                   <select
-                    value={selectedCategory || ""}
+                    value={selectedSubcategory || ""}
                     onChange={(e) =>
                       handleSpecCategoryChange(parseInt(e.target.value) || 0)
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   >
-                    <option value="">Select a category</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
+                    <option value="">Select a subcategory</option>
+                    {subcategories.map((subcategory) => (
+                      <option key={subcategory.id} value={subcategory.id}>
+                        {subcategory.name}
                       </option>
                     ))}
                   </select>
@@ -1181,7 +1193,7 @@ const CategoryManagement: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={isSubmitting || !selectedCategory}
+                    disabled={isSubmitting || !selectedSubcategory}
                     className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
                   >
                     {isSubmitting

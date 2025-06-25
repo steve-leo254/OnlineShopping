@@ -93,26 +93,23 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  // Fetch specifications for a category
-  const fetchSpecs = async (catId: number) => {
-    setIsSpecLoading(true);
+  // Fetch specifications for a subcategory
+  const fetchSpecifications = async (subcatId: number) => {
     try {
-      const res = await axios.get(
+      const response = await axios.get(
         `${
           import.meta.env.VITE_API_BASE_URL
-        }/categories/${catId}/specifications`
+        }/subcategories/${subcatId}/specifications`
       );
-      setSpecs(res.data);
+      setSpecs(response.data || []);
     } catch (err) {
       setSpecs([]);
-    } finally {
-      setIsSpecLoading(false);
     }
   };
 
   // After category is created, fetch its specs
   useEffect(() => {
-    if (categoryId) fetchSpecs(categoryId);
+    if (categoryId) fetchSpecifications(categoryId);
   }, [categoryId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -183,12 +180,12 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
       await axios.post(
         `${
           import.meta.env.VITE_API_BASE_URL
-        }/categories/${categoryId}/specifications`,
-        { ...specForm, category_id: categoryId },
+        }/subcategories/${categoryId}/specifications`,
+        { ...specForm, subcategory_id: categoryId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setSpecForm({ name: "", value_type: "string" });
-      fetchSpecs(categoryId);
+      fetchSpecifications(categoryId);
       toast.success("Specification added");
     } catch (err) {
       toast.error("Failed to add specification");
@@ -206,7 +203,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
       await axios.delete(
         `${
           import.meta.env.VITE_API_BASE_URL
-        }/categories/${categoryId}/specifications/${specId}`,
+        }/subcategories/${categoryId}/specifications/${specId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setSpecs((prev) => prev.filter((s) => s.id !== specId));

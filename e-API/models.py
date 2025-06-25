@@ -74,9 +74,6 @@ class Categories(Base):
     description = Column(Text)
     features = Column(JSON, nullable=True)
     products = relationship("Products", back_populates="category")
-    specifications = relationship(
-        "Specification", back_populates="category", cascade="all, delete-orphan"
-    )
     subcategories = relationship(
         "Subcategory", back_populates="category", cascade="all, delete-orphan"
     )
@@ -90,6 +87,9 @@ class Subcategory(Base):
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
     category = relationship("Categories", back_populates="subcategories")
     products = relationship("Products", back_populates="subcategory")
+    specifications = relationship(
+        "Specification", back_populates="subcategory", cascade="all, delete-orphan"
+    )
 
 
 class Products(Base):
@@ -221,12 +221,10 @@ class ProductImage(Base):
 class Specification(Base):
     __tablename__ = "specifications"
     id = Column(Integer, primary_key=True, index=True)
-    category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
+    subcategory_id = Column(Integer, ForeignKey("subcategories.id"), nullable=False)
     name = Column(String(100), nullable=False)
-    value_type = Column(
-        String(50), nullable=False
-    )  # e.g., 'string', 'number', 'boolean'
-    category = relationship("Categories", back_populates="specifications")
+    value_type = Column(String(50), nullable=False)
+    subcategory = relationship("Subcategory", back_populates="specifications")
     product_specifications = relationship(
         "ProductSpecification", back_populates="specification"
     )

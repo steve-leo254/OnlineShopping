@@ -115,15 +115,16 @@ class ProductImageResponse(ProductImageBase):
 class SpecificationBase(BaseModel):
     name: str
     value_type: str
+    subcategory_id: int
 
 
 class SpecificationCreate(SpecificationBase):
-    category_id: int
+    pass
 
 
 class SpecificationResponse(SpecificationBase):
     id: int
-    category_id: int
+    subcategory_id: int
 
     class Config:
         from_attributes = True
