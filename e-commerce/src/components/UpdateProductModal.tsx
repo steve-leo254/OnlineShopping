@@ -121,13 +121,13 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
     }
   };
 
-  // Fetch specifications when category changes
-  const fetchSpecifications = async (categoryId: number) => {
+  // Fetch specifications when subcategory changes
+  const fetchSpecifications = async (subcategoryId: number) => {
     try {
       const response = await axios.get<Specification[]>(
         `${
           import.meta.env.VITE_API_BASE_URL
-        }/categories/${categoryId}/specifications`
+        }/subcategories/${subcategoryId}/specifications`
       );
       setSpecifications(response.data || []);
     } catch (err) {
@@ -180,7 +180,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
       });
       if (productToEdit.category_id) {
         fetchSubcategories(productToEdit.category_id);
-        fetchSpecifications(productToEdit.category_id);
+        fetchSpecifications(productToEdit.subcategory_id || 0);
       }
       setImageFiles([]);
       setImagePreviews([]);
@@ -192,7 +192,6 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
   useEffect(() => {
     if (formData.category_id) {
       fetchSubcategories(formData.category_id);
-      fetchSpecifications(formData.category_id);
       // Reset subcategory when category changes
       setFormData((prev) => ({ ...prev, subcategory_id: null }));
     } else {
@@ -327,8 +326,20 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
   };
 
   // Remove existing image visually (cannot delete from backend)
-  const handleRemoveExistingImage = (id: number) => {
-    setExistingImages((prev) => prev.filter((img) => img.id !== id));
+  const handleRemoveExistingImage = async (id: number) => {
+    if (!productToEdit) return;
+    try {
+      await axios.delete(
+        `${import.meta.env.VITE_API_BASE_URL}/products/${
+          productToEdit.id
+        }/images/${id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setExistingImages((prev) => prev.filter((img) => img.id !== id));
+      toast.success("Image removed from product");
+    } catch (err) {
+      toast.error("Failed to remove image");
+    }
   };
 
   // Handle specification value changes
@@ -870,7 +881,7 @@ const UpdateProductModal: React.FC<UpdateProductModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {specifications.map((spec, index) => (
+                  {specifications.map((spec) => (
                     <div
                       key={spec.id}
                       className="group relative bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 hover:border-indigo-300"
