@@ -112,13 +112,13 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
     }
   };
 
-  // Fetch specifications when category changes
-  const fetchSpecifications = async (categoryId: number) => {
+  // Fetch specifications when subcategory changes
+  const fetchSpecifications = async (subcategoryId: number) => {
     try {
       const response = await axios.get<Specification[]>(
         `${
           import.meta.env.VITE_API_BASE_URL
-        }/categories/${categoryId}/specifications`
+        }/subcategories/${subcategoryId}/specifications`
       );
       setSpecifications(response.data || []);
     } catch (err) {
@@ -130,17 +130,21 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
     fetchCategories();
   }, []);
 
+  // Fetch specifications when subcategory_id changes
+  useEffect(() => {
+    if (formData.subcategory_id) {
+      fetchSpecifications(formData.subcategory_id);
+    } else {
+      setSpecifications([]);
+    }
+  }, [formData.subcategory_id]);
+
   // Handle category change
   useEffect(() => {
     if (formData.category_id) {
       fetchSubcategories(formData.category_id);
-      fetchSpecifications(formData.category_id);
-      // Reset subcategory when category changes
-      setFormData((prev) => ({ ...prev, subcategory_id: null }));
     } else {
       setSubcategories([]);
-      setSpecifications([]);
-      setFormData((prev) => ({ ...prev, subcategory_id: null }));
     }
   }, [formData.category_id]);
 
@@ -766,7 +770,7 @@ const AddProduct: React.FC<AddProductProps> = ({ onClose }) => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {specifications.map((spec, index) => (
+                {specifications.map((spec) => (
                   <div
                     key={spec.id}
                     className="group relative bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 hover:border-indigo-300"

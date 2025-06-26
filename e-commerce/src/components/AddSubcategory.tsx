@@ -168,7 +168,7 @@ const AddSubcategory: React.FC<AddSubcategoryProps> = ({
     setIsSubmitting(true);
 
     try {
-      const response = await axios.post(
+      await axios.post(
         `${import.meta.env.VITE_API_BASE_URL}/subcategories`,
         formData,
         {
