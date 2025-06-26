@@ -100,7 +100,7 @@ class Products(Base):
     price = Column(Numeric(precision=14, scale=2), nullable=False)
     original_price = Column(Numeric(precision=14, scale=2), nullable=True)  # New field
     stock_quantity = Column(Numeric(precision=14, scale=2), nullable=False)
-    description = Column(String(1000), nullable=True)
+    description = Column(Text, nullable=False)
     rating = Column(
         Numeric(precision=3, scale=2), nullable=True, default=0.0
     )  # New field (0.00 to 5.00)

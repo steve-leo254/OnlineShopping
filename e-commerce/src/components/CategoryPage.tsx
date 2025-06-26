@@ -85,6 +85,9 @@ const CategoryProductsPage = () => {
   const [allCategoryBanners, setAllCategoryBanners] = useState<string[]>([]);
   const [allBannerIndex, setAllBannerIndex] = useState(0);
   const [globalAllProducts, setGlobalAllProducts] = useState<Product[]>([]);
+  const [allProductsInCategory, setAllProductsInCategory] = useState<Product[]>(
+    []
+  );
 
   const { addToCart, getItemQuantity } = useShoppingCart();
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
@@ -151,52 +154,73 @@ const CategoryProductsPage = () => {
     }
   };
 
-  // Fetch products by category and subcategory
-  const fetchProductsByCategory = async (
-    categoryName: string,
-    subcategoryName?: string
-  ) => {
+  // Dedicated function to fetch all products for a category (no subcategory filter)
+  const fetchAllProductsInCategory = async (categoryName: string) => {
     setIsLoading(true);
     try {
-      // Handle "All" category - fetch all products
       if (categoryName.toLowerCase() === "all") {
         const response = await axios.get(
           `${import.meta.env.VITE_API_BASE_URL}/public/products?limit=100`
         );
+        setAllProductsInCategory(response.data.items || []);
         setProducts(response.data.items || []);
         setGlobalAllProducts(response.data.items || []);
         return;
       }
-      // First, find the category ID
+      const category = categories.find(
+        (cat) => cat.name.toLowerCase() === categoryName.toLowerCase()
+      );
+      if (!category) {
+        setAllProductsInCategory([]);
+        setProducts([]);
+        setGlobalAllProducts([]);
+        return;
+      }
+      const url = `${
+        import.meta.env.VITE_API_BASE_URL
+      }/public/products?category_id=${category.id}&limit=100`;
+      const response = await axios.get(url);
+      setAllProductsInCategory(response.data.items || []);
+      setProducts(response.data.items || []);
+      setGlobalAllProducts(response.data.items || []);
+    } catch (error) {
+      setAllProductsInCategory([]);
+      setProducts([]);
+      setGlobalAllProducts([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch products filtered by subcategory (does not touch allProductsInCategory)
+  const fetchProductsBySubcategory = async (
+    categoryName: string,
+    subcategoryName: string
+  ) => {
+    setIsLoading(true);
+    try {
       const category = categories.find(
         (cat) => cat.name.toLowerCase() === categoryName.toLowerCase()
       );
       if (!category) {
         setProducts([]);
-        setGlobalAllProducts([]);
         return;
       }
-      // Build query parameters
       let url = `${
         import.meta.env.VITE_API_BASE_URL
-      }/public/products?category_id=${category.id}&limit=50`;
-      // Add subcategory filter if specified
-      if (subcategoryName) {
-        const subcategory = subcategories.find(
-          (sub) =>
-            sub.name.toLowerCase() === subcategoryName.toLowerCase() &&
-            sub.category_id === category.id
-        );
-        if (subcategory) {
-          url += `&subcategory_id=${subcategory.id}`;
-        }
+      }/public/products?category_id=${category.id}&limit=100`;
+      const subcategory = subcategories.find(
+        (sub) =>
+          sub.name.toLowerCase() === subcategoryName.toLowerCase() &&
+          sub.category_id === category.id
+      );
+      if (subcategory) {
+        url += `&subcategory_id=${subcategory.id}`;
       }
       const response = await axios.get(url);
       setProducts(response.data.items || []);
-      setGlobalAllProducts(response.data.items || []);
     } catch (error) {
       setProducts([]);
-      setGlobalAllProducts([]);
     } finally {
       setIsLoading(false);
     }
@@ -229,7 +253,8 @@ const CategoryProductsPage = () => {
   // Fetch products when category changes
   useEffect(() => {
     if (selectedCategory && categories.length > 0) {
-      fetchProductsByCategory(selectedCategory, selectedSubcategory);
+      // When category changes, fetch all products for the category and update allProductsInCategory
+      fetchAllProductsInCategory(selectedCategory);
 
       // Only fetch subcategories if not "All" category
       if (selectedCategory.toLowerCase() !== "all") {
@@ -244,8 +269,40 @@ const CategoryProductsPage = () => {
         // Clear subcategories when "All" is selected
         setSubcategories([]);
       }
+      // Reset subcategory selection when category changes
+      setSelectedSubcategory("");
     }
-  }, [selectedCategory, categories, selectedSubcategory]);
+  }, [selectedCategory, categories]);
+
+  // When subcategory changes, only update products, not allProductsInCategory
+  useEffect(() => {
+    if (
+      selectedCategory &&
+      categories.length > 0 &&
+      selectedSubcategory &&
+      selectedCategory.toLowerCase() !== "all"
+    ) {
+      fetchProductsBySubcategory(selectedCategory, selectedSubcategory);
+    }
+  }, [selectedSubcategory]);
+
+  // When subcategory is cleared (e.g., after changing category), show all products in category
+  useEffect(() => {
+    if (
+      selectedCategory &&
+      categories.length > 0 &&
+      !selectedSubcategory &&
+      selectedCategory.toLowerCase() !== "all"
+    ) {
+      // Show all products in the category
+      setProducts(allProductsInCategory);
+    }
+  }, [
+    selectedSubcategory,
+    allProductsInCategory,
+    selectedCategory,
+    categories,
+  ]);
 
   // Fetch banners for the selected category
   useEffect(() => {
@@ -401,7 +458,6 @@ const CategoryProductsPage = () => {
 
   const handleSubcategoryChange = (subcategoryName: string) => {
     setSelectedSubcategory(subcategoryName);
-    fetchProductsByCategory(selectedCategory, subcategoryName);
   };
 
   const resetFilters = () => {
@@ -410,7 +466,7 @@ const CategoryProductsPage = () => {
     setSearchTerm("");
     setPriceRange("all");
     setSortBy("featured");
-    fetchProductsByCategory("All");
+    fetchAllProductsInCategory("All");
   };
 
   // Subcategory carousel navigation
@@ -947,9 +1003,18 @@ const CategoryProductsPage = () => {
 
   // Helper to get top-rated product image for a subcategory
   const getSubcategoryImage = (categoryId: number, subcategoryId: number) => {
-    // Use globalAllProducts for image lookup
-    const productsInSubcategory = globalAllProducts.filter(
+    const productsInSubcategory = allProductsInCategory.filter(
       (p) => p.category_id === categoryId && p.subcategory_id === subcategoryId
+    );
+    console.log(
+      "Subcat:",
+      subcategoryId,
+      "Products:",
+      productsInSubcategory.map((p) => ({
+        id: p.id,
+        name: p.name,
+        images: p.images,
+      }))
     );
     if (productsInSubcategory.length > 0) {
       const top = [...productsInSubcategory].sort(
@@ -957,12 +1022,13 @@ const CategoryProductsPage = () => {
       )[0];
       if (top && top.images && top.images.length > 0) {
         const url = top.images[0].img_url;
+        console.log("Returning image for subcat", subcategoryId, ":", url);
         return url.startsWith("http")
           ? url
           : `${import.meta.env.VITE_API_BASE_URL}${url}`;
       }
     }
-    // No fallback SVG, just return empty string
+    console.log("No image for subcat", subcategoryId);
     return "";
   };
 
