@@ -33,7 +33,7 @@ import { FavoritesProvider } from "./context/FavoritesContext";
 import ModernEcommerceHomepage from "./components/Test";
 import CategoryProductsPage from "./components/CategoryPage";
 import CategoryManagement from "./pages/CategoryManagement";
-import BannerManagement from "./pages/BannerManagment";
+import BannerManagement from "./pages/BannerManagement";
 
 function App() {
   return (
