@@ -14,6 +14,7 @@ import { useFetchProducts } from "./UseFetchProducts";
 import UpdateProductModal from "./UpdateProductModal";
 import AddProduct from "./AddProduct";
 import { formatCurrency } from "../cart/formatCurrency";
+import { useAuth } from "../context/AuthContext";
 
 interface Category {
   id: string;
@@ -61,6 +62,7 @@ const ProductsTable: React.FC = () => {
   const [selectedProductForEdit, setSelectedProductForEdit] =
     useState<Product | null>(null);
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
+  const { token } = useAuth();
 
   const limit = 10;
 
@@ -199,9 +201,41 @@ const ProductsTable: React.FC = () => {
     fetchProducts(currentPage, limit, searchQuery, selectedCategory);
   };
 
-  const handleDelete = (product: Product) => {
-    console.log("Delete product:", product);
-    setOpenDropdown(null);
+  const handleDelete = async (product: Product) => {
+    if (
+      !confirm(
+        `Are you sure you want to delete "${product.name}"? This action cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/delete-product/${product.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete product");
+      }
+
+      // Refresh the products list
+      fetchProducts(currentPage, limit, searchQuery, selectedCategory);
+      setOpenDropdown(null);
+
+      // Show success message
+      alert("Product deleted successfully");
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      alert("Failed to delete product. Please try again.");
+    }
   };
 
   // Get unique brands from current products
@@ -532,7 +566,7 @@ const ProductsTable: React.FC = () => {
                         </td>
                         <td className="py-4 px-6">
                           <span className="text-gray-500 line-through">
-                            {formatCurrency(product.original_price)}
+                            {formatCurrency(product.original_price ?? 0)}
                           </span>
                         </td>
                         <td className="py-4 px-6">
