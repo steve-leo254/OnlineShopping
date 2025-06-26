@@ -481,19 +481,23 @@ const ModernEcommerceHomepage = () => {
             </div>
 
             {/* Navigation Buttons */}
-            <button
-              onClick={prevCategorySlide}
-              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hidden sm:flex items-center justify-center"
-            >
-              <ChevronLeft className="w-6 h-6 text-gray-700" />
-            </button>
+            {totalSlides > 1 && (
+              <>
+                <button
+                  onClick={prevCategorySlide}
+                  className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hidden sm:flex items-center justify-center"
+                >
+                  <ChevronLeft className="w-6 h-6 text-gray-700" />
+                </button>
 
-            <button
-              onClick={nextCategorySlide}
-              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hidden sm:flex items-center justify-center"
-            >
-              <ChevronRight className="w-6 h-6 text-gray-700" />
-            </button>
+                <button
+                  onClick={nextCategorySlide}
+                  className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hidden sm:flex items-center justify-center"
+                >
+                  <ChevronRight className="w-6 h-6 text-gray-700" />
+                </button>
+              </>
+            )}
 
             {/* Categories Grid */}
             <div
