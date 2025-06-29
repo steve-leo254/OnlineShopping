@@ -900,15 +900,15 @@ const CategoryProductsPage = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="relative h-12">
+          <div className="relative">
             <button
               disabled={product.stock_quantity === 0}
-              className={`absolute inset-0 w-full px-4 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 ${
+              className={`w-full px-4 py-3 rounded-xl font-semibold transition-all duration-300 hidden group-hover:block flex items-center justify-center gap-2 ${
                 getItemQuantity(product.id) > 0
-                  ? "bg-red-600 text-white hover:bg-red-700 shadow-lg transform hover:scale-105"
+                  ? "bg-red-600 text-white hover:bg-red-700 shadow-lg"
                   : product.stock_quantity === 0
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-purple-600 text-white hover:bg-purple-700 shadow-lg transform hover:scale-105"
+                  : "bg-purple-600 text-white hover:bg-purple-700 shadow-lg"
               }`}
               onClick={() => {
                 if (getItemQuantity(product.id) > 0) {
@@ -918,7 +918,7 @@ const CategoryProductsPage = () => {
                 }
               }}
             >
-              <ShoppingCart size={16} />
+              
               {getItemQuantity(product.id) > 0
                 ? "Remove from Cart"
                 : product.stock_quantity === 0
