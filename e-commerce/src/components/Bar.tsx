@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import CartDropdown from "./CartDropdown";
@@ -38,12 +38,35 @@ const Bar: React.FC = () => {
     useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
 
+  // Ref for the shop dropdown
+  const shopDropdownRef = useRef<HTMLDivElement>(null);
+
   // Initialize Flowbite (if available) on component mount
   useEffect(() => {
     if (window.initFlowbite) {
       window.initFlowbite();
     }
   }, []);
+
+  // Click outside handler for shop dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        shopDropdownRef.current &&
+        !shopDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsCategoryDropdownOpen(false);
+      }
+    };
+
+    if (isCategoryDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isCategoryDropdownOpen]);
 
   // Fetch categories
   useEffect(() => {
@@ -187,7 +210,7 @@ const Bar: React.FC = () => {
                   </Link>
 
                   {/* Shop Dropdown */}
-                  <div className="relative">
+                  <div className="relative" ref={shopDropdownRef}>
                     <button
                       onClick={() =>
                         setIsCategoryDropdownOpen(!isCategoryDropdownOpen)
