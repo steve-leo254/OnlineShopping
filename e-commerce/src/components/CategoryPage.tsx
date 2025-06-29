@@ -1046,7 +1046,7 @@ const CategoryProductsPage = () => {
             }}
           >
             <div className="absolute inset-0 bg-black/40"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-800 opacity-75"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 opacity-75"></div>
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
               <div className="text-white max-w-2xl">
                 <div className="flex items-center gap-3 mb-4">
