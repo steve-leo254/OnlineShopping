@@ -187,10 +187,10 @@ const Bar: React.FC = () => {
                   <img
                     className="h-10 w-auto transition-transform duration-200 hover:scale-105"
                     src="/logomoto.png"
-                    alt="Flowtechs Logo"
+                    alt="FlowTechs Logo"
                   />
                   <span className="hidden sm:inline text-xl md:text-2xl font-semibold whitespace-nowrap text-white">
-                    FlowTech
+                    Flowtechs
                   </span>
                 </Link>
               </div>
