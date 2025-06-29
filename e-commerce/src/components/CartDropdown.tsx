@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { formatCurrency } from "../cart/formatCurrency";
 
@@ -15,6 +16,7 @@ type CartProduct = {
 };
 
 const CartDropdown: React.FC = () => {
+  const navigate = useNavigate();
   const { cartItems, removeFromCart } = useShoppingCart();
   const [cartProducts, setCartProducts] = useState<CartProduct[]>([]);
 
@@ -55,6 +57,15 @@ const CartDropdown: React.FC = () => {
     0
   );
 
+  const handleProductClick = (productId: number) => {
+    navigate(`/product-details/${productId}`);
+  };
+
+  const handleRemoveClick = (e: React.MouseEvent, productId: number) => {
+    e.stopPropagation(); // Prevent navigation when clicking remove button
+    removeFromCart(productId);
+  };
+
   return (
     <div
       id="myCartDropdown1"
@@ -94,7 +105,8 @@ const CartDropdown: React.FC = () => {
             {cartProducts.map((cartProduct) => (
               <div
                 key={cartProduct.product.id}
-                className="group relative bg-gradient-to-r from-gray-50 to-white rounded-xl p-3 sm:p-4 hover:shadow-md transition-all duration-300 border border-gray-100 hover:border-blue-200"
+                onClick={() => handleProductClick(cartProduct.product.id)}
+                className="group relative bg-gradient-to-r from-gray-50 to-white rounded-xl p-3 sm:p-4 hover:shadow-md transition-all duration-300 border border-gray-100 hover:border-blue-200 cursor-pointer"
               >
                 {/* Product Info */}
                 <div className="flex items-start justify-between">
@@ -120,7 +132,9 @@ const CartDropdown: React.FC = () => {
 
                   {/* Remove Button */}
                   <button
-                    onClick={() => removeFromCart(cartProduct.product.id)}
+                    onClick={(e) =>
+                      handleRemoveClick(e, cartProduct.product.id)
+                    }
                     className="flex-shrink-0 p-1.5 sm:p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all duration-200 group-hover:scale-110"
                   >
                     <svg
