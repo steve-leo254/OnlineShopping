@@ -307,7 +307,7 @@ const Store = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-700 text-white py-10 shadow-lg">
+      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white py-10 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-3 bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent drop-shadow-lg">
             Top Reviewed Products
