@@ -837,7 +837,7 @@ const ModernEcommerceHomepage = () => {
               {
                 icon: RotateCcw,
                 title: "Easy Returns",
-                desc: "30-day return policy",
+                desc: "7-day return policy",
               },
             ].map((feature, index) => (
               <div key={index} className="text-center group">

@@ -89,7 +89,7 @@ const CategoryProductsPage = () => {
     []
   );
 
-  const { addToCart, getItemQuantity } = useShoppingCart();
+  const { addToCart, getItemQuantity, removeFromCart } = useShoppingCart();
   const { isFavorite, addFavorite, removeFavorite } = useFavorites();
   const { isAuthenticated } = useAuth();
 
@@ -900,37 +900,31 @@ const CategoryProductsPage = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3">
+          <div className="relative h-12">
             <button
               disabled={product.stock_quantity === 0}
-              className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
-                product.stock_quantity === 0
+              className={`absolute inset-0 w-full px-4 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 ${
+                getItemQuantity(product.id) > 0
+                  ? "bg-red-600 text-white hover:bg-red-700 shadow-lg transform hover:scale-105"
+                  : product.stock_quantity === 0
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                   : "bg-purple-600 text-white hover:bg-purple-700 shadow-lg transform hover:scale-105"
               }`}
-              onClick={() => handleAddToCart(product)}
+              onClick={() => {
+                if (getItemQuantity(product.id) > 0) {
+                  removeFromCart(product.id);
+                } else {
+                  handleAddToCart(product);
+                }
+              }}
             >
               <ShoppingCart size={16} />
-              {product.stock_quantity === 0 ? "Out of Stock" : "Add to Cart"}
+              {getItemQuantity(product.id) > 0
+                ? "Remove from Cart"
+                : product.stock_quantity === 0
+                ? "Out of Stock"
+                : "Add to Cart"}
             </button>
-          </div>
-
-          {/* Additional Info */}
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="flex items-center justify-between text-xs text-gray-500">
-              <span className="flex items-center gap-1">
-                <Truck size={12} />
-                Delivery Services
-              </span>
-              <span className="flex items-center gap-1">
-                <Shield size={12} />
-                Warranty included
-              </span>
-              <span className="flex items-center gap-1">
-                <Award size={12} />
-                Quality assured
-              </span>
-            </div>
           </div>
         </div>
       </div>
