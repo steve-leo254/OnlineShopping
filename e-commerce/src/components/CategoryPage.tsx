@@ -615,10 +615,11 @@ const CategoryProductsPage = () => {
     if (discount > 0) {
       badges.push({
         label: `${discount}% OFF`,
-        color: "bg-red-500",
+        color: "relative bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300 border border-red-400/50 before:absolute before:inset-0 before:bg-gradient-to-r before:from-red-500/30 before:to-pink-500/30 before:rounded-full before:blur-lg before:animate-pulse before:-z-10 after:absolute after:inset-0 after:bg-gradient-to-r after:from-transparent after:via-white/20 after:to-transparent after:rounded-full after:transform after:-skew-x-12 after:animate-shine overflow-hidden",
         icon: "🏷️",
       });
     }
+    
 
     // Validate rating before checking for top rated badge
     const validRating =
