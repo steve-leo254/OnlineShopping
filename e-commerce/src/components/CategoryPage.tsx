@@ -1093,7 +1093,7 @@ const CategoryProductsPage = () => {
             }}
           >
             <div className="absolute inset-0 bg-black/40"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-800 opacity-75"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 opacity-75"></div>
             <div className="flex items-center justify-center h-full relative z-10">
               <div className="text-white text-center">
                 <h1 className="text-5xl font-bold mb-4">All Products</h1>
