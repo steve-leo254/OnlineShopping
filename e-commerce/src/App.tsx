@@ -34,8 +34,61 @@ import ModernEcommerceHomepage from "./components/Test";
 import CategoryProductsPage from "./components/CategoryPage";
 import CategoryManagement from "./pages/CategoryManagement";
 import BannerManagement from "./pages/BannerManagement";
+import { useEffect } from "react";
 
 function App() {
+  useEffect(() => {
+    // Prevent Ctrl+A (select all)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent Ctrl+A
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+      }
+      // Prevent Ctrl+U (view source)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "u") {
+        e.preventDefault();
+      }
+      // Prevent F12 (dev tools)
+      if (e.key === "F12") {
+        e.preventDefault();
+      }
+      // Prevent Ctrl+Shift+I (dev tools)
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.shiftKey &&
+        e.key.toLowerCase() === "i"
+      ) {
+        e.preventDefault();
+      }
+      // Prevent Ctrl+Shift+C (dev tools)
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.shiftKey &&
+        e.key.toLowerCase() === "c"
+      ) {
+        e.preventDefault();
+      }
+      // Prevent Ctrl+Shift+J (dev tools)
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.shiftKey &&
+        e.key.toLowerCase() === "j"
+      ) {
+        e.preventDefault();
+      }
+    };
+    // Prevent right-click context menu
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("contextmenu", handleContextMenu);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("contextmenu", handleContextMenu);
+    };
+  }, []);
+
   return (
     <AuthProvider>
       <FavoritesProvider>
