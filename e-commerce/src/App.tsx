@@ -1,7 +1,6 @@
 // src/App.tsx
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext"; // Import AuthProvider
-import Home from "./pages/Home";
+import { AuthProvider } from "./context/AuthContext";
 import Layout from "./assets/Layout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -30,7 +29,7 @@ import ReviewPage from "./pages/pending-views";
 import WishList from "./pages/WishList";
 import TermsAndConditions from "./pages/Terms&Condition";
 import { FavoritesProvider } from "./context/FavoritesContext";
-import ModernEcommerceHomepage from "./components/Test";
+import ModernEcommerceHomepage from "./pages/Home";
 import CategoryProductsPage from "./components/CategoryPage";
 import CategoryManagement from "./pages/CategoryManagement";
 import BannerManagement from "./pages/BannerManagement";
@@ -121,7 +120,7 @@ function App() {
                   path="/category/:categoryName"
                   element={<CategoryProductsPage />}
                 />
-                <Route path="/home" element={<Home />} />
+               
                 <Route
                   path="/product-details/:id"
                   element={<ProductDetail />}
