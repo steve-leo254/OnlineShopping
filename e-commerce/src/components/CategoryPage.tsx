@@ -893,7 +893,7 @@ const CategoryProductsPage = () => {
               {discount > 0 && (
                 <span className="text-sm text-green-600 font-medium">
                   Save {formatCurrency(product.original_price - product.price)}{" "}
-                  ({discount}% off)
+                  
                 </span>
               )}
             </div>
