@@ -604,7 +604,7 @@ const ModernEcommerceHomepage = () => {
                           />
                           <div className="absolute top-4 left-4 flex flex-col gap-2">
                             {product.is_new && (
-                              <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold mb-1">
+                              <span className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-200 hover:shadow-blue-300 transform hover:scale-[1.02] active:scale-[0.98] text-white px-3 py-1 rounded-full text-sm font-semibold mb-1">
                                 New
                               </span>
                             )}
@@ -641,7 +641,7 @@ const ModernEcommerceHomepage = () => {
 
                         <div className="p-6">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-gray-500 font-medium">
+                            <span className="text-sm text-blue-600 font-medium">
                               {product.category?.name}
                             </span>
                             {product.subcategory && (
@@ -676,7 +676,7 @@ const ModernEcommerceHomepage = () => {
 
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center space-x-2">
-                              <span className="text-2xl font-bold text-purple-600">
+                              <span className="text-2xl font-bold text-blue-600">
                                 {formatCurrency(product.price)}
                               </span>
                               {product.original_price &&
@@ -699,7 +699,7 @@ const ModernEcommerceHomepage = () => {
                             className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 hidden group-hover:block ${
                               getItemQuantity(product.id) > 0
                                 ? "bg-red-600 text-white hover:bg-red-700"
-                                : "bg-purple-600 text-white hover:bg-purple-700"
+                                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-200 hover:shadow-blue-300 transform hover:scale-[1.02] active:scale-[0.98]"
                             }`}
                           >
                             {getItemQuantity(product.id) > 0

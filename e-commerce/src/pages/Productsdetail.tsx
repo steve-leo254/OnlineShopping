@@ -464,7 +464,7 @@ const ProductDetail: React.FC = () => {
               {/* Badges */}
               <div className="absolute top-4 left-4 flex flex-col gap-2">
                 {product.isNew && (
-                  <span className="bg-green-500 text-white px-2 py-1 rounded text-xs font-medium">
+                  <span className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-200 hover:shadow-blue-300 transform hover:scale-[1.02] active:scale-[0.98] px-2 py-1 rounded text-xs font-medium">
                     NEW
                   </span>
                 )}
