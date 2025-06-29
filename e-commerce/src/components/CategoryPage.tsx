@@ -3,14 +3,10 @@ import {
   Search,
   Filter,
   Heart,
-  ShoppingCart,
   Star,
   Eye,
   ChevronLeft,
   ChevronRight,
-  Shield,
-  Truck,
-  Award,
   Tag,
 } from "lucide-react";
 import axios from "axios";
@@ -84,7 +80,6 @@ const CategoryProductsPage = () => {
   const [bannerIndex, setBannerIndex] = useState(0);
   const [allCategoryBanners, setAllCategoryBanners] = useState<string[]>([]);
   const [allBannerIndex, setAllBannerIndex] = useState(0);
-  const [globalAllProducts, setGlobalAllProducts] = useState<Product[]>([]);
   const [allProductsInCategory, setAllProductsInCategory] = useState<Product[]>(
     []
   );
@@ -164,7 +159,6 @@ const CategoryProductsPage = () => {
         );
         setAllProductsInCategory(response.data.items || []);
         setProducts(response.data.items || []);
-        setGlobalAllProducts(response.data.items || []);
         return;
       }
       const category = categories.find(
@@ -173,7 +167,6 @@ const CategoryProductsPage = () => {
       if (!category) {
         setAllProductsInCategory([]);
         setProducts([]);
-        setGlobalAllProducts([]);
         return;
       }
       const url = `${
@@ -182,11 +175,9 @@ const CategoryProductsPage = () => {
       const response = await axios.get(url);
       setAllProductsInCategory(response.data.items || []);
       setProducts(response.data.items || []);
-      setGlobalAllProducts(response.data.items || []);
     } catch (error) {
       setAllProductsInCategory([]);
       setProducts([]);
-      setGlobalAllProducts([]);
     } finally {
       setIsLoading(false);
     }
@@ -608,18 +599,23 @@ const CategoryProductsPage = () => {
     const badges: Array<{ label: string; color: string; icon: string }> = [];
 
     if (product.is_new) {
-      badges.push({ label: "New", color: "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-200 hover:shadow-blue-300 transform hover:scale-[1.02] active:scale-[0.98]", icon: "✨" });
+      badges.push({
+        label: "New",
+        color:
+          "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-200 hover:shadow-blue-300 transform hover:scale-[1.02] active:scale-[0.98]",
+        icon: "✨",
+      });
     }
 
     const discount = calculateDiscount(product);
     if (discount > 0) {
       badges.push({
         label: `${discount}% OFF`,
-        color: "relative bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300 border border-red-400/50 before:absolute before:inset-0 before:bg-gradient-to-r before:from-red-500/30 before:to-pink-500/30 before:rounded-full before:blur-lg before:animate-pulse before:-z-10 after:absolute after:inset-0 after:bg-gradient-to-r after:from-transparent after:via-white/20 after:to-transparent after:rounded-full after:transform after:-skew-x-12 after:animate-shine overflow-hidden",
+        color:
+          "relative bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300 border border-red-400/50 before:absolute before:inset-0 before:bg-gradient-to-r before:from-red-500/30 before:to-pink-500/30 before:rounded-full before:blur-lg before:animate-pulse before:-z-10 after:absolute after:inset-0 after:bg-gradient-to-r after:from-transparent after:via-white/20 after:to-transparent after:rounded-full after:transform after:-skew-x-12 after:animate-shine overflow-hidden",
         icon: "🏷️",
       });
     }
-    
 
     // Validate rating before checking for top rated badge
     const validRating =
@@ -894,7 +890,6 @@ const CategoryProductsPage = () => {
               {discount > 0 && (
                 <span className="text-sm text-green-600 font-medium">
                   Save {formatCurrency(product.original_price - product.price)}{" "}
-                  
                 </span>
               )}
             </div>
@@ -919,7 +914,6 @@ const CategoryProductsPage = () => {
                 }
               }}
             >
-              
               {getItemQuantity(product.id) > 0
                 ? "Remove from Cart"
                 : product.stock_quantity === 0
