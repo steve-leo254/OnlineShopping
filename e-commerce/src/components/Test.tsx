@@ -696,7 +696,7 @@ const ModernEcommerceHomepage = () => {
                                 handleAddToCart(product);
                               }
                             }}
-                            className={`w-full py-3 rounded-xl font-semibold transition-colors ${
+                            className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 hidden group-hover:block ${
                               getItemQuantity(product.id) > 0
                                 ? "bg-red-600 text-white hover:bg-red-700"
                                 : "bg-purple-600 text-white hover:bg-purple-700"
