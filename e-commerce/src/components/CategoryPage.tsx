@@ -608,7 +608,7 @@ const CategoryProductsPage = () => {
     const badges: Array<{ label: string; color: string; icon: string }> = [];
 
     if (product.is_new) {
-      badges.push({ label: "New", color: "bg-blue-500", icon: "✨" });
+      badges.push({ label: "New", color: "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-200 hover:shadow-blue-300 transform hover:scale-[1.02] active:scale-[0.98]", icon: "✨" });
     }
 
     const discount = calculateDiscount(product);
@@ -908,7 +908,7 @@ const CategoryProductsPage = () => {
                   ? "bg-red-600 text-white hover:bg-red-700 shadow-lg"
                   : product.stock_quantity === 0
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-purple-600 text-white hover:bg-purple-700 shadow-lg"
+                  : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg shadow-blue-200 hover:shadow-blue-300 transform hover:scale-[1.02] active:scale-[0.98]"
               }`}
               onClick={() => {
                 if (getItemQuantity(product.id) > 0) {
