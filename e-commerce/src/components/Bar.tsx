@@ -155,7 +155,7 @@ const Bar: React.FC = () => {
   // Handle category navigation
   const handleCategoryClick = (categoryName: string) => {
     const categoryPath = categoryName.toLowerCase().replace(/\s+/g, "-");
-    navigate(`/category/${categoryPath}`, {
+    navigate(`/shop/category/${categoryPath}`, {
       state: { categoryName },
       replace: true,
     });
@@ -247,7 +247,7 @@ const Bar: React.FC = () => {
                               onClick={() => handleCategoryClick(category.name)}
                               className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-colors duration-200 ${
                                 location.pathname ===
-                                `/category/${category.name
+                                `/shop/category/${category.name
                                   .toLowerCase()
                                   .replace(/\s+/g, "-")}`
                                   ? "border-b-2 border-blue-600 text-blue-700 font-bold bg-blue-50"

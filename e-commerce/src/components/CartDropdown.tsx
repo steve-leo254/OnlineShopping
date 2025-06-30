@@ -58,7 +58,7 @@ const CartDropdown: React.FC = () => {
   );
 
   const handleProductClick = (productId: number) => {
-    navigate(`/product-details/${productId}`);
+    navigate(`/shop/product-details/${productId}`);
   };
 
   const handleRemoveClick = (e: React.MouseEvent, productId: number) => {
@@ -205,7 +205,7 @@ const CartDropdown: React.FC = () => {
           {/* Action Buttons */}
           <div className="space-y-2">
             <a
-              href="/shopping-cart"
+              href="/shop/shopping-cart"
               className="block w-full bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 text-white text-center py-2.5 sm:py-3 px-4 rounded-xl font-medium hover:from-blue-700 hover:via-purple-700 hover:to-blue-900 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base"
             >
               <span className="flex items-center justify-center">

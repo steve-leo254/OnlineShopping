@@ -314,7 +314,7 @@ const ProductDetail: React.FC = () => {
   };
 
   const handleRelatedProductClick = (relatedProduct: Product): void => {
-    navigate(`/product-details/${relatedProduct.id}`);
+    navigate(`/shop/product-details/${relatedProduct.id}`);
   };
 
   const renderStars = (rating: number) => {

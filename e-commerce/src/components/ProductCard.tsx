@@ -89,11 +89,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   const handleViewClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/product-details/${product.id}`);
+    navigate(`/shop/product-details/${product.id}`);
   };
 
   const handleCardClick = () => {
-    navigate(`/product-details/${product.id}`);
+    navigate(`/shop/product-details/${product.id}`);
   };
 
   const handleRemoveFromCart = () => {

@@ -14,7 +14,6 @@ import {
   Clock,
   MessageSquare,
   ArrowUp,
-
   XCircle,
   Phone,
   Mail,
@@ -111,7 +110,11 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
   const [awaitingConfirmation, setAwaitingConfirmation] = useState<any>(null);
   const [showScrollToTop, setShowScrollToTop] = useState<boolean>(false);
   const [counties, setCounties] = useState<any[]>([]);
-  const { products, isLoading: productsLoading, fetchProducts } = useFetchProducts();
+  const {
+    products,
+    isLoading: productsLoading,
+    fetchProducts,
+  } = useFetchProducts();
   const { token, isAuthenticated } = useAuth();
   const { addToCart } = useShoppingCart();
   const { refreshStats } = useUserStats(); // Only if you use refreshStats
@@ -497,7 +500,7 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
             Browse Store
           </button>
           <button
-            onClick={() => navigate("/shopping-cart")}
+            onClick={() => navigate("/shop/shopping-cart")}
             className="flex-1 py-2 px-4 bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-lg text-sm font-medium hover:from-green-600 hover:to-blue-700 transition-colors"
           >
             View Cart
@@ -659,7 +662,6 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
             if (status === "cancelled") {
               return "❌ **Oda Imeghairiwa**";
             }
-
 
             if (status === "pending") {
               const estimatedDelivery = new Date(
@@ -2852,7 +2854,9 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
                   alt="Makena"
                   className="w-12 h-12 rounded-full border-2 border-white/80 shadow-md"
                 />
-                <h3 className="font-semibold text-lg">Makena Shopping Baddie</h3>
+                <h3 className="font-semibold text-lg">
+                  Makena Shopping Baddie
+                </h3>
               </div>
               <button
                 onClick={() => setIsOpen(false)}

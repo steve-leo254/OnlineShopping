@@ -187,7 +187,9 @@ const WishList: React.FC = () => {
                 <div className="absolute inset-0 hidden sm:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
                   <div className="flex gap-2 pointer-events-auto">
                     <button
-                      onClick={() => navigate(`/product-details/${product.id}`)}
+                      onClick={() =>
+                        navigate(`/shop/product-details/${product.id}`)
+                      }
                       className="p-2 lg:p-3 bg-white rounded-full shadow-lg hover:scale-110 transition-transform"
                     >
                       <Eye className="w-4 h-4 lg:w-5 lg:h-5 text-gray-700" />
@@ -288,7 +290,9 @@ const WishList: React.FC = () => {
                   <div className="flex gap-1 sm:hidden">
                     <button
                       className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                      onClick={() => navigate(`/product-details/${product.id}`)}
+                      onClick={() =>
+                        navigate(`/shop/product-details/${product.id}`)
+                      }
                     >
                       <Eye className="w-3 h-3 text-gray-600" />
                     </button>

@@ -303,10 +303,13 @@ const ModernEcommerceHomepage = () => {
   const handleCategoryClick = (categoryName: string) => {
     console.log("Test.tsx: Navigating to category:", categoryName);
     // Navigate to the correct route path with category parameter
-    navigate(`/category/${categoryName.toLowerCase().replace(/\s+/g, "-")}`, {
-      state: { categoryName },
-      replace: true,
-    });
+    navigate(
+      `/shop/category/${categoryName.toLowerCase().replace(/\s+/g, "-")}`,
+      {
+        state: { categoryName },
+        replace: true,
+      }
+    );
   };
 
   // Calculate items per slide based on screen size
@@ -629,7 +632,7 @@ const ModernEcommerceHomepage = () => {
                             </button>
                             <button
                               onClick={() =>
-                                navigate(`/product-details/${product.id}`)
+                                navigate(`/shop/product-details/${product.id}`)
                               }
                               className="p-2 bg-white/80 rounded-full hover:bg-white transition-colors"
                               title="View Details"
@@ -742,7 +745,7 @@ const ModernEcommerceHomepage = () => {
                           key={product.id}
                           className="flex items-center space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer group"
                           onClick={() =>
-                            navigate(`/product-details/${product.id}`)
+                            navigate(`/shop/product-details/${product.id}`)
                           }
                         >
                           <div className="relative">

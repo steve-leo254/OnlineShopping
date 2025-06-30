@@ -444,7 +444,7 @@ const CategoryProductsPage = () => {
 
   const handleViewProduct = (productId: number) => {
     console.log(`Navigating to product details for product ID: ${productId}`);
-    navigate(`/product-details/${productId}`);
+    navigate(`/shop/product-details/${productId}`);
   };
 
   const handleSubcategoryChange = (subcategoryName: string) => {

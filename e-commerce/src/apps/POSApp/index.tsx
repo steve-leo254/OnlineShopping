@@ -1,7 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Search, CreditCard, DollarSign, Trash2, Plus, Minus, Package, Users, BarChart3 } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import {
+  ShoppingCart,
+  Search,
+  CreditCard,
+  DollarSign,
+  Trash2,
+  Plus,
+  Minus,
+  Package,
+  Users,
+  BarChart3,
+} from "lucide-react";
 
-const POSSystem = () => {
+const POSApp = () => {
   const [cart, setCart] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -94,7 +105,6 @@ const POSSystem = () => {
           {/* Header */}
           <div className="p-6 border-b">
             <h1 className="text-2xl font-bold text-gray-800 mb-4">Point of Sale</h1>
-            
             {/* Search Bar */}
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -106,7 +116,6 @@ const POSSystem = () => {
                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-
             {/* Category Filters */}
             <div className="flex gap-2">
               {categories.map(category => (
@@ -125,7 +134,6 @@ const POSSystem = () => {
               ))}
             </div>
           </div>
-
           {/* Products Grid */}
           <div className="p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -147,7 +155,6 @@ const POSSystem = () => {
           </div>
         </div>
       </div>
-
       {/* Right Panel - Cart */}
       <div className="w-96 bg-white shadow-lg">
         <div className="p-6 border-b">
@@ -159,7 +166,6 @@ const POSSystem = () => {
             </div>
           </div>
         </div>
-
         {/* Cart Items */}
         <div className="flex-1 overflow-y-auto max-h-96">
           {cart.length === 0 ? (
@@ -201,7 +207,6 @@ const POSSystem = () => {
             </div>
           )}
         </div>
-
         {/* Order Total */}
         {cart.length > 0 && (
           <div className="border-t p-4">
@@ -219,7 +224,6 @@ const POSSystem = () => {
                 <span className="text-green-600">${calculateGrandTotal().toFixed(2)}</span>
               </div>
             </div>
-
             {/* Customer Info */}
             <div className="space-y-2 mb-4">
               <input
@@ -237,7 +241,6 @@ const POSSystem = () => {
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
               />
             </div>
-
             {/* Payment Method */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
@@ -266,7 +269,6 @@ const POSSystem = () => {
                 </button>
               </div>
             </div>
-
             {/* Action Buttons */}
             <div className="flex gap-2">
               <button
@@ -289,4 +291,4 @@ const POSSystem = () => {
   );
 };
 
-export default POSSystem;
+export default POSApp;
