@@ -9,15 +9,20 @@ import {
   useLocation,
 } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-
-import "react-toastify/dist/ReactToastify.css";
-import { ToastContainer } from "react-toastify";
-import { ShoppingCartProvider } from "./context/ShoppingCartContext";
-
+import { useAuth } from "./context/AuthContext";
 import { FavoritesProvider } from "./context/FavoritesContext";
-
+import { ShoppingCartProvider } from "./context/ShoppingCartContext";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import EcommerceApp from "./apps/EcommerceApp";
 import POSApp from "./apps/POSApp";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import SuperAdminRegister from "./pages/SuperAdmin";
+import NotFound from "./pages/NotFound";
+import ModernEcommerceHomepage from "./pages/Home";
+import CategoryProductsPage from "./components/CategoryPage";
+import Layout from "./assets/Layout";
 
 // AppSwitcher component for switching between E-Commerce and POS
 const AppSwitcher: React.FC = () => {
@@ -26,12 +31,18 @@ const AppSwitcher: React.FC = () => {
   return (
     <div style={{ display: "flex", gap: 8, margin: 16 }}>
       <button
+        onClick={() => navigate("/")}
+        style={{ fontWeight: location.pathname === "/" ? "bold" : "normal" }}
+      >
+        Home
+      </button>
+      <button
         onClick={() => navigate("/shop")}
         style={{
           fontWeight: location.pathname.startsWith("/shop") ? "bold" : "normal",
         }}
       >
-        E-Commerce
+        Shop
       </button>
       <button
         onClick={() => navigate("/pos")}
@@ -42,6 +53,36 @@ const AppSwitcher: React.FC = () => {
         POS
       </button>
     </div>
+  );
+};
+
+const AppContent: React.FC = () => {
+  const { role } = useAuth();
+  const isAdmin = role === "admin" || role === "SUPERADMIN";
+
+  return (
+    <>
+      {/* Only show AppSwitcher for admins */}
+      {isAdmin && <AppSwitcher />}
+      <Routes>
+        {/* Public Auth Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/SuperAdmin" element={<SuperAdminRegister />} />
+        {/* Home page at root, wrapped in Layout for navbar/footer */}
+        <Route element={<Layout />}>
+          <Route path="/" element={<ModernEcommerceHomepage />} />
+        </Route>
+        {/* Shop/Categories */}
+        <Route path="/shop" element={<CategoryProductsPage />} />
+        {/* All other e-commerce routes */}
+        <Route path="/shop/*" element={<EcommerceApp />} />
+        {/* POS (admin only, with role check) */}
+        {isAdmin && <Route path="/pos/*" element={<POSApp />} />}
+        {/* Fallback */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
   );
 };
 
@@ -114,12 +155,7 @@ function App() {
               draggable
               progressClassName="toast-progress-bar"
             />
-            <AppSwitcher />
-            <Routes>
-              <Route path="/shop/*" element={<EcommerceApp />} />
-              <Route path="/pos/*" element={<POSApp />} />
-              <Route path="/" element={<Navigate to="/shop" replace />} />
-            </Routes>
+            <AppContent />
           </Router>
         </ShoppingCartProvider>
       </FavoritesProvider>

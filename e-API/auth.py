@@ -94,7 +94,7 @@ def send_verification_email(email: str, username: str, token: str):
         msg["Subject"] = "Verify Your FlowTech Account"
 
         # Create HTML body
-        verification_url = f"{FRONTEND_BASE_URL}/verify-email?token={token}"
+        verification_url = f"{FRONTEND_BASE_URL}/shop/verify-email?token={token}"
         html_body = f"""
         <html>
         <body>
