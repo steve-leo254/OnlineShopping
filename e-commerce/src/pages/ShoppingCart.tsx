@@ -212,7 +212,7 @@ const ShoppingCart: React.FC = () => {
       return;
     }
 
-    navigate("/checkout", {
+    navigate("/shop/checkout", {
       state: {
         subtotal: subtotal,
       },

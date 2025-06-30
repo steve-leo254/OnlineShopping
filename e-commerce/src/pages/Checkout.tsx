@@ -251,7 +251,7 @@ const Checkout = () => {
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             setShowOrderConfirmation(false);
-            navigate(`/order-details/${orderConfirmationData.orderId}`);
+            navigate(`/shop/order-details/${orderConfirmationData.orderId}`);
           }
         }}
       >

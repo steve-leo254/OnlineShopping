@@ -576,7 +576,7 @@ const OrderDetails: React.FC = () => {
                   {/* Action Buttons */}
                   <div className="mt-6 sm:mt-8 space-y-3">
                     <button
-                      onClick={() => navigate("/store")}
+                      onClick={() => navigate("/shop")}
                       className="w-full px-4 sm:px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transform hover:scale-105 transition-all duration-200 font-medium shadow-lg flex items-center justify-center text-sm sm:text-base"
                     >
                       <svg
@@ -596,7 +596,7 @@ const OrderDetails: React.FC = () => {
                     </button>
 
                     <button
-                      onClick={() => navigate("/orders-overview")}
+                      onClick={() => navigate("/shop/orders-overview")}
                       className="w-full px-4 sm:px-6 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl hover:border-blue-300 hover:text-blue-600 transition-all duration-200 font-medium flex items-center justify-center text-sm sm:text-base"
                     >
                       <svg
