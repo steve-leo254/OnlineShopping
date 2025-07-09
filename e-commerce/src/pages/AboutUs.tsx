@@ -64,47 +64,128 @@ const AboutUs = () => {
 
   const [open, setOpen] = useState<number | null>(null);
 
-  const plans = [
+  const webPlans = [
     {
-      name: "Starter",
-      price: "Free",
-      description: "Perfect for individuals and small businesses starting out.",
+      name: "Startup",
+      price: "Ksh 20000",
+      note: "One Time Fee / No other hidden cost",
+      color: "bg-green-600",
+      button: "bg-green-600 hover:bg-green-700",
       features: [
-        "Basic product listing",
-        "Email support",
-        "Community access",
+        "Content Management System",
+        "Responsive Professional Design",
+        "Content & Images Upload (provided by client)",
+        "Website Security included/SSL",
+        "Social Media, Online forms integrations",
+        "Site Upload & Setup of domain emails",
+        "Analytics dashboard",
+        "2 months support",
+        "1 Yr Domain & Hosting Inclusive",
+        "Delivery: 7 working days",
       ],
-      unavailable: ["Custom domain", "Advanced analytics", "POS integration"],
-      highlight: false,
-      details: "Starter is great for testing the waters. You get basic listings, email support, and access to our community forum.",
+      whatsapp: "https://wa.me/254117802561?text=I'm%20interested%20in%20the%20Startup%20package",
     },
     {
-      name: "Pro",
-      price: "Ksh 2,999/mo",
-      description: "For growing businesses that need more power and flexibility.",
+      name: "Small Business",
+      price: "Ksh 35000",
+      note: "One Time Fee / No other hidden cost",
+      color: "bg-red-600",
+      button: "bg-red-600 hover:bg-red-700",
       features: [
-        "Everything in Starter",
-        "Custom domain",
-        "Advanced analytics",
-        "Priority support",
+        "Content Management System",
+        "Responsive Professional Design",
+        "SEO Content Copywriting",
+        "Images Optimization",
+        "Products/Services Showcasing module",
+        "Enhanced Website Security included (SSL, Firewall)",
+        "Social Media, Chat, Online forms integrations",
+        "Site Upload & Setup of domain emails",
+        "Analytics dashboard",
+        "Basic website SEO",
+        "Search Engine Submission",
+        "1 Yr Domain & Hosting Inclusive",
+        "2 months free support",
+        "Delivery: 14 working days",
       ],
-      unavailable: ["POS integration"],
-      highlight: true,
-      details: "Pro unlocks advanced analytics, custom domains, and priority support. Perfect for scaling your business.",
+      whatsapp: "https://wa.me/254117802561?text=I'm%20interested%20in%20the%20Small%20Business%20package",
     },
     {
-      name: "Enterprise",
-      price: "Contact Us",
-      description: "Custom solutions for large businesses and enterprises.",
+      name: "Ecommerce/Company",
+      price: "Ksh 70000",
+      note: "One Time Fee / No other hidden cost",
+      color: "bg-gray-800",
+      button: "bg-gray-800 hover:bg-gray-900",
       features: [
-        "Everything in Pro",
-        "POS integration",
-        "Dedicated account manager",
-        "Custom integrations",
+        "Content Management System",
+        "Responsive Professional Design",
+        "Keywords Research",
+        "SEO Content Copywriting",
+        "Images Capture & Optimization",
+        "Product/Services Ordering",
+        "Enhanced Website Security (SSL, Firewall...)",
+        "Social Media Creation, Chat, Online forms integrations",
+        "Site Upload & Setup of domain emails",
+        "Analytics dashboard",
+        "Standard website SEO",
+        "Google Business Creation",
+        "Search Engine Submission",
+        "Local directories Submission",
+        "POS Integration",
+        "Payments Integration (Mpesa/PayPal)",
+        "1 Yr Domain & Hosting Inclusive",
+        "3 months free support",
+        "Delivery: From 21 working days",
       ],
-      unavailable: [],
-      highlight: false,
-      details: "Enterprise is fully customizable. Get POS integration, a dedicated manager, and tailored solutions for your needs.",
+      whatsapp: "https://wa.me/254117802561?text=I'm%20interested%20in%20the%20Ecommerce%20package",
+    },
+    {
+      name: "Corporate/Portal",
+      price: "Ksh 120000",
+      note: "One Time Fee / No other hidden cost",
+      color: "bg-red-500",
+      button: "bg-red-500 hover:bg-red-600",
+      features: [
+        "Multisite - One site with subsite (branches/countries/etc)",
+        "Multi Language website",
+        "Content Management System/Customized Portal",
+        "Responsive Professional Design",
+        "Keywords Research",
+        "SEO Content Copywriting",
+        "Images Capture & Optimization",
+        "Products/Services Showcasing module",
+        "Enhanced Website Security (SSL, Firewall...)",
+        "Social Media Creation, Chat, Online forms integrations",
+        "Site Upload & Setup of domain emails",
+        "Analytics dashboard",
+        "Standard website SEO",
+        "Google Business Creation",
+        "POS Integration",
+        "Search Engine Submission",
+        "Local directories Submission",
+        "Custom Features/Modules",
+        "3 months free support",
+        "1 Yr Domain & Hosting Inclusive",
+        "Delivery: From 30 working days",
+      ],
+      whatsapp: "https://wa.me/254117802561?text=I'm%20interested%20in%20the%20Corporate%20Portal%20package",
+    },
+  ];
+
+  const planColors = [
+    {
+      gradient: "from-teal-400 to-emerald-600",
+      badge: "bg-teal-400 border-teal-600",
+      button: "bg-teal-500 hover:bg-teal-600 text-white",
+    },
+    {
+      gradient: "from-fuchsia-500 to-pink-600",
+      badge: "bg-fuchsia-500 border-pink-600",
+      button: "bg-fuchsia-600 hover:bg-pink-600 text-white",
+    },
+    {
+      gradient: "from-yellow-400 to-orange-500",
+      badge: "bg-yellow-400 border-orange-500",
+      button: "bg-yellow-500 hover:bg-orange-500 text-black",
     },
   ];
 
@@ -347,116 +428,53 @@ const AboutUs = () => {
             Our Rate Card
           </h2>
           <p className="text-center text-lg text-gray-600 mb-12">
-            Simple, transparent pricing. No hidden fees.
+            Simple, transparent & quality. No hidden fees.
           </p>
-          <div className="grid md:grid-cols-3 gap-8">
-            {plans.map((plan, idx) => (
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 my-12">
+            {webPlans.map((plan, idx) => (
               <motion.div
                 key={plan.name}
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.15, duration: 0.6, type: "spring" }}
-                whileHover={{ scale: 1.05 }}
-                className={`cursor-pointer rounded-3xl shadow-xl border border-purple-200 bg-white/80 backdrop-blur-xl p-8 flex flex-col ${
-                  plan.highlight
-                    ? "scale-105 border-2 border-purple-500 shadow-purple-200"
-                    : ""
-                }`}
-                onClick={() => setOpen(idx)}
+                whileHover={{ scale: 1.04 }}
+                className={`rounded-xl shadow-2xl overflow-hidden border border-gray-200 bg-white flex flex-col`}
+                style={{ minHeight: 600 }}
               >
-                <h3 className="text-2xl font-bold mb-2 text-gray-900 text-center">
-                  {plan.name}
-                </h3>
-                <div className="text-center text-4xl font-extrabold text-purple-700 mb-2">
-                  {plan.price}
+                {/* Header */}
+                <div className={`${plan.color} px-6 py-6`}>
+                  <h3 className="text-2xl font-bold text-white mb-1">{plan.name}</h3>
+                  <div className="text-3xl font-extrabold text-white">{plan.price}</div>
+                  <div className="text-sm text-white/90 mt-1">{plan.note}</div>
                 </div>
-                <p className="text-gray-600 text-center mb-6">{plan.description}</p>
-                <ul className="mb-8 space-y-3">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2 text-gray-800">
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                      {feature}
-                    </li>
-                  ))}
-                  {plan.unavailable.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2 text-gray-400 line-through">
-                      <XCircle className="w-5 h-5 text-gray-300" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 ${
-                    plan.highlight
-                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg hover:from-purple-700 hover:to-blue-700"
-                      : "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 hover:from-purple-200 hover:to-blue-200"
-                  }`}
-                >
-                  {plan.price === "Contact Us" ? "Contact Sales" : "Get Started"}
-                </button>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Modal Popup */}
-          <AnimatePresence>
-            {open !== null && (
-              <motion.div
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setOpen(null)}
-              >
-                <motion.div
-                  className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl relative"
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    className="absolute top-4 right-4 text-gray-400 hover:text-purple-600"
-                    onClick={() => setOpen(null)}
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                  <h3 className="text-2xl font-bold mb-2 text-gray-900 text-center">
-                    {plans[open].name}
-                  </h3>
-                  <div className="text-center text-3xl font-extrabold text-purple-700 mb-2">
-                    {plans[open].price}
+                {/* Features */}
+                <div className="flex-1 flex flex-col px-6 py-6">
+                  <div className="mb-4 font-semibold text-gray-800">
+                    {plan.name === "Startup" && "Ideal for Startups with a need to have a professional online presence"}
+                    {plan.name === "Small Business" && "For individuals, SMEs that want to share business information online"}
+                    {plan.name === "Ecommerce/Company" && "For stores that sell products or companies promoting their brand online"}
+                    {plan.name === "Corporate/Portal" && "Ideal for corporate, with custom integrations, multisite, multi language / membership portals"}
                   </div>
-                  <p className="text-gray-600 text-center mb-4">{plans[open].description}</p>
-                  <div className="text-gray-700 mb-4">{plans[open].details}</div>
-                  <ul className="mb-6 space-y-2">
-                    {plans[open].features.map((feature) => (
-                      <li key={feature} className="flex items-center gap-2 text-gray-800">
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                        {feature}
-                      </li>
-                    ))}
-                    {plans[open].unavailable.map((feature) => (
-                      <li key={feature} className="flex items-center gap-2 text-gray-400 line-through">
-                        <XCircle className="w-5 h-5 text-gray-300" />
-                        {feature}
+                  <ul className="mb-6 space-y-2 text-gray-700 text-sm">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500 mt-1" />
+                        <span>{feature}</span>
                       </li>
                     ))}
                   </ul>
-                  <button
-                    className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 ${
-                      plans[open].highlight
-                        ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg hover:from-purple-700 hover:to-blue-700"
-                        : "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 hover:from-purple-200 hover:to-blue-200"
-                    }`}
+                  <a
+                    href={plan.whatsapp}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`mt-auto w-full py-3 rounded-lg font-semibold text-white text-center shadow-lg transition-all duration-300 ${plan.button}`}
                   >
-                    {plans[open].price === "Contact Us" ? "Contact Sales" : "Get Started"}
-                  </button>
-                </motion.div>
+                    Whatsapp Chat Now!
+                  </a>
+                </div>
               </motion.div>
-            )}
-          </AnimatePresence>
+            ))}
+          </div>
         </div>
       </div>
     </div>
