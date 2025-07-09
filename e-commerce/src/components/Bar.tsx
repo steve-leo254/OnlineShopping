@@ -160,7 +160,7 @@ const Bar: React.FC = () => {
                     alt="Flowtechs Logo"
                   />
                   <span className="hidden sm:inline text-xl md:text-2xl font-semibold whitespace-nowrap text-white">
-                    FlowTech
+                    FlowTechS
                   </span>
                 </Link>
               </div>

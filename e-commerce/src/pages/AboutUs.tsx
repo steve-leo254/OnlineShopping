@@ -11,7 +11,12 @@ import {
   MessageCircle,
   TrendingUp,
   HandHeart,
+  CheckCircle,
+  XCircle,
+  X,
 } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const AboutUs = () => {
   const features = [
@@ -54,6 +59,52 @@ const AboutUs = () => {
       icon: <Zap className="w-6 h-6" />,
       title: "Seamless Integration",
       description: "Unified systems that work together effortlessly",
+    },
+  ];
+
+  const [open, setOpen] = useState<number | null>(null);
+
+  const plans = [
+    {
+      name: "Starter",
+      price: "Free",
+      description: "Perfect for individuals and small businesses starting out.",
+      features: [
+        "Basic product listing",
+        "Email support",
+        "Community access",
+      ],
+      unavailable: ["Custom domain", "Advanced analytics", "POS integration"],
+      highlight: false,
+      details: "Starter is great for testing the waters. You get basic listings, email support, and access to our community forum.",
+    },
+    {
+      name: "Pro",
+      price: "Ksh 2,999/mo",
+      description: "For growing businesses that need more power and flexibility.",
+      features: [
+        "Everything in Starter",
+        "Custom domain",
+        "Advanced analytics",
+        "Priority support",
+      ],
+      unavailable: ["POS integration"],
+      highlight: true,
+      details: "Pro unlocks advanced analytics, custom domains, and priority support. Perfect for scaling your business.",
+    },
+    {
+      name: "Enterprise",
+      price: "Contact Us",
+      description: "Custom solutions for large businesses and enterprises.",
+      features: [
+        "Everything in Pro",
+        "POS integration",
+        "Dedicated account manager",
+        "Custom integrations",
+      ],
+      unavailable: [],
+      highlight: false,
+      details: "Enterprise is fully customizable. Get POS integration, a dedicated manager, and tailored solutions for your needs.",
     },
   ];
 
@@ -286,6 +337,126 @@ const AboutUs = () => {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Rate Card */}
+      <div className="py-20 bg-gradient-to-br from-blue-50 to-purple-50">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-4xl md:text-5xl font-bold text-center mb-6 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            Our Rate Card
+          </h2>
+          <p className="text-center text-lg text-gray-600 mb-12">
+            Simple, transparent pricing. No hidden fees.
+          </p>
+          <div className="grid md:grid-cols-3 gap-8">
+            {plans.map((plan, idx) => (
+              <motion.div
+                key={plan.name}
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.15, duration: 0.6, type: "spring" }}
+                whileHover={{ scale: 1.05 }}
+                className={`cursor-pointer rounded-3xl shadow-xl border border-purple-200 bg-white/80 backdrop-blur-xl p-8 flex flex-col ${
+                  plan.highlight
+                    ? "scale-105 border-2 border-purple-500 shadow-purple-200"
+                    : ""
+                }`}
+                onClick={() => setOpen(idx)}
+              >
+                <h3 className="text-2xl font-bold mb-2 text-gray-900 text-center">
+                  {plan.name}
+                </h3>
+                <div className="text-center text-4xl font-extrabold text-purple-700 mb-2">
+                  {plan.price}
+                </div>
+                <p className="text-gray-600 text-center mb-6">{plan.description}</p>
+                <ul className="mb-8 space-y-3">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-center gap-2 text-gray-800">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      {feature}
+                    </li>
+                  ))}
+                  {plan.unavailable.map((feature) => (
+                    <li key={feature} className="flex items-center gap-2 text-gray-400 line-through">
+                      <XCircle className="w-5 h-5 text-gray-300" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 ${
+                    plan.highlight
+                      ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg hover:from-purple-700 hover:to-blue-700"
+                      : "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 hover:from-purple-200 hover:to-blue-200"
+                  }`}
+                >
+                  {plan.price === "Contact Us" ? "Contact Sales" : "Get Started"}
+                </button>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Modal Popup */}
+          <AnimatePresence>
+            {open !== null && (
+              <motion.div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setOpen(null)}
+              >
+                <motion.div
+                  className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl relative"
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    className="absolute top-4 right-4 text-gray-400 hover:text-purple-600"
+                    onClick={() => setOpen(null)}
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                  <h3 className="text-2xl font-bold mb-2 text-gray-900 text-center">
+                    {plans[open].name}
+                  </h3>
+                  <div className="text-center text-3xl font-extrabold text-purple-700 mb-2">
+                    {plans[open].price}
+                  </div>
+                  <p className="text-gray-600 text-center mb-4">{plans[open].description}</p>
+                  <div className="text-gray-700 mb-4">{plans[open].details}</div>
+                  <ul className="mb-6 space-y-2">
+                    {plans[open].features.map((feature) => (
+                      <li key={feature} className="flex items-center gap-2 text-gray-800">
+                        <CheckCircle className="w-5 h-5 text-green-500" />
+                        {feature}
+                      </li>
+                    ))}
+                    {plans[open].unavailable.map((feature) => (
+                      <li key={feature} className="flex items-center gap-2 text-gray-400 line-through">
+                        <XCircle className="w-5 h-5 text-gray-300" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    className={`w-full py-3 rounded-xl font-semibold transition-all duration-300 ${
+                      plans[open].highlight
+                        ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg hover:from-purple-700 hover:to-blue-700"
+                        : "bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 hover:from-purple-200 hover:to-blue-200"
+                    }`}
+                  >
+                    {plans[open].price === "Contact Us" ? "Contact Sales" : "Get Started"}
+                  </button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>
