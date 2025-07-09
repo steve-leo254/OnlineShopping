@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 const AboutUs = () => {
   const features = [
