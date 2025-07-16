@@ -24,6 +24,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import { useUserStats } from "../context/UserStatsContext";
 import countiesData from "../context/kenyan_counties.json";
+import { getOpenAIResponse, buildProductDescriptionPrompt } from "../utils/openai";
 
 // Define Message interface for type safety
 interface Message {
@@ -517,7 +518,7 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
   };
 
   // Enhanced bot response system with more personality and intelligence
-  const getBotResponse = (userMessage: string): Message => {
+  const getBotResponse = async (userMessage: string): Promise<Message> => {
     const message = userMessage.toLowerCase();
 
     if (productsLoading) {
@@ -590,7 +591,7 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
     ) {
       return {
         id: Date.now(),
-        text: "Poa sana! Ukoaje? 😊✨ Karibu sana Flowtechs! your receptionist wa Flowtechs! 🇰🇪\n\nNimefurahi kukuona hapa! (I'm happy to see you here!)\n\nNiko tayari kukusaidia na:\n• 🛍️ Kupata bidhaa (Find products)\n• 📦 Kufuatilia oda (Track orders)\n• 💡 Mapendekezo (Recommendations)\n• 🎧 Msaada wa wateja (Customer support)\n• 🏷️ Bei nzuri (Best deals)\n• 💳 \n\nTuanze safari ya manunuzi pamoja! 🚀💫\n\n(PS: I'm still learning Swahili, so feel free to mix with English!)",
+        text: "Poa sana! Ukoaje? 😊✨ Karibu sana Flowtechs! your receptionist wa Flowtechs! 🇰🇪\n\nNimefurahi kukuona hapa! \n\nNiko tayari kukusaidia na:\n• 🛍️ Kupata bidhaa (Find products)\n• 📦 Kufuatilia oda (Track orders)\n• 💡 Mapendekezo (Recommendations)\n• 🎧 Msaada wa wateja (Customer support)\n• 🏷️ Bei nzuri (Best deals)\n• 💳 \n\nTuanze safari ya manunuzi pamoja! 🚀💫\n\n(PS: I'm still learning Swahili, so feel free to mix with English!)",
         sender: "bot",
         timestamp: new Date(),
       };
@@ -831,8 +832,8 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
       message.includes("who owns") ||
       message.includes("started by") ||
       message.includes("who are the founders") ||
-      message.includes("who are founders") ||
-      message.includes("tell me history about flowtechs") ||
+      message.includes("flowtechs") ||
+      message.includes("tell me  about flowtechs") ||
       message.includes("when was flowtechs started") ||
       message.includes("when did flowtechs start") ||
       message.includes("when was flowtechs founded") ||
@@ -1021,6 +1022,19 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
       };
     }
 
+    if (
+      [
+        "customer support",
+      
+      ].includes(message)
+    ) {
+      return {
+        id: Date.now(),
+        text: " 🎧 For A fast response send message or  querries  on Whatsapp +254 117 802 561 🏷️",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
     // Handle "tell me a joke" requests
     if (
       [
@@ -1391,8 +1405,28 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
       return getReturnContactResponse(message);
     }
 
+    // Handle product description queries using OpenAI
+    if (message.startsWith("describe ")) {
+      // Try to extract product name
+      const productName = userMessage.slice(9).trim();
+      const prompt = buildProductDescriptionPrompt(productName);
+      const openaiReply = await getOpenAIResponse(prompt);
+      return {
+        id: Date.now(),
+        text: openaiReply,
+        sender: "bot",
+        timestamp: new Date(),
+      };
+    }
+
     // Default fallback response with better context
-    return getFallbackResponse(message);
+    const openaiReply = await getOpenAIResponse(userMessage);
+    return {
+      id: Date.now(),
+      text: openaiReply,
+      sender: "bot",
+      timestamp: new Date(),
+    };
   };
 
   // Enhanced problem help response
@@ -2027,7 +2061,7 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
 
   // Enhanced quick action handler with more intelligent responses
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
     const userMessage: Message = {
@@ -2041,12 +2075,10 @@ const EnhancedServiceChatbot: React.FC<{}> = () => {
     setInputMessage("");
     setIsTyping(true);
 
-    // Otherwise, normal bot response
-    setTimeout(() => {
-      const botResponse = getBotResponse(inputMessage);
-      setMessages((prev) => [...prev, botResponse]);
-      setIsTyping(false);
-    }, 1000);
+    // Await OpenAI or your logic
+    const botResponse = await getBotResponse(inputMessage);
+    setMessages((prev) => [...prev, botResponse]);
+    setIsTyping(false);
   };
 
   // Scroll to bottom when new messages are added
